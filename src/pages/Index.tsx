@@ -32,6 +32,7 @@ const Index = () => {
     standings, 
     players,
     matches: allMatches,
+    leaguePlayers,
     loading,
     addMatch,
     getPlayerMatches,
@@ -126,11 +127,13 @@ const Index = () => {
         allMatches={allMatches}
         leagues={leagues}
         associations={associations}
+        leaguePlayers={leaguePlayers}
         rank={selectedPlayerRank}
         getPlayerById={getPlayerById}
         onBack={() => setView('standings')}
         isOwnProfile={isOwnProfile}
         onProfileUpdate={refetchProfiles}
+        addMatch={addMatch}
       />
     );
   }
