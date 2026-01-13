@@ -68,19 +68,19 @@ export function StandingsTable({ standings, onPlayerClick }: StandingsTableProps
                 {getRankIcon(index + 1)}
               </div>
               <div className="flex items-center gap-2 text-left min-w-0">
-                {stat.player.avatar_url ? (
+                {stat.player?.avatar_url ? (
                   <img 
                     src={stat.player.avatar_url} 
-                    alt={stat.player.name}
+                    alt={stat.player.name || 'Oyuncu'}
                     className="w-6 h-6 rounded-full object-cover flex-shrink-0"
                   />
                 ) : (
                   <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary flex-shrink-0">
-                    {stat.player.name.charAt(0)}
+                    {stat.player?.name?.charAt(0) || '?'}
                   </div>
                 )}
                 <span className="font-medium text-foreground truncate">
-                  {stat.player.name}
+                  {stat.player?.name || 'Bilinmeyen Oyuncu'}
                 </span>
               </div>
               <div className="text-center text-muted-foreground">{stat.played}</div>
