@@ -264,7 +264,7 @@ export function useSupabaseLeague() {
     });
 
     return sortedStats;
-  }, [matches, players]);
+  }, [matches, players, leaguePlayers]);
 
   const standings = useMemo(() => 
     calculateStats(currentLeagueId),
