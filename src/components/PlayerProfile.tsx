@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo } from 'react';
-import { ArrowLeft, Trophy, Target, TrendingUp, Calendar, LogOut, Key, Loader2, Camera, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Trophy, LogOut, Key, Loader2, Camera, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -412,67 +412,13 @@ export function PlayerProfile({
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-card rounded-xl p-4 border border-border">
-            <div className="flex items-center gap-2 mb-2">
-              <Trophy className="w-4 h-4 text-gold" />
-              <span className="text-xs text-muted-foreground">Galibiyet Oranı</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{winRate}%</p>
-          </div>
-
-          <div className="bg-card rounded-xl p-4 border border-border">
-            <div className="flex items-center gap-2 mb-2">
-              <Target className="w-4 h-4 text-primary" />
-              <span className="text-xs text-muted-foreground">Toplam Puan</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{stats?.points || 0}</p>
-          </div>
-
-          <div className="bg-card rounded-xl p-4 border border-border">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-success" />
-              <span className="text-xs text-muted-foreground">Averaj</span>
-            </div>
-            <p className={`text-2xl font-bold ${stats && stats.average > 0 ? 'text-success' : stats && stats.average < 0 ? 'text-primary' : 'text-foreground'}`}>
-              {stats && stats.average > 0 ? `+${stats.average}` : stats?.average || 0}
-            </p>
-          </div>
-
-          <div className="bg-card rounded-xl p-4 border border-border">
-            <div className="flex items-center gap-2 mb-2">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Maç Sayısı</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{stats?.played || 0}</p>
-          </div>
-        </div>
-
-        {/* Performance Summary */}
+        {/* Win Rate */}
         <div className="bg-card rounded-xl p-4 border border-border">
-          <h3 className="font-semibold mb-3">Performans Özeti</h3>
-          <div className="flex gap-4">
-            <div className="flex-1 text-center">
-              <p className="text-2xl font-bold text-success">{stats?.won || 0}</p>
-              <p className="text-xs text-muted-foreground">Galibiyet</p>
-            </div>
-            <div className="w-px bg-border" />
-            <div className="flex-1 text-center">
-              <p className="text-2xl font-bold text-primary">{stats?.lost || 0}</p>
-              <p className="text-xs text-muted-foreground">Mağlubiyet</p>
-            </div>
-            <div className="w-px bg-border" />
-            <div className="flex-1 text-center">
-              <p className="text-2xl font-bold text-foreground">{stats?.scored || 0}</p>
-              <p className="text-xs text-muted-foreground">Attığı</p>
-            </div>
-            <div className="w-px bg-border" />
-            <div className="flex-1 text-center">
-              <p className="text-2xl font-bold text-foreground">{stats?.conceded || 0}</p>
-              <p className="text-xs text-muted-foreground">Yediği</p>
-            </div>
+          <div className="flex items-center gap-2 mb-2">
+            <Trophy className="w-4 h-4 text-gold" />
+            <span className="text-xs text-muted-foreground">Galibiyet Oranı</span>
           </div>
+          <p className="text-2xl font-bold text-foreground">{winRate}%</p>
         </div>
 
         {/* Leagues & Matches */}
