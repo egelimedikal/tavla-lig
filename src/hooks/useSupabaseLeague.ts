@@ -174,6 +174,11 @@ export function useSupabaseLeague() {
   );
 
   const calculateStats = useCallback((leagueId: string): PlayerStats[] => {
+    // Don't calculate if players haven't loaded yet
+    if (players.length === 0) {
+      return [];
+    }
+
     const leagueMatchesFiltered = matches.filter(m => m.league_id === leagueId);
     const statsMap = new Map<string, PlayerStats>();
 
