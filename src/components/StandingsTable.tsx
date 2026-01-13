@@ -2,9 +2,9 @@ import { Trophy, Medal } from 'lucide-react';
 
 interface Profile {
   id: string;
-  user_id: string;
+  user_id: string | null;
   name: string;
-  phone: string | null;
+  phone?: string | null;
   avatar_url: string | null;
 }
 

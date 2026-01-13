@@ -13,9 +13,9 @@ interface Profile {
   id: string;
   user_id: string | null;
   name: string;
-  phone: string | null;
+  phone?: string | null;
   avatar_url: string | null;
-  must_change_password: boolean;
+  must_change_password?: boolean;
 }
 
 interface Match {
@@ -92,12 +92,12 @@ export function useSupabaseLeague() {
         
         if (leaguesData) setLeagues(leaguesData);
 
-        // Fetch all profiles
+        // Fetch all public profiles (using the public view for visibility)
         const { data: profilesData } = await supabase
-          .from('profiles')
+          .from('profiles_public')
           .select('*');
         
-        if (profilesData) setPlayers(profilesData);
+        if (profilesData) setPlayers(profilesData as Profile[]);
 
         // Fetch all matches
         const { data: matchesData } = await supabase
@@ -318,10 +318,10 @@ export function useSupabaseLeague() {
 
   const refetchProfiles = useCallback(async () => {
     const { data: profilesData } = await supabase
-      .from('profiles')
+      .from('profiles_public')
       .select('*');
     
-    if (profilesData) setPlayers(profilesData);
+    if (profilesData) setPlayers(profilesData as Profile[]);
     
     // Also update current user profile
     if (user) {
