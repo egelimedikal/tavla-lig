@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Trash2, Edit, Users, Trophy, Gamepad2, Loader2, Shield, Building2, Crown, Upload, ImageIcon, Key, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit, Users, Trophy, Gamepad2, Loader2, Shield, Building2, Crown, Upload, ImageIcon, Key, RefreshCw, Megaphone } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface Profile {
@@ -1054,6 +1054,15 @@ const Admin = () => {
               </Badge>
             ) : null}
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/announcements')}
+            className="ml-auto"
+          >
+            <Megaphone className="w-4 h-4 mr-2" />
+            Duyurular
+          </Button>
         </div>
       </div>
 
