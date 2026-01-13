@@ -967,6 +967,28 @@ const Admin = () => {
     return false;
   };
 
+  // Check if current user can manage a league (add/remove players)
+  const canManageLeague = (leagueId: string): boolean => {
+    const league = leagues.find(l => l.id === leagueId);
+    if (!league?.association_id) return false;
+    
+    // Super admin can manage all leagues
+    if (isSuperAdmin) return true;
+    
+    // Association admin can only manage leagues in their associations
+    return managedAssociationIds.includes(league.association_id);
+  };
+
+  // Get leagues that current user can manage
+  const manageableLeagues = leagues.filter(league => {
+    if (!league.association_id) return false;
+    if (isSuperAdmin) return true;
+    return managedAssociationIds.includes(league.association_id);
+  });
+
+  // Check if user is an association admin (not super_admin or admin)
+  const isOnlyAssociationAdmin = managedAssociationIds.length > 0 && !isSuperAdmin && !isAdmin;
+
   if (authLoading || adminLoading || superAdminLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -1538,42 +1560,50 @@ const Admin = () => {
                   </div>
                 </div>
 
-                {/* Add Player to League Section */}
-                <div className="space-y-3 p-4 bg-muted/50 rounded-lg border-t pt-6">
-                  <Label className="text-base font-medium">Oyuncu Lig Ataması</Label>
-                  <div className="flex gap-2">
-                    <Select value={selectedLeagueForPlayer} onValueChange={setSelectedLeagueForPlayer}>
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Lig Seç" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {leagues.map(league => (
-                          <SelectItem key={league.id} value={league.id}>
-                            {league.name} ({getAssociationName(league.association_id)})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select value={selectedPlayer} onValueChange={setSelectedPlayer}>
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Oyuncu Seç" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {players.map(player => (
-                          <SelectItem key={player.id} value={player.id}>
-                            {player.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button onClick={addPlayerToLeague} size="icon">
-                      <Plus className="w-4 h-4" />
-                    </Button>
+                {/* Add Player to League Section - Only for association admins or super admin */}
+                {(isSuperAdmin || managedAssociationIds.length > 0) && manageableLeagues.length > 0 && (
+                  <div className="space-y-3 p-4 bg-muted/50 rounded-lg border-t pt-6">
+                    <Label className="text-base font-medium">Oyuncu Lig Ataması</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {isSuperAdmin 
+                        ? 'Tüm liglere oyuncu atayabilirsiniz.'
+                        : 'Sadece yönettiğiniz derneklerin liglerine oyuncu atayabilirsiniz.'
+                      }
+                    </p>
+                    <div className="flex gap-2">
+                      <Select value={selectedLeagueForPlayer} onValueChange={setSelectedLeagueForPlayer}>
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Lig Seç" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {manageableLeagues.map(league => (
+                            <SelectItem key={league.id} value={league.id}>
+                              {league.name} ({getAssociationName(league.association_id)})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={selectedPlayer} onValueChange={setSelectedPlayer}>
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Oyuncu Seç" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {players.map(player => (
+                            <SelectItem key={player.id} value={player.id}>
+                              {player.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button onClick={addPlayerToLeague} size="icon">
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {/* Player-League Assignments */}
-                {leagues.map(league => {
+                {/* Player-League Assignments - Only show leagues user can manage */}
+                {manageableLeagues.map(league => {
                   const playersInLeague = leaguePlayers.filter(lp => lp.league_id === league.id);
                   if (playersInLeague.length === 0) return null;
                   
