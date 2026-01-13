@@ -21,14 +21,13 @@ export function useAdminRole() {
           .from('user_roles')
           .select('role')
           .eq('user_id', user.id)
-          .in('role', ['admin', 'super_admin'])
-          .maybeSingle();
+          .in('role', ['admin', 'super_admin']);
 
         if (error) {
           console.error('Error checking admin role:', error);
           setIsAdmin(false);
         } else {
-          setIsAdmin(!!data);
+          setIsAdmin(data && data.length > 0);
         }
       } catch (error) {
         console.error('Error checking admin role:', error);
