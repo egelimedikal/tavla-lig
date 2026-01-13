@@ -1,5 +1,16 @@
-import { ArrowLeft, Trophy, Target, TrendingUp, Calendar, LogOut } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowLeft, Trophy, Target, TrendingUp, Calendar, LogOut, Key, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { z } from 'zod';
+
+const passwordSchema = z.string().min(4, 'Şifre en az 4 karakter olmalı');
 
 interface Profile {
   id: string;
@@ -43,7 +54,13 @@ interface PlayerProfileProps {
 }
 
 export function PlayerProfile({ player, stats, matches, rank, getPlayerById, onBack, isOwnProfile }: PlayerProfileProps) {
-  const { signOut } = useAuth();
+  const { signOut, updatePassword } = useAuth();
+  const { toast } = useToast();
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
   
   const winRate = stats && stats.played > 0 
     ? Math.round((stats.won / stats.played) * 100) 
@@ -53,6 +70,46 @@ export function PlayerProfile({ player, stats, matches, rank, getPlayerById, onB
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const handlePasswordChange = async () => {
+    setPasswordError('');
+    
+    try {
+      passwordSchema.parse(newPassword);
+    } catch (e) {
+      if (e instanceof z.ZodError) {
+        setPasswordError(e.errors[0].message);
+        return;
+      }
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Şifreler eşleşmiyor');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const { error } = await updatePassword(newPassword);
+      if (error) {
+        toast({
+          title: 'Hata',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Başarılı',
+          description: 'Şifreniz başarıyla değiştirildi.',
+        });
+        setShowPasswordDialog(false);
+        setNewPassword('');
+        setConfirmPassword('');
+      }
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   return (
@@ -70,12 +127,20 @@ export function PlayerProfile({ player, stats, matches, rank, getPlayerById, onB
             <h1 className="text-lg font-bold">Oyuncu Profili</h1>
           </div>
           {isOwnProfile && (
-            <button
-              onClick={handleSignOut}
-              className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center hover:bg-primary/30 text-primary"
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowPasswordDialog(true)}
+                className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80"
+              >
+                <Key className="w-5 h-5" />
+              </button>
+              <button
+                onClick={handleSignOut}
+                className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center hover:bg-primary/30 text-primary"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -203,6 +268,51 @@ export function PlayerProfile({ player, stats, matches, rank, getPlayerById, onB
           )}
         </div>
       </div>
+
+      {/* Password Change Dialog */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Şifre Değiştir</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground">Yeni Şifre</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="••••••••"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground">Yeni Şifre (Tekrar)</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="••••••••"
+              />
+            </div>
+            {passwordError && (
+              <p className="text-sm text-primary">{passwordError}</p>
+            )}
+            <button
+              onClick={handlePasswordChange}
+              disabled={changingPassword || !newPassword || !confirmPassword}
+              className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 disabled:opacity-50 transition-all"
+            >
+              {changingPassword ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                'Şifreyi Değiştir'
+              )}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
