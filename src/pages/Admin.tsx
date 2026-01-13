@@ -17,8 +17,9 @@ import { Badge } from '@/components/ui/badge';
 
 interface Profile {
   id: string;
-  user_id: string;
+  user_id: string | null;
   name: string;
+  phone: string | null;
 }
 
 interface Association {
@@ -94,6 +95,11 @@ const Admin = () => {
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [selectedLeagueForPlayer, setSelectedLeagueForPlayer] = useState('');
   const [selectedPlayer, setSelectedPlayer] = useState('');
+  
+  // New player form
+  const [newPlayerName, setNewPlayerName] = useState('');
+  const [newPlayerPhone, setNewPlayerPhone] = useState('');
+  const [editingPlayer, setEditingPlayer] = useState<Profile | null>(null);
   
   // Admin management
   const [selectedUserForRole, setSelectedUserForRole] = useState('');
@@ -383,6 +389,130 @@ const Admin = () => {
     toast({
       title: "Başarılı",
       description: "Lig silindi.",
+    });
+  };
+
+  // Player CRUD (add new players with phone)
+  const formatPhoneNumber = (phone: string) => {
+    const digits = phone.replace(/\D/g, '');
+    return digits.startsWith('90') ? `+${digits}` : `+90${digits.replace(/^0/, '')}`;
+  };
+
+  const addPlayer = async () => {
+    if (!newPlayerName.trim() || !newPlayerPhone.trim()) {
+      toast({
+        title: "Hata",
+        description: "Oyuncu adı ve telefon numarası gerekli.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPlayerPhone.replace(/\D/g, '').length < 10) {
+      toast({
+        title: "Hata",
+        description: "Geçerli bir telefon numarası girin.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const formattedPhone = formatPhoneNumber(newPlayerPhone);
+
+    // Check if phone already exists
+    const existingPlayer = players.find(p => p.phone === formattedPhone);
+    if (existingPlayer) {
+      toast({
+        title: "Hata",
+        description: "Bu telefon numarası zaten kayıtlı.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert({ 
+        name: newPlayerName.trim(), 
+        phone: formattedPhone 
+      } as any)
+      .select()
+      .single();
+
+    if (error) {
+      toast({
+        title: "Hata",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (data) {
+      setPlayers(prev => [...prev, data]);
+      setNewPlayerName('');
+      setNewPlayerPhone('');
+      toast({
+        title: "Başarılı",
+        description: "Oyuncu eklendi. Oyuncu artık telefon numarası ile giriş yapabilir.",
+      });
+    }
+  };
+
+  const updatePlayer = async () => {
+    if (!editingPlayer) return;
+
+    const formattedPhone = editingPlayer.phone ? formatPhoneNumber(editingPlayer.phone) : null;
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ 
+        name: editingPlayer.name,
+        phone: formattedPhone
+      })
+      .eq('id', editingPlayer.id);
+
+    if (error) {
+      toast({
+        title: "Hata",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setPlayers(prev => prev.map(p => 
+      p.id === editingPlayer.id 
+        ? { ...editingPlayer, phone: formattedPhone } 
+        : p
+    ));
+    setEditingPlayer(null);
+    toast({
+      title: "Başarılı",
+      description: "Oyuncu güncellendi.",
+    });
+  };
+
+  const deletePlayer = async (playerId: string) => {
+    const { error } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', playerId);
+
+    if (error) {
+      toast({
+        title: "Hata",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setPlayers(prev => prev.filter(p => p.id !== playerId));
+    setLeaguePlayers(prev => prev.filter(lp => lp.player_id !== playerId));
+    toast({
+      title: "Başarılı",
+      description: "Oyuncu silindi.",
     });
   };
 
@@ -1118,12 +1248,116 @@ const Admin = () => {
           <TabsContent value="players">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Oyuncu Lig Ataması</CardTitle>
+                <CardTitle className="text-base">Oyuncu Yönetimi</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Add Player to League */}
+              <CardContent className="space-y-6">
+                {/* Add New Player */}
                 <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
-                  <Label>Oyuncu Ekle</Label>
+                  <Label className="text-base font-medium">Yeni Oyuncu Ekle</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Oyuncu adı ve telefon numarasını girin. Oyuncu bu numara ile sisteme giriş yapabilecek.
+                  </p>
+                  <div className="grid gap-3">
+                    <Input
+                      placeholder="Oyuncu Adı Soyadı"
+                      value={newPlayerName}
+                      onChange={e => setNewPlayerName(e.target.value)}
+                    />
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">+90</span>
+                        <Input
+                          placeholder="5XX XXX XX XX"
+                          value={newPlayerPhone}
+                          onChange={e => setNewPlayerPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                          className="pl-12"
+                        />
+                      </div>
+                      <Button onClick={addPlayer}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Ekle
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* All Players List */}
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">Kayıtlı Oyuncular ({players.length})</Label>
+                  <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                    {players.map(player => (
+                      <div 
+                        key={player.id} 
+                        className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium">{player.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {player.phone || 'Telefon yok'}
+                            {player.user_id && <span className="ml-2 text-green-500">✓ Giriş yapmış</span>}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="icon"
+                                onClick={() => setEditingPlayer({ ...player })}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Oyuncu Düzenle</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div>
+                                  <Label>Oyuncu Adı</Label>
+                                  <Input
+                                    value={editingPlayer?.name || ''}
+                                    onChange={e => setEditingPlayer(prev => prev ? { ...prev, name: e.target.value } : null)}
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Telefon Numarası</Label>
+                                  <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">+90</span>
+                                    <Input
+                                      value={editingPlayer?.phone?.replace('+90', '') || ''}
+                                      onChange={e => setEditingPlayer(prev => prev ? { ...prev, phone: e.target.value.replace(/\D/g, '').slice(0, 10) } : null)}
+                                      className="pl-12"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              <DialogFooter>
+                                <DialogClose asChild>
+                                  <Button variant="outline">İptal</Button>
+                                </DialogClose>
+                                <DialogClose asChild>
+                                  <Button onClick={updatePlayer}>Kaydet</Button>
+                                </DialogClose>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                          <Button 
+                            variant="destructive" 
+                            size="icon"
+                            onClick={() => deletePlayer(player.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Add Player to League Section */}
+                <div className="space-y-3 p-4 bg-muted/50 rounded-lg border-t pt-6">
+                  <Label className="text-base font-medium">Oyuncu Lig Ataması</Label>
                   <div className="flex gap-2">
                     <Select value={selectedLeagueForPlayer} onValueChange={setSelectedLeagueForPlayer}>
                       <SelectTrigger className="flex-1">

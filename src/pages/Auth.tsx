@@ -1,24 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { Phone, ArrowRight, Shield, Loader2 } from 'lucide-react';
 import tavlaLogo from '@/assets/tavlalogo.png';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 
-const emailSchema = z.string().email('Geçerli bir e-posta adresi girin');
-const passwordSchema = z.string().min(6, 'Şifre en az 6 karakter olmalı');
-const nameSchema = z.string().min(2, 'İsim en az 2 karakter olmalı');
+const phoneSchema = z.string()
+  .min(10, 'Telefon numarası en az 10 karakter olmalı')
+  .regex(/^[0-9+]+$/, 'Geçerli bir telefon numarası girin');
 
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [step, setStep] = useState<'phone' | 'otp'>('phone');
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string }>({});
+  const [error, setError] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState(0);
   
-  const { signIn, signUp, user } = useAuth();
+  const { sendOtp, verifyOtp, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -28,91 +29,115 @@ export default function Auth() {
     }
   }, [user, navigate]);
 
-  const validateForm = () => {
-    const newErrors: { email?: string; password?: string; name?: string } = {};
-    
-    try {
-      emailSchema.parse(email);
-    } catch (e) {
-      if (e instanceof z.ZodError) {
-        newErrors.email = e.errors[0].message;
-      }
+  // Countdown timer for resend
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
     }
+  }, [countdown]);
 
-    try {
-      passwordSchema.parse(password);
-    } catch (e) {
-      if (e instanceof z.ZodError) {
-        newErrors.password = e.errors[0].message;
-      }
-    }
-
-    if (!isLogin) {
-      try {
-        nameSchema.parse(name);
-      } catch (e) {
-        if (e instanceof z.ZodError) {
-          newErrors.name = e.errors[0].message;
-        }
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const formatPhoneDisplay = (value: string) => {
+    // Remove non-digits
+    const digits = value.replace(/\D/g, '');
+    // Format as 5XX XXX XX XX
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
+    if (digits.length <= 8) return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+    return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 8)} ${digits.slice(8, 10)}`;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 10) {
+      setPhone(value);
+    }
+  };
+
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     
-    if (!validateForm()) return;
+    try {
+      phoneSchema.parse(phone);
+    } catch (e) {
+      if (e instanceof z.ZodError) {
+        setError(e.errors[0].message);
+        return;
+      }
+    }
 
     setLoading(true);
 
     try {
-      if (isLogin) {
-        const { error } = await signIn(email, password);
-        if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            toast({
-              title: 'Giriş Başarısız',
-              description: 'E-posta veya şifre hatalı.',
-              variant: 'destructive',
-            });
-          } else {
-            toast({
-              title: 'Hata',
-              description: error.message,
-              variant: 'destructive',
-            });
-          }
-        } else {
-          toast({
-            title: 'Hoş Geldiniz! 🎲',
-            description: 'Başarıyla giriş yaptınız.',
-          });
-        }
+      const { error } = await sendOtp(phone);
+      if (error) {
+        toast({
+          title: 'Hata',
+          description: error.message,
+          variant: 'destructive',
+        });
       } else {
-        const { error } = await signUp(email, password, name);
-        if (error) {
-          if (error.message.includes('already registered')) {
-            toast({
-              title: 'Hesap Mevcut',
-              description: 'Bu e-posta adresi zaten kayıtlı. Giriş yapmayı deneyin.',
-              variant: 'destructive',
-            });
-          } else {
-            toast({
-              title: 'Hata',
-              description: error.message,
-              variant: 'destructive',
-            });
-          }
-        } else {
-          toast({
-            title: 'Hesap Oluşturuldu! 🎉',
-            description: 'Başarıyla kayıt oldunuz.',
-          });
-        }
+        setStep('otp');
+        setCountdown(60);
+        toast({
+          title: 'Doğrulama Kodu Gönderildi 📱',
+          description: 'Telefonunuza gelen 6 haneli kodu girin.',
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otp.length !== 6) {
+      setError('6 haneli kodu eksiksiz girin');
+      return;
+    }
+
+    setError(null);
+    setLoading(true);
+
+    try {
+      const { error } = await verifyOtp(phone, otp);
+      if (error) {
+        setError(error.message);
+        toast({
+          title: 'Doğrulama Başarısız',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Hoş Geldiniz! 🎲',
+          description: 'Başarıyla giriş yaptınız.',
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (countdown > 0) return;
+    
+    setLoading(true);
+    try {
+      const { error } = await sendOtp(phone);
+      if (error) {
+        toast({
+          title: 'Hata',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        setCountdown(60);
+        setOtp('');
+        toast({
+          title: 'Kod Tekrar Gönderildi 📱',
+          description: 'Yeni doğrulama kodunuz gönderildi.',
+        });
       }
     } finally {
       setLoading(false);
@@ -135,88 +160,124 @@ export default function Auth() {
             </div>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
+          {step === 'phone' ? (
+            /* Phone Input Step */
+            <form onSubmit={handleSendOtp} className="space-y-6">
               <div className="space-y-2">
-                <label className="text-sm text-muted-foreground">Ad Soyad</label>
+                <label className="text-sm text-muted-foreground">Telefon Numarası</label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-muted-foreground">
+                    <Phone className="w-5 h-5" />
+                    <span className="text-sm font-medium">+90</span>
+                  </div>
                   <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="Adınız Soyadınız"
+                    type="tel"
+                    value={formatPhoneDisplay(phone)}
+                    onChange={handlePhoneChange}
+                    className="w-full pl-20 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-lg tracking-wide"
+                    placeholder="5XX XXX XX XX"
+                    autoComplete="tel"
                   />
                 </div>
-                {errors.name && <p className="text-xs text-primary">{errors.name}</p>}
+                {error && <p className="text-xs text-primary">{error}</p>}
+                <p className="text-xs text-muted-foreground">
+                  Yönetici tarafından sisteme eklenen telefon numaranızı girin
+                </p>
               </div>
-            )}
 
-            <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">E-posta</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="ornek@email.com"
-                />
+              <button
+                type="submit"
+                disabled={loading || phone.length < 10}
+                className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2 glow-primary hover:bg-primary/90 disabled:opacity-50 transition-all"
+              >
+                {loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    Doğrulama Kodu Gönder
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
+              </button>
+            </form>
+          ) : (
+            /* OTP Verification Step */
+            <div className="space-y-6">
+              <div className="text-center space-y-2">
+                <div className="w-16 h-16 mx-auto rounded-full bg-primary/20 flex items-center justify-center">
+                  <Shield className="w-8 h-8 text-primary" />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">+90 {formatPhoneDisplay(phone)}</span> numarasına gönderilen 6 haneli kodu girin
+                </p>
               </div>
-              {errors.email && <p className="text-xs text-primary">{errors.email}</p>}
+
+              <div className="flex justify-center">
+                <InputOTP
+                  maxLength={6}
+                  value={otp}
+                  onChange={(value) => {
+                    setOtp(value);
+                    setError(null);
+                  }}
+                  onComplete={handleVerifyOtp}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} className="w-12 h-14 text-xl" />
+                    <InputOTPSlot index={1} className="w-12 h-14 text-xl" />
+                    <InputOTPSlot index={2} className="w-12 h-14 text-xl" />
+                    <InputOTPSlot index={3} className="w-12 h-14 text-xl" />
+                    <InputOTPSlot index={4} className="w-12 h-14 text-xl" />
+                    <InputOTPSlot index={5} className="w-12 h-14 text-xl" />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+
+              {error && <p className="text-xs text-primary text-center">{error}</p>}
+
+              <button
+                onClick={handleVerifyOtp}
+                disabled={loading || otp.length !== 6}
+                className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2 glow-primary hover:bg-primary/90 disabled:opacity-50 transition-all"
+              >
+                {loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    Giriş Yap
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
+              </button>
+
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={countdown > 0 || loading}
+                  className="text-sm text-muted-foreground hover:text-foreground disabled:opacity-50 transition-colors"
+                >
+                  {countdown > 0 ? (
+                    <span>Tekrar gönder ({countdown}s)</span>
+                  ) : (
+                    <span className="text-primary font-medium">Kodu tekrar gönder</span>
+                  )}
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep('phone');
+                    setOtp('');
+                    setError(null);
+                  }}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Numarayı değiştir
+                </button>
+              </div>
             </div>
-
-            <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">Şifre</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="••••••••"
-                />
-              </div>
-              {errors.password && <p className="text-xs text-primary">{errors.password}</p>}
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2 glow-primary hover:bg-primary/90 disabled:opacity-50 transition-all"
-            >
-              {loading ? (
-                <span className="animate-pulse">Yükleniyor...</span>
-              ) : (
-                <>
-                  {isLogin ? 'Giriş Yap' : 'Kayıt Ol'}
-                  <ArrowRight className="w-5 h-5" />
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Toggle */}
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setErrors({});
-              }}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {isLogin ? (
-                <>Hesabınız yok mu? <span className="text-primary font-semibold">Kayıt Ol</span></>
-              ) : (
-                <>Zaten hesabınız var mı? <span className="text-primary font-semibold">Giriş Yap</span></>
-              )}
-            </button>
-          </div>
+          )}
         </div>
       </div>
 
