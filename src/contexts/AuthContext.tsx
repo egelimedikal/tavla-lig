@@ -6,8 +6,8 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, name: string) => Promise<{ error: Error | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  sendOtp: (phone: string) => Promise<{ error: Error | null }>;
+  verifyOtp: (phone: string, token: string) => Promise<{ error: Error | null; isNewUser?: boolean }>;
   signOut: () => Promise<void>;
 }
 
@@ -38,30 +38,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, name: string) => {
-    const redirectUrl = `${window.location.origin}/`;
+  const sendOtp = async (phone: string) => {
+    // Format phone number for Turkey (+90)
+    const formattedPhone = phone.startsWith('+') ? phone : `+90${phone.replace(/^0/, '')}`;
     
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          name: name,
-        }
-      }
+    const { error } = await supabase.auth.signInWithOtp({
+      phone: formattedPhone,
     });
     
     return { error: error ? new Error(error.message) : null };
   };
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+  const verifyOtp = async (phone: string, token: string) => {
+    const formattedPhone = phone.startsWith('+') ? phone : `+90${phone.replace(/^0/, '')}`;
+    
+    const { data, error } = await supabase.auth.verifyOtp({
+      phone: formattedPhone,
+      token,
+      type: 'sms',
     });
     
-    return { error: error ? new Error(error.message) : null };
+    if (error) {
+      return { error: new Error(error.message) };
+    }
+
+    // Check if this phone exists in profiles (admin added)
+    if (data.user) {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('phone', formattedPhone)
+        .maybeSingle();
+
+      if (profileError) {
+        return { error: new Error(profileError.message) };
+      }
+
+      if (!profile) {
+        // Phone not registered by admin
+        await supabase.auth.signOut();
+        return { error: new Error('Bu telefon numarası sistemde kayıtlı değil. Lütfen yönetici ile iletişime geçin.') };
+      }
+
+      // Link profile to auth user if not already linked
+      if (!profile.user_id) {
+        await supabase
+          .from('profiles')
+          .update({ user_id: data.user.id })
+          .eq('phone', formattedPhone);
+      }
+    }
+    
+    return { error: null };
   };
 
   const signOut = async () => {
@@ -69,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, sendOtp, verifyOtp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
