@@ -25,7 +25,7 @@ serve(async (req) => {
     });
 
     // Get request body
-    const { user_id, new_password } = await req.json();
+    const { user_id, new_password, new_email } = await req.json();
 
     console.log('Resetting password for user_id:', user_id);
 
@@ -39,10 +39,16 @@ serve(async (req) => {
       );
     }
 
-    // Update user password using admin API
+    // Build update object
+    const updateData: { password: string; email?: string } = { password: new_password };
+    if (new_email) {
+      updateData.email = new_email;
+    }
+
+    // Update user password (and optionally email) using admin API
     const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
       user_id,
-      { password: new_password }
+      updateData
     );
 
     if (error) {
