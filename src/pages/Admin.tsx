@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Trash2, Edit, Users, Trophy, Gamepad2, Loader2, Shield, Building2, Crown } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit, Users, Trophy, Gamepad2, Loader2, Shield, Building2, Crown, Upload, ImageIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface Profile {
@@ -26,6 +26,7 @@ interface Association {
   name: string;
   slug: string;
   description: string | null;
+  logo_url: string | null;
 }
 
 interface League {
@@ -82,6 +83,9 @@ const Admin = () => {
   // Form states
   const [newAssociationName, setNewAssociationName] = useState('');
   const [newAssociationSlug, setNewAssociationSlug] = useState('');
+  const [newAssociationLogo, setNewAssociationLogo] = useState<File | null>(null);
+  const [editingAssociationLogo, setEditingAssociationLogo] = useState<File | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [editingAssociation, setEditingAssociation] = useState<Association | null>(null);
   
   const [newLeagueName, setNewLeagueName] = useState('');
@@ -155,6 +159,28 @@ const Admin = () => {
     }
   };
 
+  // Upload logo helper
+  const uploadLogo = async (file: File, associationId: string): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${associationId}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('association-logos')
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('association-logos')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  };
+
   // Association CRUD
   const addAssociation = async () => {
     if (!newAssociationName.trim() || !newAssociationSlug.trim()) {
@@ -166,55 +192,94 @@ const Admin = () => {
       return;
     }
 
-    const { data, error } = await supabase
-      .from('associations')
-      .insert({ name: newAssociationName, slug: newAssociationSlug.toLowerCase() })
-      .select()
-      .single();
+    setUploadingLogo(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('associations')
+        .insert({ name: newAssociationName, slug: newAssociationSlug.toLowerCase() })
+        .select()
+        .single();
 
-    if (error) {
-      toast({
-        title: "Hata",
-        description: error.message,
-        variant: "destructive",
-      });
-      return;
-    }
+      if (error) {
+        toast({
+          title: "Hata",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
 
-    if (data) {
-      setAssociations(prev => [...prev, data]);
-      setNewAssociationName('');
-      setNewAssociationSlug('');
-      toast({
-        title: "Başarılı",
-        description: "Dernek eklendi.",
-      });
+      if (data) {
+        let logoUrl: string | null = null;
+        
+        if (newAssociationLogo) {
+          logoUrl = await uploadLogo(newAssociationLogo, data.id);
+          if (logoUrl) {
+            await supabase
+              .from('associations')
+              .update({ logo_url: logoUrl })
+              .eq('id', data.id);
+          }
+        }
+
+        setAssociations(prev => [...prev, { ...data, logo_url: logoUrl }]);
+        setNewAssociationName('');
+        setNewAssociationSlug('');
+        setNewAssociationLogo(null);
+        toast({
+          title: "Başarılı",
+          description: "Dernek eklendi.",
+        });
+      }
+    } finally {
+      setUploadingLogo(false);
     }
   };
 
   const updateAssociation = async () => {
     if (!editingAssociation) return;
 
-    const { error } = await supabase
-      .from('associations')
-      .update({ name: editingAssociation.name, slug: editingAssociation.slug })
-      .eq('id', editingAssociation.id);
+    setUploadingLogo(true);
+    
+    try {
+      let logoUrl = editingAssociation.logo_url;
 
-    if (error) {
+      if (editingAssociationLogo) {
+        const newLogoUrl = await uploadLogo(editingAssociationLogo, editingAssociation.id);
+        if (newLogoUrl) {
+          logoUrl = newLogoUrl;
+        }
+      }
+
+      const { error } = await supabase
+        .from('associations')
+        .update({ 
+          name: editingAssociation.name, 
+          slug: editingAssociation.slug,
+          logo_url: logoUrl
+        })
+        .eq('id', editingAssociation.id);
+
+      if (error) {
+        toast({
+          title: "Hata",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setAssociations(prev => prev.map(a => a.id === editingAssociation.id ? { ...editingAssociation, logo_url: logoUrl } : a));
+      setEditingAssociation(null);
+      setEditingAssociationLogo(null);
       toast({
-        title: "Hata",
-        description: error.message,
-        variant: "destructive",
+        title: "Başarılı",
+        description: "Dernek güncellendi.",
       });
-      return;
+    } finally {
+      setUploadingLogo(false);
     }
-
-    setAssociations(prev => prev.map(a => a.id === editingAssociation.id ? editingAssociation : a));
-    setEditingAssociation(null);
-    toast({
-      title: "Başarılı",
-      description: "Dernek güncellendi.",
-    });
   };
 
   const deleteAssociation = async (assocId: string) => {
@@ -691,21 +756,43 @@ const Admin = () => {
                 {/* Add Association */}
                 <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
                   <Label>Yeni Dernek Ekle</Label>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <Input
                       placeholder="Dernek Adı"
                       value={newAssociationName}
                       onChange={e => setNewAssociationName(e.target.value)}
-                      className="flex-1"
+                      className="flex-1 min-w-[150px]"
                     />
                     <Input
                       placeholder="Kısaltma (örn: bursa)"
                       value={newAssociationSlug}
                       onChange={e => setNewAssociationSlug(e.target.value)}
-                      className="flex-1"
+                      className="flex-1 min-w-[150px]"
                     />
-                    <Button onClick={addAssociation} size="icon">
-                      <Plus className="w-4 h-4" />
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => setNewAssociationLogo(e.target.files?.[0] || null)}
+                      />
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground">
+                        <Upload className="w-4 h-4" />
+                        <span className="text-sm">{newAssociationLogo ? newAssociationLogo.name : 'Logo Seç'}</span>
+                      </div>
+                    </label>
+                    {newAssociationLogo && (
+                      <img 
+                        src={URL.createObjectURL(newAssociationLogo)} 
+                        alt="Önizleme" 
+                        className="w-10 h-10 object-contain rounded"
+                      />
+                    )}
+                    <Button onClick={addAssociation} disabled={uploadingLogo} className="ml-auto">
+                      {uploadingLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                      <span className="ml-1">Ekle</span>
                     </Button>
                   </div>
                 </div>
@@ -717,9 +804,22 @@ const Admin = () => {
                       key={assoc.id} 
                       className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
                     >
-                      <div>
-                        <p className="font-medium">{assoc.name}</p>
-                        <p className="text-xs text-muted-foreground">/{assoc.slug}</p>
+                      <div className="flex items-center gap-3">
+                        {assoc.logo_url ? (
+                          <img 
+                            src={assoc.logo_url} 
+                            alt={`${assoc.name} logo`}
+                            className="w-10 h-10 object-contain rounded"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
+                            <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-medium">{assoc.name}</p>
+                          <p className="text-xs text-muted-foreground">/{assoc.slug}</p>
+                        </div>
                       </div>
                       <div className="flex gap-2">
                         <Dialog>
@@ -751,13 +851,42 @@ const Admin = () => {
                                   onChange={e => setEditingAssociation(prev => prev ? { ...prev, slug: e.target.value } : null)}
                                 />
                               </div>
+                              <div>
+                                <Label>Logo</Label>
+                                <div className="flex items-center gap-3 mt-2">
+                                  {(editingAssociationLogo || editingAssociation?.logo_url) && (
+                                    <img 
+                                      src={editingAssociationLogo ? URL.createObjectURL(editingAssociationLogo) : editingAssociation?.logo_url || ''} 
+                                      alt="Logo önizleme"
+                                      className="w-16 h-16 object-contain rounded border"
+                                    />
+                                  )}
+                                  <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={e => setEditingAssociationLogo(e.target.files?.[0] || null)}
+                                    />
+                                    <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground">
+                                      <Upload className="w-4 h-4" />
+                                      <span className="text-sm">
+                                        {editingAssociationLogo ? 'Değiştir' : (editingAssociation?.logo_url ? 'Değiştir' : 'Logo Yükle')}
+                                      </span>
+                                    </div>
+                                  </label>
+                                </div>
+                              </div>
                             </div>
                             <DialogFooter>
                               <DialogClose asChild>
-                                <Button variant="outline">İptal</Button>
+                                <Button variant="outline" onClick={() => setEditingAssociationLogo(null)}>İptal</Button>
                               </DialogClose>
                               <DialogClose asChild>
-                                <Button onClick={updateAssociation}>Kaydet</Button>
+                                <Button onClick={updateAssociation} disabled={uploadingLogo}>
+                                  {uploadingLogo ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                                  Kaydet
+                                </Button>
                               </DialogClose>
                             </DialogFooter>
                           </DialogContent>
