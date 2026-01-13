@@ -405,11 +405,21 @@ export function PlayerProfile({
               <p className="text-xs text-muted-foreground">Mağlubiyet</p>
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-border text-center">
-            <p className="text-sm text-muted-foreground">
-              Oynadığı Lig Sayısı: <span className="font-bold text-foreground">{leagueStats.length}</span>
-            </p>
-          </div>
+          {leagueStats.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-border">
+              <p className="text-xs text-muted-foreground mb-2">Oynadığı Ligler:</p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {leagueStats.map(ls => (
+                  <span 
+                    key={ls.league.id}
+                    className="bg-primary/10 text-primary px-2 py-1 rounded-md text-xs font-medium"
+                  >
+                    {ls.league.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Win Rate */}
