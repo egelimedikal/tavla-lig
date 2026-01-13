@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Trash2, Edit, Users, Trophy, Gamepad2, Loader2, Shield, Building2, Crown, Upload, ImageIcon } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit, Users, Trophy, Gamepad2, Loader2, Shield, Building2, Crown, Upload, ImageIcon, Key } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface Profile {
@@ -102,8 +102,10 @@ const Admin = () => {
   const [creatingPlayer, setCreatingPlayer] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Profile | null>(null);
   
-  // Default password for new players
-  const DEFAULT_PASSWORD = 'TTB2014';
+  // Default password from settings
+  const [defaultPassword, setDefaultPassword] = useState('TTB2014');
+  const [editingDefaultPassword, setEditingDefaultPassword] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
   
   // Admin management
   const [selectedUserForRole, setSelectedUserForRole] = useState('');
@@ -139,12 +141,13 @@ const Admin = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [associationsRes, leaguesRes, playersRes, matchesRes, leaguePlayersRes] = await Promise.all([
+      const [associationsRes, leaguesRes, playersRes, matchesRes, leaguePlayersRes, settingsRes] = await Promise.all([
         supabase.from('associations').select('*').order('name'),
         supabase.from('leagues').select('*'),
         supabase.from('profiles').select('*'),
         supabase.from('matches').select('*').order('match_date', { ascending: false }),
         supabase.from('league_players').select('*'),
+        supabase.from('app_settings').select('*').eq('key', 'default_player_password').single(),
       ]);
 
       if (associationsRes.data) setAssociations(associationsRes.data);
@@ -152,6 +155,10 @@ const Admin = () => {
       if (playersRes.data) setPlayers(playersRes.data);
       if (matchesRes.data) setMatches(matchesRes.data);
       if (leaguePlayersRes.data) setLeaguePlayers(leaguePlayersRes.data);
+      if (settingsRes.data) {
+        setDefaultPassword(settingsRes.data.value);
+        setEditingDefaultPassword(settingsRes.data.value);
+      }
 
       // Fetch user roles and association admins only for super admins
       if (isSuperAdmin) {
@@ -437,11 +444,11 @@ const Admin = () => {
     setCreatingPlayer(true);
 
     try {
-      // Call edge function to create auth user and profile with default password
+      // Call edge function to create auth user and profile with default password from settings
       const { data, error } = await supabase.functions.invoke('create-player', {
         body: {
           phone: newPlayerPhone,
-          password: DEFAULT_PASSWORD,
+          password: defaultPassword,
           name: newPlayerName.trim(),
         },
       });
@@ -472,7 +479,7 @@ const Admin = () => {
       setNewPlayerPhone('');
       toast({
         title: "Başarılı",
-        description: `Oyuncu eklendi. Varsayılan şifre: ${DEFAULT_PASSWORD}`,
+        description: `Oyuncu eklendi. Varsayılan şifre: ${defaultPassword}`,
       });
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Bilinmeyen hata';
@@ -821,6 +828,42 @@ const Admin = () => {
       title: "Başarılı",
       description: "Dernek admini kaldırıldı.",
     });
+  };
+
+  const updateDefaultPassword = async () => {
+    if (!editingDefaultPassword.trim() || editingDefaultPassword.length < 4) {
+      toast({
+        title: "Hata",
+        description: "Şifre en az 4 karakter olmalı.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      const { error } = await supabase
+        .from('app_settings')
+        .update({ value: editingDefaultPassword })
+        .eq('key', 'default_player_password');
+
+      if (error) {
+        toast({
+          title: "Hata",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setDefaultPassword(editingDefaultPassword);
+      toast({
+        title: "Başarılı",
+        description: "Varsayılan şifre güncellendi.",
+      });
+    } finally {
+      setSavingPassword(false);
+    }
   };
 
   const getPlayerName = (playerId: string) => {
@@ -1282,7 +1325,7 @@ const Admin = () => {
                 <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
                   <Label className="text-base font-medium">Yeni Oyuncu Ekle</Label>
                   <p className="text-xs text-muted-foreground">
-                    Oyuncu adı ve telefon numarası girin. Varsayılan şifre: <span className="font-mono font-bold">TTB2014</span>
+                    Oyuncu adı ve telefon numarası girin. Varsayılan şifre: <span className="font-mono font-bold">{defaultPassword}</span>
                   </p>
                   <div className="grid gap-3">
                     <Input
@@ -1562,6 +1605,36 @@ const Admin = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  {/* Default Password Setting */}
+                  <div className="space-y-3 p-4 bg-primary/10 rounded-lg border border-primary/20">
+                    <Label className="flex items-center gap-2 text-primary">
+                      <Key className="w-4 h-4" />
+                      Varsayılan Oyuncu Şifresi
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Yeni eklenen oyuncuların ilk giriş şifresi. Oyuncular ilk girişte şifrelerini değiştirmek zorundadır.
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        type="text"
+                        value={editingDefaultPassword}
+                        onChange={e => setEditingDefaultPassword(e.target.value)}
+                        placeholder="Varsayılan şifre"
+                        className="flex-1"
+                      />
+                      <Button 
+                        onClick={updateDefaultPassword} 
+                        disabled={savingPassword || editingDefaultPassword === defaultPassword}
+                      >
+                        {savingPassword ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                        Kaydet
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Mevcut şifre: <span className="font-mono font-bold">{defaultPassword}</span>
+                    </p>
+                  </div>
+
                   {/* Add Global Admin Role */}
                   <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
                     <Label className="flex items-center gap-2">
