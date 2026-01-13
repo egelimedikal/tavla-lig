@@ -15,9 +15,9 @@ const passwordSchema = z.string().min(4, 'Şifre en az 4 karakter olmalı');
 
 interface Profile {
   id: string;
-  user_id: string;
+  user_id: string | null;
   name: string;
-  phone: string | null;
+  phone?: string | null;
   avatar_url: string | null;
   must_change_password?: boolean;
 }
