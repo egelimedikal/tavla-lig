@@ -1,32 +1,38 @@
-import { LeagueTab } from '@/types/league';
-
-interface LeagueTabsProps {
-  currentTab: LeagueTab;
-  onTabChange: (tab: LeagueTab) => void;
+interface League {
+  id: string;
+  name: string;
+  association_id: string | null;
 }
 
-const tabs: { id: LeagueTab; label: string }[] = [
-  { id: 'super-a', label: 'Süper Lig A' },
-  { id: 'super-b', label: 'Süper Lig B' },
-  { id: 'lig1-a', label: '1. Lig A' },
-  { id: 'lig1-b', label: '1. Lig B' },
-];
+interface LeagueTabsProps {
+  leagues: League[];
+  currentLeagueId: string;
+  onLeagueChange: (leagueId: string) => void;
+}
 
-export function LeagueTabs({ currentTab, onTabChange }: LeagueTabsProps) {
+export function LeagueTabs({ leagues, currentLeagueId, onLeagueChange }: LeagueTabsProps) {
+  if (leagues.length === 0) {
+    return (
+      <div className="px-4 py-3 text-center text-muted-foreground text-sm">
+        Bu dernekte henüz lig bulunmuyor
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-x-auto scrollbar-hide">
       <div className="flex gap-2 px-4 py-3 min-w-max">
-        {tabs.map((tab) => (
+        {leagues.map((league) => (
           <button
-            key={tab.id}
-            onClick={() => onTabChange(tab.id)}
+            key={league.id}
+            onClick={() => onLeagueChange(league.id)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-              currentTab === tab.id
+              currentLeagueId === league.id
                 ? 'bg-primary text-primary-foreground glow-primary'
                 : 'bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground'
             }`}
           >
-            {tab.label}
+            {league.name}
           </button>
         ))}
       </div>

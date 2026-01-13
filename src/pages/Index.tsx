@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
+import { AssociationSelector } from '@/components/AssociationSelector';
 import { LeagueTabs } from '@/components/LeagueTabs';
 import { StandingsTable } from '@/components/StandingsTable';
 import { MatchEntryForm } from '@/components/MatchEntryForm';
@@ -17,6 +18,11 @@ const Index = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { 
+    associations,
+    currentAssociation,
+    currentAssociationId,
+    setCurrentAssociationId,
+    associationLeagues,
     currentLeague, 
     currentLeagueId, 
     setCurrentLeagueId, 
@@ -102,14 +108,21 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-24">
       <Header onProfileClick={handleProfileClick} />
       
+      <AssociationSelector
+        associations={associations}
+        currentAssociationId={currentAssociationId}
+        onAssociationChange={setCurrentAssociationId}
+      />
+      
       <LeagueTabs 
-        currentTab={currentLeagueId} 
-        onTabChange={setCurrentLeagueId} 
+        leagues={associationLeagues}
+        currentLeagueId={currentLeagueId} 
+        onLeagueChange={setCurrentLeagueId} 
       />
 
       <div className="mt-4">
         <div className="px-4 mb-4">
-          <h2 className="text-lg font-bold text-foreground">{currentLeague.name || 'Lig'}</h2>
+          <h2 className="text-lg font-bold text-foreground">{currentLeague?.name || 'Lig'}</h2>
           <p className="text-sm text-muted-foreground">Puan Durumu</p>
         </div>
         

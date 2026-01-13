@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      associations: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       league_players: {
         Row: {
           created_at: string
@@ -52,21 +79,32 @@ export type Database = {
       }
       leagues: {
         Row: {
+          association_id: string | null
           created_at: string
           id: string
           name: string
         }
         Insert: {
+          association_id?: string | null
           created_at?: string
           id: string
           name: string
         }
         Update: {
+          association_id?: string | null
           created_at?: string
           id?: string
           name?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "leagues_association_id_fkey"
+            columns: ["association_id"]
+            isOneToOne: false
+            referencedRelation: "associations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       matches: {
         Row: {

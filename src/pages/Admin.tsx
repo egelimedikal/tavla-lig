@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminRole } from '@/hooks/useAdminRole';
+import { useSuperAdminRole } from '@/hooks/useSuperAdminRole';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Trash2, Edit, Users, Trophy, Gamepad2, Loader2, Shield } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit, Users, Trophy, Gamepad2, Loader2, Shield, Building2, Crown } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface Profile {
   id: string;
@@ -19,9 +21,17 @@ interface Profile {
   name: string;
 }
 
+interface Association {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+}
+
 interface League {
   id: string;
   name: string;
+  association_id: string | null;
 }
 
 interface Match {
@@ -41,25 +51,43 @@ interface LeaguePlayer {
   player_id: string;
 }
 
+interface UserRole {
+  id: string;
+  user_id: string;
+  role: 'admin' | 'super_admin' | 'user';
+}
+
 const Admin = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdminRole();
+  const { isSuperAdmin, loading: superAdminLoading } = useSuperAdminRole();
   const { toast } = useToast();
   
+  const [associations, setAssociations] = useState<Association[]>([]);
   const [leagues, setLeagues] = useState<League[]>([]);
   const [players, setPlayers] = useState<Profile[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [leaguePlayers, setLeaguePlayers] = useState<LeaguePlayer[]>([]);
+  const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Form states
+  const [newAssociationName, setNewAssociationName] = useState('');
+  const [newAssociationSlug, setNewAssociationSlug] = useState('');
+  const [editingAssociation, setEditingAssociation] = useState<Association | null>(null);
+  
   const [newLeagueName, setNewLeagueName] = useState('');
   const [newLeagueId, setNewLeagueId] = useState('');
+  const [selectedAssociationForLeague, setSelectedAssociationForLeague] = useState('');
   const [editingLeague, setEditingLeague] = useState<League | null>(null);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [selectedLeagueForPlayer, setSelectedLeagueForPlayer] = useState('');
   const [selectedPlayer, setSelectedPlayer] = useState('');
+  
+  // Admin management
+  const [selectedUserForRole, setSelectedUserForRole] = useState('');
+  const [selectedRole, setSelectedRole] = useState<'admin' | 'user'>('admin');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -87,17 +115,25 @@ const Admin = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [leaguesRes, playersRes, matchesRes, leaguePlayersRes] = await Promise.all([
+      const [associationsRes, leaguesRes, playersRes, matchesRes, leaguePlayersRes] = await Promise.all([
+        supabase.from('associations').select('*').order('name'),
         supabase.from('leagues').select('*'),
         supabase.from('profiles').select('*'),
         supabase.from('matches').select('*').order('match_date', { ascending: false }),
         supabase.from('league_players').select('*'),
       ]);
 
+      if (associationsRes.data) setAssociations(associationsRes.data);
       if (leaguesRes.data) setLeagues(leaguesRes.data);
       if (playersRes.data) setPlayers(playersRes.data);
       if (matchesRes.data) setMatches(matchesRes.data);
       if (leaguePlayersRes.data) setLeaguePlayers(leaguePlayersRes.data);
+
+      // Fetch user roles only for super admins
+      if (isSuperAdmin) {
+        const { data: rolesData } = await supabase.from('user_roles').select('*');
+        if (rolesData) setUserRoles(rolesData);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -105,11 +141,96 @@ const Admin = () => {
     }
   };
 
-  const addLeague = async () => {
-    if (!newLeagueName.trim() || !newLeagueId.trim()) {
+  // Association CRUD
+  const addAssociation = async () => {
+    if (!newAssociationName.trim() || !newAssociationSlug.trim()) {
       toast({
         title: "Hata",
-        description: "Lig adı ve ID'si gerekli.",
+        description: "Dernek adı ve kısaltması gerekli.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('associations')
+      .insert({ name: newAssociationName, slug: newAssociationSlug.toLowerCase() })
+      .select()
+      .single();
+
+    if (error) {
+      toast({
+        title: "Hata",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (data) {
+      setAssociations(prev => [...prev, data]);
+      setNewAssociationName('');
+      setNewAssociationSlug('');
+      toast({
+        title: "Başarılı",
+        description: "Dernek eklendi.",
+      });
+    }
+  };
+
+  const updateAssociation = async () => {
+    if (!editingAssociation) return;
+
+    const { error } = await supabase
+      .from('associations')
+      .update({ name: editingAssociation.name, slug: editingAssociation.slug })
+      .eq('id', editingAssociation.id);
+
+    if (error) {
+      toast({
+        title: "Hata",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAssociations(prev => prev.map(a => a.id === editingAssociation.id ? editingAssociation : a));
+    setEditingAssociation(null);
+    toast({
+      title: "Başarılı",
+      description: "Dernek güncellendi.",
+    });
+  };
+
+  const deleteAssociation = async (assocId: string) => {
+    const { error } = await supabase
+      .from('associations')
+      .delete()
+      .eq('id', assocId);
+
+    if (error) {
+      toast({
+        title: "Hata",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAssociations(prev => prev.filter(a => a.id !== assocId));
+    toast({
+      title: "Başarılı",
+      description: "Dernek silindi.",
+    });
+  };
+
+  // League CRUD
+  const addLeague = async () => {
+    if (!newLeagueName.trim() || !newLeagueId.trim() || !selectedAssociationForLeague) {
+      toast({
+        title: "Hata",
+        description: "Lig adı, ID'si ve dernek seçimi gerekli.",
         variant: "destructive",
       });
       return;
@@ -117,7 +238,7 @@ const Admin = () => {
 
     const { data, error } = await supabase
       .from('leagues')
-      .insert({ id: newLeagueId, name: newLeagueName })
+      .insert({ id: newLeagueId, name: newLeagueName, association_id: selectedAssociationForLeague })
       .select()
       .single();
 
@@ -146,7 +267,7 @@ const Admin = () => {
 
     const { error } = await supabase
       .from('leagues')
-      .update({ name: editingLeague.name })
+      .update({ name: editingLeague.name, association_id: editingLeague.association_id })
       .eq('id', editingLeague.id);
 
     if (error) {
@@ -317,15 +438,103 @@ const Admin = () => {
     });
   };
 
+  // Admin Role Management (Super Admin only)
+  const addAdminRole = async () => {
+    if (!selectedUserForRole) {
+      toast({
+        title: "Hata",
+        description: "Kullanıcı seçimi gerekli.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if user already has a role
+    const existingRole = userRoles.find(r => r.user_id === selectedUserForRole);
+    if (existingRole) {
+      toast({
+        title: "Hata",
+        description: "Bu kullanıcının zaten bir rolü var.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('user_roles')
+      .insert({ user_id: selectedUserForRole, role: selectedRole })
+      .select()
+      .single();
+
+    if (error) {
+      toast({
+        title: "Hata",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (data) {
+      setUserRoles(prev => [...prev, data as UserRole]);
+      setSelectedUserForRole('');
+      toast({
+        title: "Başarılı",
+        description: "Admin rolü eklendi.",
+      });
+    }
+  };
+
+  const removeAdminRole = async (roleId: string, userId: string) => {
+    // Prevent removing own super_admin role
+    if (userId === user?.id) {
+      toast({
+        title: "Hata",
+        description: "Kendi rolünüzü silemezsiniz.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { error } = await supabase
+      .from('user_roles')
+      .delete()
+      .eq('id', roleId);
+
+    if (error) {
+      toast({
+        title: "Hata",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUserRoles(prev => prev.filter(r => r.id !== roleId));
+    toast({
+      title: "Başarılı",
+      description: "Rol kaldırıldı.",
+    });
+  };
+
   const getPlayerName = (playerId: string) => {
     return players.find(p => p.id === playerId)?.name || 'Bilinmeyen';
+  };
+
+  const getUserName = (userId: string) => {
+    return players.find(p => p.user_id === userId)?.name || 'Bilinmeyen';
   };
 
   const getLeagueName = (leagueId: string) => {
     return leagues.find(l => l.id === leagueId)?.name || leagueId;
   };
 
-  if (authLoading || adminLoading || loading) {
+  const getAssociationName = (assocId: string | null) => {
+    if (!assocId) return 'Atanmamış';
+    return associations.find(a => a.id === assocId)?.name || 'Bilinmeyen';
+  };
+
+  if (authLoading || adminLoading || superAdminLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -351,26 +560,138 @@ const Admin = () => {
           <div className="flex items-center gap-2">
             <Shield className="w-5 h-5 text-primary" />
             <h1 className="text-lg font-bold">Admin Paneli</h1>
+            {isSuperAdmin && (
+              <Badge variant="secondary" className="ml-2">
+                <Crown className="w-3 h-3 mr-1" />
+                Süper Admin
+              </Badge>
+            )}
           </div>
         </div>
       </div>
 
       <div className="p-4">
-        <Tabs defaultValue="leagues" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-4">
-            <TabsTrigger value="leagues" className="flex items-center gap-2">
+        <Tabs defaultValue="associations" className="w-full">
+          <TabsList className={`grid w-full mb-4 ${isSuperAdmin ? 'grid-cols-5' : 'grid-cols-4'}`}>
+            <TabsTrigger value="associations" className="flex items-center gap-1 text-xs px-2">
+              <Building2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Dernekler</span>
+            </TabsTrigger>
+            <TabsTrigger value="leagues" className="flex items-center gap-1 text-xs px-2">
               <Trophy className="w-4 h-4" />
-              Ligler
+              <span className="hidden sm:inline">Ligler</span>
             </TabsTrigger>
-            <TabsTrigger value="players" className="flex items-center gap-2">
+            <TabsTrigger value="players" className="flex items-center gap-1 text-xs px-2">
               <Users className="w-4 h-4" />
-              Oyuncular
+              <span className="hidden sm:inline">Oyuncular</span>
             </TabsTrigger>
-            <TabsTrigger value="matches" className="flex items-center gap-2">
+            <TabsTrigger value="matches" className="flex items-center gap-1 text-xs px-2">
               <Gamepad2 className="w-4 h-4" />
-              Maçlar
+              <span className="hidden sm:inline">Maçlar</span>
             </TabsTrigger>
+            {isSuperAdmin && (
+              <TabsTrigger value="admins" className="flex items-center gap-1 text-xs px-2">
+                <Crown className="w-4 h-4" />
+                <span className="hidden sm:inline">Adminler</span>
+              </TabsTrigger>
+            )}
           </TabsList>
+
+          {/* Associations Tab */}
+          <TabsContent value="associations">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Dernek Yönetimi</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Add Association */}
+                <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+                  <Label>Yeni Dernek Ekle</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Dernek Adı"
+                      value={newAssociationName}
+                      onChange={e => setNewAssociationName(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Input
+                      placeholder="Kısaltma (örn: bursa)"
+                      value={newAssociationSlug}
+                      onChange={e => setNewAssociationSlug(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button onClick={addAssociation} size="icon">
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Association List */}
+                <div className="space-y-2">
+                  {associations.map(assoc => (
+                    <div 
+                      key={assoc.id} 
+                      className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
+                    >
+                      <div>
+                        <p className="font-medium">{assoc.name}</p>
+                        <p className="text-xs text-muted-foreground">/{assoc.slug}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              onClick={() => setEditingAssociation({ ...assoc })}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Dernek Düzenle</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <Label>Dernek Adı</Label>
+                                <Input
+                                  value={editingAssociation?.name || ''}
+                                  onChange={e => setEditingAssociation(prev => prev ? { ...prev, name: e.target.value } : null)}
+                                />
+                              </div>
+                              <div>
+                                <Label>Kısaltma</Label>
+                                <Input
+                                  value={editingAssociation?.slug || ''}
+                                  onChange={e => setEditingAssociation(prev => prev ? { ...prev, slug: e.target.value } : null)}
+                                />
+                              </div>
+                            </div>
+                            <DialogFooter>
+                              <DialogClose asChild>
+                                <Button variant="outline">İptal</Button>
+                              </DialogClose>
+                              <DialogClose asChild>
+                                <Button onClick={updateAssociation}>Kaydet</Button>
+                              </DialogClose>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                        <Button 
+                          variant="destructive" 
+                          size="icon"
+                          onClick={() => deleteAssociation(assoc.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Leagues Tab */}
           <TabsContent value="leagues">
@@ -382,81 +703,207 @@ const Admin = () => {
                 {/* Add League */}
                 <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
                   <Label>Yeni Lig Ekle</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Lig ID (örn: super-c)"
-                      value={newLeagueId}
-                      onChange={e => setNewLeagueId(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Input
-                      placeholder="Lig Adı"
-                      value={newLeagueName}
-                      onChange={e => setNewLeagueName(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Button onClick={addLeague} size="icon">
-                      <Plus className="w-4 h-4" />
-                    </Button>
+                  <div className="space-y-2">
+                    <Select value={selectedAssociationForLeague} onValueChange={setSelectedAssociationForLeague}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Dernek Seç" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {associations.map(assoc => (
+                          <SelectItem key={assoc.id} value={assoc.id}>
+                            {assoc.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Lig ID (örn: super-c)"
+                        value={newLeagueId}
+                        onChange={e => setNewLeagueId(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Input
+                        placeholder="Lig Adı"
+                        value={newLeagueName}
+                        onChange={e => setNewLeagueName(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button onClick={addLeague} size="icon">
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
-                {/* League List */}
-                <div className="space-y-2">
-                  {leagues.map(league => (
-                    <div 
-                      key={league.id} 
-                      className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
-                    >
-                      <div>
-                        <p className="font-medium">{league.name}</p>
-                        <p className="text-xs text-muted-foreground">ID: {league.id}</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="icon"
-                              onClick={() => setEditingLeague({ ...league })}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Lig Düzenle</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              <div>
-                                <Label>Lig Adı</Label>
-                                <Input
-                                  value={editingLeague?.name || ''}
-                                  onChange={e => setEditingLeague(prev => prev ? { ...prev, name: e.target.value } : null)}
-                                />
-                              </div>
-                            </div>
-                            <DialogFooter>
-                              <DialogClose asChild>
-                                <Button variant="outline">İptal</Button>
-                              </DialogClose>
-                              <DialogClose asChild>
-                                <Button onClick={updateLeague}>Kaydet</Button>
-                              </DialogClose>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
-                        <Button 
-                          variant="destructive" 
-                          size="icon"
-                          onClick={() => deleteLeague(league.id)}
+                {/* League List grouped by Association */}
+                {associations.map(assoc => {
+                  const assocLeagues = leagues.filter(l => l.association_id === assoc.id);
+                  if (assocLeagues.length === 0) return null;
+
+                  return (
+                    <div key={assoc.id} className="space-y-2">
+                      <h3 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
+                        <Building2 className="w-4 h-4" />
+                        {assoc.name}
+                      </h3>
+                      {assocLeagues.map(league => (
+                        <div 
+                          key={league.id} 
+                          className="flex items-center justify-between p-3 bg-muted/30 rounded-lg ml-4"
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                          <div>
+                            <p className="font-medium">{league.name}</p>
+                            <p className="text-xs text-muted-foreground">ID: {league.id}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="icon"
+                                  onClick={() => setEditingLeague({ ...league })}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Lig Düzenle</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div>
+                                    <Label>Lig Adı</Label>
+                                    <Input
+                                      value={editingLeague?.name || ''}
+                                      onChange={e => setEditingLeague(prev => prev ? { ...prev, name: e.target.value } : null)}
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label>Dernek</Label>
+                                    <Select 
+                                      value={editingLeague?.association_id || ''} 
+                                      onValueChange={val => setEditingLeague(prev => prev ? { ...prev, association_id: val } : null)}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Dernek Seç" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {associations.map(assoc => (
+                                          <SelectItem key={assoc.id} value={assoc.id}>
+                                            {assoc.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                                <DialogFooter>
+                                  <DialogClose asChild>
+                                    <Button variant="outline">İptal</Button>
+                                  </DialogClose>
+                                  <DialogClose asChild>
+                                    <Button onClick={updateLeague}>Kaydet</Button>
+                                  </DialogClose>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                            <Button 
+                              variant="destructive" 
+                              size="icon"
+                              onClick={() => deleteLeague(league.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
+
+                {/* Unassigned leagues */}
+                {(() => {
+                  const unassignedLeagues = leagues.filter(l => !l.association_id);
+                  if (unassignedLeagues.length === 0) return null;
+
+                  return (
+                    <div className="space-y-2">
+                      <h3 className="font-medium text-sm text-muted-foreground">Atanmamış Ligler</h3>
+                      {unassignedLeagues.map(league => (
+                        <div 
+                          key={league.id} 
+                          className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
+                        >
+                          <div>
+                            <p className="font-medium">{league.name}</p>
+                            <p className="text-xs text-muted-foreground">ID: {league.id}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="icon"
+                                  onClick={() => setEditingLeague({ ...league })}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Lig Düzenle</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div>
+                                    <Label>Lig Adı</Label>
+                                    <Input
+                                      value={editingLeague?.name || ''}
+                                      onChange={e => setEditingLeague(prev => prev ? { ...prev, name: e.target.value } : null)}
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label>Dernek</Label>
+                                    <Select 
+                                      value={editingLeague?.association_id || ''} 
+                                      onValueChange={val => setEditingLeague(prev => prev ? { ...prev, association_id: val } : null)}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Dernek Seç" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {associations.map(assoc => (
+                                          <SelectItem key={assoc.id} value={assoc.id}>
+                                            {assoc.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                                <DialogFooter>
+                                  <DialogClose asChild>
+                                    <Button variant="outline">İptal</Button>
+                                  </DialogClose>
+                                  <DialogClose asChild>
+                                    <Button onClick={updateLeague}>Kaydet</Button>
+                                  </DialogClose>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                            <Button 
+                              variant="destructive" 
+                              size="icon"
+                              onClick={() => deleteLeague(league.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           </TabsContent>
@@ -479,7 +926,7 @@ const Admin = () => {
                       <SelectContent>
                         {leagues.map(league => (
                           <SelectItem key={league.id} value={league.id}>
-                            {league.name}
+                            {league.name} ({getAssociationName(league.association_id)})
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -509,7 +956,9 @@ const Admin = () => {
                   
                   return (
                     <div key={league.id} className="space-y-2">
-                      <h3 className="font-medium text-sm text-muted-foreground">{league.name}</h3>
+                      <h3 className="font-medium text-sm text-muted-foreground">
+                        {league.name} ({getAssociationName(league.association_id)})
+                      </h3>
                       <div className="space-y-1">
                         {playersInLeague.map(lp => (
                           <div 
@@ -632,6 +1081,80 @@ const Admin = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Admins Tab - Super Admin only */}
+          {isSuperAdmin && (
+            <TabsContent value="admins">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Crown className="w-5 h-5 text-primary" />
+                    Admin Yönetimi
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Add Admin Role */}
+                  <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+                    <Label>Admin Ekle</Label>
+                    <div className="flex gap-2">
+                      <Select value={selectedUserForRole} onValueChange={setSelectedUserForRole}>
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Kullanıcı Seç" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {players
+                            .filter(p => !userRoles.find(r => r.user_id === p.user_id))
+                            .map(player => (
+                              <SelectItem key={player.user_id} value={player.user_id}>
+                                {player.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={selectedRole} onValueChange={(val) => setSelectedRole(val as 'admin' | 'user')}>
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button onClick={addAdminRole} size="icon">
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Role List */}
+                  <div className="space-y-2">
+                    <h3 className="font-medium text-sm text-muted-foreground">Mevcut Roller</h3>
+                    {userRoles.map(role => (
+                      <div 
+                        key={role.id}
+                        className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="font-medium">{getUserName(role.user_id)}</span>
+                          <Badge variant={role.role === 'super_admin' ? 'default' : 'secondary'}>
+                            {role.role === 'super_admin' ? 'Süper Admin' : 'Admin'}
+                          </Badge>
+                        </div>
+                        {role.user_id !== user?.id && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => removeAdminRole(role.id, role.user_id)}
+                          >
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>
