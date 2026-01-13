@@ -116,6 +116,7 @@ serve(async (req) => {
           user_id: authData.user!.id,
           name: name,
           phone: profilePhone,
+          must_change_password: true,
         })
         .select()
         .single();
