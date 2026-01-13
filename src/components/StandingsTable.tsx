@@ -1,5 +1,24 @@
-import { PlayerStats } from '@/types/league';
 import { Trophy, Medal } from 'lucide-react';
+
+interface Profile {
+  id: string;
+  user_id: string;
+  name: string;
+  phone: string | null;
+  avatar_url: string | null;
+}
+
+interface PlayerStats {
+  playerId: string;
+  player: Profile;
+  played: number;
+  won: number;
+  lost: number;
+  scored: number;
+  conceded: number;
+  average: number;
+  points: number;
+}
 
 interface StandingsTableProps {
   standings: PlayerStats[];

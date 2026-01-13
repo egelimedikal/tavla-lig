@@ -1,0 +1,267 @@
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { LeagueTab } from '@/types/league';
+import { useToast } from '@/hooks/use-toast';
+
+interface Profile {
+  id: string;
+  user_id: string;
+  name: string;
+  phone: string | null;
+  avatar_url: string | null;
+}
+
+interface Match {
+  id: string;
+  league_id: string;
+  player1_id: string;
+  player2_id: string;
+  score1: number;
+  score2: number;
+  winner_id: string;
+  match_date: string;
+}
+
+interface League {
+  id: string;
+  name: string;
+}
+
+interface PlayerStats {
+  playerId: string;
+  player: Profile;
+  played: number;
+  won: number;
+  lost: number;
+  scored: number;
+  conceded: number;
+  average: number;
+  points: number;
+}
+
+export function useSupabaseLeague() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [leagues, setLeagues] = useState<League[]>([]);
+  const [players, setPlayers] = useState<Profile[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [currentLeagueId, setCurrentLeagueId] = useState<LeagueTab>('super-a');
+  const [loading, setLoading] = useState(true);
+  const [currentUserProfile, setCurrentUserProfile] = useState<Profile | null>(null);
+
+  // Fetch initial data
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch leagues
+        const { data: leaguesData } = await supabase
+          .from('leagues')
+          .select('*');
+        
+        if (leaguesData) setLeagues(leaguesData);
+
+        // Fetch all profiles
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('*');
+        
+        if (profilesData) setPlayers(profilesData);
+
+        // Fetch all matches
+        const { data: matchesData } = await supabase
+          .from('matches')
+          .select('*')
+          .order('match_date', { ascending: false });
+        
+        if (matchesData) setMatches(matchesData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Get current user's profile
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) {
+        setCurrentUserProfile(null);
+        return;
+      }
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (data) setCurrentUserProfile(data);
+    };
+
+    fetchUserProfile();
+  }, [user]);
+
+  const currentLeague = useMemo(() => 
+    leagues.find(l => l.id === currentLeagueId) || { id: currentLeagueId, name: '' },
+    [leagues, currentLeagueId]
+  );
+
+  const leagueMatches = useMemo(() => 
+    matches.filter(m => m.league_id === currentLeagueId),
+    [matches, currentLeagueId]
+  );
+
+  const calculateStats = useCallback((leagueId: string): PlayerStats[] => {
+    const leagueMatchesFiltered = matches.filter(m => m.league_id === leagueId);
+    const statsMap = new Map<string, PlayerStats>();
+
+    // Get unique players from matches
+    const playerIds = new Set<string>();
+    leagueMatchesFiltered.forEach(match => {
+      playerIds.add(match.player1_id);
+      playerIds.add(match.player2_id);
+    });
+
+    // Initialize stats for all players in this league
+    playerIds.forEach(playerId => {
+      const player = players.find(p => p.id === playerId);
+      if (player) {
+        statsMap.set(playerId, {
+          playerId,
+          player,
+          played: 0,
+          won: 0,
+          lost: 0,
+          scored: 0,
+          conceded: 0,
+          average: 0,
+          points: 0,
+        });
+      }
+    });
+
+    // Calculate stats from matches
+    leagueMatchesFiltered.forEach(match => {
+      const stats1 = statsMap.get(match.player1_id);
+      const stats2 = statsMap.get(match.player2_id);
+
+      if (stats1) {
+        stats1.played++;
+        stats1.scored += match.score1;
+        stats1.conceded += match.score2;
+        if (match.winner_id === match.player1_id) {
+          stats1.won++;
+          stats1.points += 2;
+        } else {
+          stats1.lost++;
+          stats1.points += 1;
+        }
+        stats1.average = stats1.scored - stats1.conceded;
+      }
+
+      if (stats2) {
+        stats2.played++;
+        stats2.scored += match.score2;
+        stats2.conceded += match.score1;
+        if (match.winner_id === match.player2_id) {
+          stats2.won++;
+          stats2.points += 2;
+        } else {
+          stats2.lost++;
+          stats2.points += 1;
+        }
+        stats2.average = stats2.scored - stats2.conceded;
+      }
+    });
+
+    // Sort with tiebreakers
+    const sortedStats = Array.from(statsMap.values()).sort((a, b) => {
+      // 1. Total Points (descending)
+      if (b.points !== a.points) return b.points - a.points;
+
+      // 2. Head-to-head result
+      const h2hMatch = leagueMatchesFiltered.find(
+        m => (m.player1_id === a.playerId && m.player2_id === b.playerId) ||
+             (m.player1_id === b.playerId && m.player2_id === a.playerId)
+      );
+      if (h2hMatch) {
+        if (h2hMatch.winner_id === a.playerId) return -1;
+        if (h2hMatch.winner_id === b.playerId) return 1;
+      }
+
+      // 3. Goal difference (descending)
+      return b.average - a.average;
+    });
+
+    return sortedStats;
+  }, [matches, players]);
+
+  const standings = useMemo(() => 
+    calculateStats(currentLeagueId),
+    [currentLeagueId, calculateStats]
+  );
+
+  const addMatch = useCallback(async (
+    player1Id: string,
+    player2Id: string,
+    score1: number,
+    score2: number
+  ) => {
+    const winnerId = score1 > score2 ? player1Id : player2Id;
+
+    const { data, error } = await supabase
+      .from('matches')
+      .insert({
+        league_id: currentLeagueId,
+        player1_id: player1Id,
+        player2_id: player2Id,
+        score1,
+        score2,
+        winner_id: winnerId,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast({
+        title: "Hata!",
+        description: error.message,
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    if (data) {
+      setMatches(prev => [data, ...prev]);
+    }
+
+    return data;
+  }, [currentLeagueId, toast]);
+
+  const getPlayerMatches = useCallback((playerId: string) => {
+    return matches.filter(m => m.player1_id === playerId || m.player2_id === playerId);
+  }, [matches]);
+
+  const getPlayerById = useCallback((playerId: string): Profile | undefined => {
+    return players.find(p => p.id === playerId);
+  }, [players]);
+
+  return {
+    leagues,
+    currentLeague,
+    currentLeagueId,
+    setCurrentLeagueId,
+    standings,
+    players,
+    loading,
+    addMatch,
+    getPlayerMatches,
+    getPlayerById,
+    currentUserProfile,
+  };
+}
