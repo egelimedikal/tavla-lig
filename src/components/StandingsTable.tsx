@@ -67,8 +67,21 @@ export function StandingsTable({ standings, onPlayerClick }: StandingsTableProps
               <div className="flex items-center justify-center">
                 {getRankIcon(index + 1)}
               </div>
-              <div className="text-left font-medium text-foreground truncate">
-                {stat.player.name}
+              <div className="flex items-center gap-2 text-left min-w-0">
+                {stat.player.avatar_url ? (
+                  <img 
+                    src={stat.player.avatar_url} 
+                    alt={stat.player.name}
+                    className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary flex-shrink-0">
+                    {stat.player.name.charAt(0)}
+                  </div>
+                )}
+                <span className="font-medium text-foreground truncate">
+                  {stat.player.name}
+                </span>
               </div>
               <div className="text-center text-muted-foreground">{stat.played}</div>
               <div className="text-center text-success font-medium">{stat.won}</div>
