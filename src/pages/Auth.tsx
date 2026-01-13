@@ -1,25 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Phone, ArrowRight, Shield, Loader2 } from 'lucide-react';
+import { Phone, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import tavlaLogo from '@/assets/tavlalogo.png';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 
 const phoneSchema = z.string()
   .min(10, 'Telefon numarası en az 10 karakter olmalı')
-  .regex(/^[0-9+]+$/, 'Geçerli bir telefon numarası girin');
+  .regex(/^[0-9]+$/, 'Geçerli bir telefon numarası girin');
+
+const passwordSchema = z.string().min(4, 'Şifre en az 4 karakter olmalı');
 
 export default function Auth() {
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [countdown, setCountdown] = useState(0);
+  const [errors, setErrors] = useState<{ phone?: string; password?: string }>({});
   
-  const { sendOtp, verifyOtp, user } = useAuth();
+  const { signIn, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -29,18 +28,8 @@ export default function Auth() {
     }
   }, [user, navigate]);
 
-  // Countdown timer for resend
-  useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [countdown]);
-
   const formatPhoneDisplay = (value: string) => {
-    // Remove non-digits
     const digits = value.replace(/\D/g, '');
-    // Format as 5XX XXX XX XX
     if (digits.length <= 3) return digits;
     if (digits.length <= 6) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
     if (digits.length <= 8) return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
@@ -54,60 +43,52 @@ export default function Auth() {
     }
   };
 
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+  const validateForm = () => {
+    const newErrors: { phone?: string; password?: string } = {};
     
     try {
       phoneSchema.parse(phone);
     } catch (e) {
       if (e instanceof z.ZodError) {
-        setError(e.errors[0].message);
-        return;
+        newErrors.phone = e.errors[0].message;
       }
     }
-
-    setLoading(true);
 
     try {
-      const { error } = await sendOtp(phone);
-      if (error) {
-        toast({
-          title: 'Hata',
-          description: error.message,
-          variant: 'destructive',
-        });
-      } else {
-        setStep('otp');
-        setCountdown(60);
-        toast({
-          title: 'Doğrulama Kodu Gönderildi 📱',
-          description: 'Telefonunuza gelen 6 haneli kodu girin.',
-        });
+      passwordSchema.parse(password);
+    } catch (e) {
+      if (e instanceof z.ZodError) {
+        newErrors.password = e.errors[0].message;
       }
-    } finally {
-      setLoading(false);
     }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleVerifyOtp = async () => {
-    if (otp.length !== 6) {
-      setError('6 haneli kodu eksiksiz girin');
-      return;
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
 
-    setError(null);
     setLoading(true);
 
     try {
-      const { error } = await verifyOtp(phone, otp);
+      const { error } = await signIn(phone, password);
       if (error) {
-        setError(error.message);
-        toast({
-          title: 'Doğrulama Başarısız',
-          description: error.message,
-          variant: 'destructive',
-        });
+        if (error.message.includes('Invalid login credentials')) {
+          toast({
+            title: 'Giriş Başarısız',
+            description: 'Telefon numarası veya şifre hatalı.',
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Hata',
+            description: error.message,
+            variant: 'destructive',
+          });
+        }
       } else {
         toast({
           title: 'Hoş Geldiniz! 🎲',
@@ -119,34 +100,8 @@ export default function Auth() {
     }
   };
 
-  const handleResendOtp = async () => {
-    if (countdown > 0) return;
-    
-    setLoading(true);
-    try {
-      const { error } = await sendOtp(phone);
-      if (error) {
-        toast({
-          title: 'Hata',
-          description: error.message,
-          variant: 'destructive',
-        });
-      } else {
-        setCountdown(60);
-        setOtp('');
-        toast({
-          title: 'Kod Tekrar Gönderildi 📱',
-          description: 'Yeni doğrulama kodunuz gönderildi.',
-        });
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm space-y-8">
           {/* Logo */}
@@ -160,124 +115,64 @@ export default function Auth() {
             </div>
           </div>
 
-          {step === 'phone' ? (
-            /* Phone Input Step */
-            <form onSubmit={handleSendOtp} className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm text-muted-foreground">Telefon Numarası</label>
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-muted-foreground">
-                    <Phone className="w-5 h-5" />
-                    <span className="text-sm font-medium">+90</span>
-                  </div>
-                  <input
-                    type="tel"
-                    value={formatPhoneDisplay(phone)}
-                    onChange={handlePhoneChange}
-                    className="w-full pl-20 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-lg tracking-wide"
-                    placeholder="5XX XXX XX XX"
-                    autoComplete="tel"
-                  />
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground">Telefon Numarası</label>
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-muted-foreground">
+                  <Phone className="w-5 h-5" />
+                  <span className="text-sm font-medium">+90</span>
                 </div>
-                {error && <p className="text-xs text-primary">{error}</p>}
-                <p className="text-xs text-muted-foreground">
-                  Yönetici tarafından sisteme eklenen telefon numaranızı girin
-                </p>
+                <input
+                  type="tel"
+                  value={formatPhoneDisplay(phone)}
+                  onChange={handlePhoneChange}
+                  className="w-full pl-20 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-lg tracking-wide"
+                  placeholder="5XX XXX XX XX"
+                  autoComplete="tel"
+                />
               </div>
-
-              <button
-                type="submit"
-                disabled={loading || phone.length < 10}
-                className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2 glow-primary hover:bg-primary/90 disabled:opacity-50 transition-all"
-              >
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    Doğrulama Kodu Gönder
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </button>
-            </form>
-          ) : (
-            /* OTP Verification Step */
-            <div className="space-y-6">
-              <div className="text-center space-y-2">
-                <div className="w-16 h-16 mx-auto rounded-full bg-primary/20 flex items-center justify-center">
-                  <Shield className="w-8 h-8 text-primary" />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  <span className="font-medium text-foreground">+90 {formatPhoneDisplay(phone)}</span> numarasına gönderilen 6 haneli kodu girin
-                </p>
-              </div>
-
-              <div className="flex justify-center">
-                <InputOTP
-                  maxLength={6}
-                  value={otp}
-                  onChange={(value) => {
-                    setOtp(value);
-                    setError(null);
-                  }}
-                  onComplete={handleVerifyOtp}
-                >
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} className="w-12 h-14 text-xl" />
-                    <InputOTPSlot index={1} className="w-12 h-14 text-xl" />
-                    <InputOTPSlot index={2} className="w-12 h-14 text-xl" />
-                    <InputOTPSlot index={3} className="w-12 h-14 text-xl" />
-                    <InputOTPSlot index={4} className="w-12 h-14 text-xl" />
-                    <InputOTPSlot index={5} className="w-12 h-14 text-xl" />
-                  </InputOTPGroup>
-                </InputOTP>
-              </div>
-
-              {error && <p className="text-xs text-primary text-center">{error}</p>}
-
-              <button
-                onClick={handleVerifyOtp}
-                disabled={loading || otp.length !== 6}
-                className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2 glow-primary hover:bg-primary/90 disabled:opacity-50 transition-all"
-              >
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    Giriş Yap
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </button>
-
-              <div className="flex flex-col items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleResendOtp}
-                  disabled={countdown > 0 || loading}
-                  className="text-sm text-muted-foreground hover:text-foreground disabled:opacity-50 transition-colors"
-                >
-                  {countdown > 0 ? (
-                    <span>Tekrar gönder ({countdown}s)</span>
-                  ) : (
-                    <span className="text-primary font-medium">Kodu tekrar gönder</span>
-                  )}
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStep('phone');
-                    setOtp('');
-                    setError(null);
-                  }}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Numarayı değiştir
-                </button>
-              </div>
+              {errors.phone && <p className="text-xs text-primary">{errors.phone}</p>}
             </div>
-          )}
+
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground">Şifre</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="••••••••"
+                />
+              </div>
+              {errors.password && <p className="text-xs text-primary">{errors.password}</p>}
+              <p className="text-xs text-muted-foreground">
+                Şifrenizi yöneticinizden alabilirsiniz
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading || phone.length < 10}
+              className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2 glow-primary hover:bg-primary/90 disabled:opacity-50 transition-all"
+            >
+              {loading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  Giriş Yap
+                  <ArrowRight className="w-5 h-5" />
+                </>
+              )}
+            </button>
+          </form>
+
+          <p className="text-center text-sm text-muted-foreground">
+            Hesabınız yok mu? Yöneticinize başvurun.
+          </p>
         </div>
       </div>
 
