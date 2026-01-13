@@ -12,7 +12,7 @@ interface LeaguePlayer {
 interface Profile {
   id: string;
   user_id: string | null;
-  name: string;
+  name: string | null;
   phone?: string | null;
   avatar_url: string | null;
   must_change_password?: boolean;
@@ -97,7 +97,11 @@ export function useSupabaseLeague() {
           .from('profiles_public')
           .select('*');
         
-        if (profilesData) setPlayers(profilesData as Profile[]);
+        if (profilesData) {
+          // Filter out any profiles with null id
+          const validProfiles = profilesData.filter(p => p.id !== null) as Profile[];
+          setPlayers(validProfiles);
+        }
 
         // Fetch all matches
         const { data: matchesData } = await supabase
@@ -200,19 +204,25 @@ export function useSupabaseLeague() {
     // Initialize stats for all players in this league
     allPlayerIds.forEach(playerId => {
       const player = players.find(p => p.id === playerId);
-      if (player) {
-        statsMap.set(playerId, {
-          playerId,
-          player,
-          played: 0,
-          won: 0,
-          lost: 0,
-          scored: 0,
-          conceded: 0,
-          average: 0,
-          points: 0,
-        });
-      }
+      // Create a placeholder profile if player not found
+      const playerProfile: Profile = player || {
+        id: playerId,
+        user_id: null,
+        name: 'Bilinmeyen Oyuncu',
+        avatar_url: null,
+      };
+      
+      statsMap.set(playerId, {
+        playerId,
+        player: playerProfile,
+        played: 0,
+        won: 0,
+        lost: 0,
+        scored: 0,
+        conceded: 0,
+        average: 0,
+        points: 0,
+      });
     });
 
     // Calculate stats from matches
@@ -326,12 +336,15 @@ export function useSupabaseLeague() {
       .from('profiles_public')
       .select('*');
     
-    if (profilesData) setPlayers(profilesData as Profile[]);
+    if (profilesData) {
+      const validProfiles = profilesData.filter(p => p.id !== null) as Profile[];
+      setPlayers(validProfiles);
+    }
     
     // Also update current user profile
     if (user) {
       const currentProfile = profilesData?.find(p => p.user_id === user.id);
-      if (currentProfile) setCurrentUserProfile(currentProfile);
+      if (currentProfile) setCurrentUserProfile(currentProfile as Profile);
     }
   }, [user]);
 

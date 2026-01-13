@@ -173,10 +173,16 @@ const Index = () => {
           <p className="text-sm text-muted-foreground">Puan Durumu</p>
         </div>
         
-        <StandingsTable 
-          standings={standings} 
-          onPlayerClick={handlePlayerClick} 
-        />
+        {standings.length > 0 ? (
+          <StandingsTable 
+            standings={standings} 
+            onPlayerClick={handlePlayerClick} 
+          />
+        ) : (
+          <div className="px-4 text-center text-muted-foreground py-8">
+            <p>Oyuncu bilgileri yükleniyor...</p>
+          </div>
+        )}
       </div>
 
       <FloatingActionButton onClick={() => setShowMatchForm(true)} />
