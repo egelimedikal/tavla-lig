@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Trash2, Edit, Users, Trophy, Gamepad2, Loader2, Shield, Building2, Crown, Upload, ImageIcon, Key } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit, Users, Trophy, Gamepad2, Loader2, Shield, Building2, Crown, Upload, ImageIcon, Key, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface Profile {
@@ -101,6 +101,7 @@ const Admin = () => {
   const [newPlayerPhone, setNewPlayerPhone] = useState('');
   const [creatingPlayer, setCreatingPlayer] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Profile | null>(null);
+  const [resettingPasswordFor, setResettingPasswordFor] = useState<string | null>(null);
   
   // Default password from settings
   const [defaultPassword, setDefaultPassword] = useState('TTB2014');
@@ -548,6 +549,60 @@ const Admin = () => {
       title: "Başarılı",
       description: "Oyuncu silindi.",
     });
+  };
+
+  const resetPlayerPassword = async (player: Profile) => {
+    if (!player.user_id) {
+      toast({
+        title: "Hata",
+        description: "Bu oyuncu henüz giriş yapmamış, şifre sıfırlanamaz.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setResettingPasswordFor(player.id);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('reset-player-password', {
+        body: {
+          user_id: player.user_id,
+          new_password: defaultPassword,
+        },
+      });
+
+      if (error) {
+        toast({
+          title: "Hata",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data?.error) {
+        toast({
+          title: "Hata",
+          description: data.error,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Başarılı",
+        description: `${player.name} için şifre sıfırlandı. Yeni şifre: ${defaultPassword}`,
+      });
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Bilinmeyen hata';
+      toast({
+        title: "Hata",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setResettingPasswordFor(null);
+    }
   };
 
   const addPlayerToLeague = async () => {
@@ -1370,6 +1425,21 @@ const Admin = () => {
                           </p>
                         </div>
                         <div className="flex gap-2">
+                          {player.user_id && (
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              onClick={() => resetPlayerPassword(player)}
+                              disabled={resettingPasswordFor === player.id}
+                              title="Şifre Sıfırla"
+                            >
+                              {resettingPasswordFor === player.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <RefreshCw className="w-4 h-4" />
+                              )}
+                            </Button>
+                          )}
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button 
