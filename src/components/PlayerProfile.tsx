@@ -1,34 +1,82 @@
-import { Player, Match, PlayerStats } from '@/types/league';
-import { ArrowLeft, Trophy, Target, TrendingUp, Calendar } from 'lucide-react';
+import { ArrowLeft, Trophy, Target, TrendingUp, Calendar, LogOut } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+
+interface Profile {
+  id: string;
+  user_id: string;
+  name: string;
+  phone: string | null;
+  avatar_url: string | null;
+}
+
+interface Match {
+  id: string;
+  league_id: string;
+  player1_id: string;
+  player2_id: string;
+  score1: number;
+  score2: number;
+  winner_id: string;
+  match_date: string;
+}
+
+interface PlayerStats {
+  playerId: string;
+  player: Profile;
+  played: number;
+  won: number;
+  lost: number;
+  scored: number;
+  conceded: number;
+  average: number;
+  points: number;
+}
 
 interface PlayerProfileProps {
-  player: Player;
+  player: Profile;
   stats: PlayerStats | undefined;
   matches: Match[];
   rank: number;
-  getPlayerById: (id: string) => Player | undefined;
+  getPlayerById: (id: string) => Profile | undefined;
   onBack: () => void;
+  isOwnProfile?: boolean;
 }
 
-export function PlayerProfile({ player, stats, matches, rank, getPlayerById, onBack }: PlayerProfileProps) {
+export function PlayerProfile({ player, stats, matches, rank, getPlayerById, onBack, isOwnProfile }: PlayerProfileProps) {
+  const { signOut } = useAuth();
+  
   const winRate = stats && stats.played > 0 
     ? Math.round((stats.won / stats.played) * 100) 
     : 0;
 
-  const recentMatches = matches.slice(-5).reverse();
+  const recentMatches = matches.slice(0, 5);
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <div className="min-h-screen bg-background animate-fade-in">
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <button
-            onClick={onBack}
-            className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="text-lg font-bold">Oyuncu Profili</h1>
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onBack}
+              className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h1 className="text-lg font-bold">Oyuncu Profili</h1>
+          </div>
+          {isOwnProfile && (
+            <button
+              onClick={handleSignOut}
+              className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center hover:bg-primary/30 text-primary"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -42,7 +90,11 @@ export function PlayerProfile({ player, stats, matches, rank, getPlayerById, onB
             <div>
               <h2 className="text-xl font-bold text-foreground">{player.name}</h2>
               <p className="text-sm text-muted-foreground">
-                Sıralama: <span className="text-primary font-semibold">#{rank}</span>
+                {rank > 0 ? (
+                  <>Sıralama: <span className="text-primary font-semibold">#{rank}</span></>
+                ) : (
+                  'Henüz sıralama yok'
+                )}
               </p>
             </div>
           </div>
@@ -120,11 +172,11 @@ export function PlayerProfile({ player, stats, matches, rank, getPlayerById, onB
           {recentMatches.length > 0 ? (
             <div className="divide-y divide-border/50">
               {recentMatches.map(match => {
-                const isPlayer1 = match.player1Id === player.id;
-                const opponent = getPlayerById(isPlayer1 ? match.player2Id : match.player1Id);
+                const isPlayer1 = match.player1_id === player.id;
+                const opponent = getPlayerById(isPlayer1 ? match.player2_id : match.player1_id);
                 const playerScore = isPlayer1 ? match.score1 : match.score2;
                 const opponentScore = isPlayer1 ? match.score2 : match.score1;
-                const isWin = match.winnerId === player.id;
+                const isWin = match.winner_id === player.id;
 
                 return (
                   <div key={match.id} className="p-4 flex items-center justify-between">
@@ -134,7 +186,7 @@ export function PlayerProfile({ player, stats, matches, rank, getPlayerById, onB
                         <p className="font-medium text-foreground">
                           vs {opponent?.name || 'Bilinmeyen'}
                         </p>
-                        <p className="text-xs text-muted-foreground">{match.date}</p>
+                        <p className="text-xs text-muted-foreground">{match.match_date}</p>
                       </div>
                     </div>
                     <div className={`text-lg font-bold ${isWin ? 'text-success' : 'text-primary'}`}>

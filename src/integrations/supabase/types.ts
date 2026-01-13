@@ -14,7 +14,155 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      league_players: {
+        Row: {
+          created_at: string
+          id: string
+          league_id: string
+          player_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          league_id: string
+          player_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          league_id?: string
+          player_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "league_players_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "leagues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "league_players_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leagues: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      matches: {
+        Row: {
+          created_at: string
+          id: string
+          league_id: string
+          match_date: string
+          player1_id: string
+          player2_id: string
+          score1: number
+          score2: number
+          winner_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          league_id: string
+          match_date?: string
+          player1_id: string
+          player2_id: string
+          score1: number
+          score2: number
+          winner_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          league_id?: string
+          match_date?: string
+          player1_id?: string
+          player2_id?: string
+          score1?: number
+          score2?: number
+          winner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "leagues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_player1_id_fkey"
+            columns: ["player1_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_player2_id_fkey"
+            columns: ["player2_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
