@@ -391,7 +391,7 @@ export function PlayerProfile({
         {/* Overall Stats */}
         <div className="bg-card rounded-xl p-4 border border-border">
           <h3 className="font-semibold mb-3">Genel İstatistikler</h3>
-          <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="grid grid-cols-4 gap-3 text-center">
             <div>
               <p className="text-2xl font-bold text-foreground">{totalStats.played}</p>
               <p className="text-xs text-muted-foreground">Toplam Maç</p>
@@ -403,6 +403,13 @@ export function PlayerProfile({
             <div>
               <p className="text-2xl font-bold text-primary">{totalStats.lost}</p>
               <p className="text-xs text-muted-foreground">Mağlubiyet</p>
+            </div>
+            <div>
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Trophy className="w-4 h-4 text-gold" />
+              </div>
+              <p className="text-2xl font-bold text-foreground">{winRate}%</p>
+              <p className="text-xs text-muted-foreground">Oran</p>
             </div>
           </div>
           {leagueStats.length > 0 && (
@@ -420,15 +427,6 @@ export function PlayerProfile({
               </div>
             </div>
           )}
-        </div>
-
-        {/* Win Rate */}
-        <div className="bg-card rounded-xl p-4 border border-border">
-          <div className="flex items-center gap-2 mb-2">
-            <Trophy className="w-4 h-4 text-gold" />
-            <span className="text-xs text-muted-foreground">Galibiyet Oranı</span>
-          </div>
-          <p className="text-2xl font-bold text-foreground">{winRate}%</p>
         </div>
 
         {/* Leagues & Matches */}
