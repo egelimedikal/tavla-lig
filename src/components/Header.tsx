@@ -17,8 +17,8 @@ export function Header({ onProfileClick }: HeaderProps) {
             <Trophy className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-foreground">Türkiye Tavla</h1>
-            <p className="text-xs text-muted-foreground">Birliği</p>
+            <h1 className="text-lg font-bold text-foreground">Türkiye Tavla Birliği</h1>
+            <p className="text-xs text-muted-foreground">Tavla Ligi</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
