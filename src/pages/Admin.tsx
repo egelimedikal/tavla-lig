@@ -99,9 +99,11 @@ const Admin = () => {
   // New player form
   const [newPlayerName, setNewPlayerName] = useState('');
   const [newPlayerPhone, setNewPlayerPhone] = useState('');
-  const [newPlayerPassword, setNewPlayerPassword] = useState('');
   const [creatingPlayer, setCreatingPlayer] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Profile | null>(null);
+  
+  // Default password for new players
+  const DEFAULT_PASSWORD = 'TTB2014';
   
   // Admin management
   const [selectedUserForRole, setSelectedUserForRole] = useState('');
@@ -401,10 +403,10 @@ const Admin = () => {
   };
 
   const addPlayer = async () => {
-    if (!newPlayerName.trim() || !newPlayerPhone.trim() || !newPlayerPassword.trim()) {
+    if (!newPlayerName.trim() || !newPlayerPhone.trim()) {
       toast({
         title: "Hata",
-        description: "Oyuncu adı, telefon numarası ve şifre gerekli.",
+        description: "Oyuncu adı ve telefon numarası gerekli.",
         variant: "destructive",
       });
       return;
@@ -414,15 +416,6 @@ const Admin = () => {
       toast({
         title: "Hata",
         description: "Geçerli bir telefon numarası girin.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (newPlayerPassword.length < 4) {
-      toast({
-        title: "Hata",
-        description: "Şifre en az 4 karakter olmalı.",
         variant: "destructive",
       });
       return;
@@ -444,11 +437,11 @@ const Admin = () => {
     setCreatingPlayer(true);
 
     try {
-      // Call edge function to create auth user and profile
+      // Call edge function to create auth user and profile with default password
       const { data, error } = await supabase.functions.invoke('create-player', {
         body: {
           phone: newPlayerPhone,
-          password: newPlayerPassword,
+          password: DEFAULT_PASSWORD,
           name: newPlayerName.trim(),
         },
       });
@@ -477,10 +470,9 @@ const Admin = () => {
       
       setNewPlayerName('');
       setNewPlayerPhone('');
-      setNewPlayerPassword('');
       toast({
         title: "Başarılı",
-        description: `Oyuncu eklendi. Giriş bilgileri: +90${newPlayerPhone} / ${newPlayerPassword}`,
+        description: `Oyuncu eklendi. Varsayılan şifre: ${DEFAULT_PASSWORD}`,
       });
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Bilinmeyen hata';
@@ -1286,11 +1278,11 @@ const Admin = () => {
                 <CardTitle className="text-base">Oyuncu Yönetimi</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Add New Player */}
+              {/* Add New Player */}
                 <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
                   <Label className="text-base font-medium">Yeni Oyuncu Ekle</Label>
                   <p className="text-xs text-muted-foreground">
-                    Oyuncu adı, telefon numarası ve şifre girin. Oyuncu bu bilgilerle sisteme giriş yapabilecek.
+                    Oyuncu adı ve telefon numarası girin. Varsayılan şifre: <span className="font-mono font-bold">TTB2014</span>
                   </p>
                   <div className="grid gap-3">
                     <Input
@@ -1307,12 +1299,6 @@ const Admin = () => {
                         className="pl-12"
                       />
                     </div>
-                    <Input
-                      type="password"
-                      placeholder="Şifre (en az 4 karakter)"
-                      value={newPlayerPassword}
-                      onChange={e => setNewPlayerPassword(e.target.value)}
-                    />
                     <Button onClick={addPlayer} disabled={creatingPlayer} className="w-full">
                       {creatingPlayer ? (
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
