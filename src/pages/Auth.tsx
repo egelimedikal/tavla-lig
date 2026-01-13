@@ -129,8 +129,8 @@ export default function Auth() {
               <Trophy className="w-10 h-10 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Bursa Tavla</h1>
-              <p className="text-muted-foreground">Derneği Ligi</p>
+              <h1 className="text-2xl font-bold text-foreground">Türkiye Tavla Birliği</h1>
+              <p className="text-muted-foreground">Tavla Ligi</p>
             </div>
           </div>
 
@@ -221,7 +221,7 @@ export default function Auth() {
 
       {/* Footer */}
       <div className="py-6 text-center text-xs text-muted-foreground">
-        <p>© 2024 Bursa Tavla Derneği</p>
+        <p>© 2024 Türkiye Tavla Birliği</p>
       </div>
     </div>
   );
