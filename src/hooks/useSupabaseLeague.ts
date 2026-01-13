@@ -268,7 +268,7 @@ export function useSupabaseLeague() {
 
   const standings = useMemo(() => 
     calculateStats(currentLeagueId),
-    [currentLeagueId, calculateStats, leaguePlayers]
+    [currentLeagueId, calculateStats, leaguePlayers, players]
   );
 
   const addMatch = useCallback(async (
