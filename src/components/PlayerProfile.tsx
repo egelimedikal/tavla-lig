@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo } from 'react';
-import { ArrowLeft, Trophy, LogOut, Key, Loader2, Camera, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Trophy, LogOut, Key, Loader2, Camera, ChevronDown, ChevronUp, Check, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,7 +16,7 @@ const passwordSchema = z.string().min(4, 'Şifre en az 4 karakter olmalı');
 interface Profile {
   id: string;
   user_id: string | null;
-  name: string;
+  name: string | null;
   phone?: string | null;
   avatar_url: string | null;
   must_change_password?: boolean;
@@ -46,6 +46,12 @@ interface Association {
   active_season: string | null;
 }
 
+interface LeaguePlayer {
+  id: string;
+  league_id: string;
+  player_id: string;
+}
+
 interface PlayerStats {
   playerId: string;
   player: Profile;
@@ -65,6 +71,7 @@ interface LeagueStats {
   won: number;
   lost: number;
   matches: Match[];
+  remainingOpponents: Profile[];
 }
 
 interface PlayerProfileProps {
@@ -74,11 +81,13 @@ interface PlayerProfileProps {
   allMatches: Match[];
   leagues: League[];
   associations: Association[];
+  leaguePlayers: LeaguePlayer[];
   rank: number;
   getPlayerById: (id: string) => Profile | undefined;
   onBack: () => void;
   isOwnProfile?: boolean;
   onProfileUpdate?: () => void;
+  addMatch: (player1Id: string, player2Id: string, score1: number, score2: number) => Promise<Match | null>;
 }
 
 export function PlayerProfile({ 
@@ -88,11 +97,13 @@ export function PlayerProfile({
   allMatches,
   leagues,
   associations,
+  leaguePlayers,
   rank, 
   getPlayerById, 
   onBack, 
   isOwnProfile,
-  onProfileUpdate
+  onProfileUpdate,
+  addMatch
 }: PlayerProfileProps) {
   const { signOut, updatePassword, user } = useAuth();
   const { toast } = useToast();
@@ -103,6 +114,10 @@ export function PlayerProfile({
   const [changingPassword, setChangingPassword] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [expandedLeagues, setExpandedLeagues] = useState<Set<string>>(new Set());
+  const [scoreEntryMatch, setScoreEntryMatch] = useState<{ leagueId: string; opponentId: string } | null>(null);
+  const [score1, setScore1] = useState(0);
+  const [score2, setScore2] = useState(0);
+  const [submittingMatch, setSubmittingMatch] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const winRate = stats && stats.played > 0 
@@ -114,6 +129,50 @@ export function PlayerProfile({
     const playerMatches = allMatches.filter(m => m.player1_id === player.id || m.player2_id === player.id);
     const leagueMap = new Map<string, LeagueStats>();
     
+    // Get all leagues the player is assigned to
+    const playerLeagueIds = leaguePlayers
+      .filter(lp => lp.player_id === player.id)
+      .map(lp => lp.league_id);
+    
+    // Initialize leagues player is assigned to
+    playerLeagueIds.forEach(leagueId => {
+      const league = leagues.find(l => l.id === leagueId);
+      if (!league) return;
+      
+      const association = associations.find(a => a.id === league.association_id) || null;
+      
+      // Get all players in this league
+      const leaguePlayerIds = leaguePlayers
+        .filter(lp => lp.league_id === leagueId && lp.player_id !== player.id)
+        .map(lp => lp.player_id);
+      
+      // Get played opponent IDs from matches
+      const playedOpponentIds = new Set<string>();
+      playerMatches
+        .filter(m => m.league_id === leagueId)
+        .forEach(m => {
+          const opponentId = m.player1_id === player.id ? m.player2_id : m.player1_id;
+          playedOpponentIds.add(opponentId);
+        });
+      
+      // Calculate remaining opponents
+      const remainingOpponents = leaguePlayerIds
+        .filter(id => !playedOpponentIds.has(id))
+        .map(id => getPlayerById(id))
+        .filter((p): p is Profile => p !== undefined);
+      
+      leagueMap.set(leagueId, {
+        league,
+        association,
+        played: 0,
+        won: 0,
+        lost: 0,
+        matches: [],
+        remainingOpponents,
+      });
+    });
+    
+    // Add matches data
     playerMatches.forEach(match => {
       const league = leagues.find(l => l.id === match.league_id);
       if (!league) return;
@@ -127,6 +186,7 @@ export function PlayerProfile({
           won: 0,
           lost: 0,
           matches: [],
+          remainingOpponents: [],
         });
       }
       
@@ -146,7 +206,7 @@ export function PlayerProfile({
     });
     
     return Array.from(leagueMap.values());
-  }, [allMatches, player.id, leagues, associations]);
+  }, [allMatches, player.id, leagues, associations, leaguePlayers, getPlayerById]);
 
   // Get current active season from associations
   const currentSeason = useMemo(() => {
@@ -299,6 +359,46 @@ export function PlayerProfile({
     });
   };
 
+  const handleScoreSubmit = async (leagueId: string, opponentId: string) => {
+    if (score1 === score2) {
+      toast({
+        title: 'Hata',
+        description: 'Skorlar eşit olamaz!',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setSubmittingMatch(true);
+    try {
+      const result = await addMatch(player.id, opponentId, score1, score2);
+      if (result) {
+        const winner = score1 > score2 ? player.name : getPlayerById(opponentId)?.name;
+        toast({
+          title: 'Maç Kaydedildi! ⚔️',
+          description: `${winner} maçı kazandı (${score1}-${score2})`,
+        });
+        setScoreEntryMatch(null);
+        setScore1(0);
+        setScore2(0);
+        onProfileUpdate?.();
+      }
+    } finally {
+      setSubmittingMatch(false);
+    }
+  };
+
+  const openScoreEntry = (leagueId: string, opponentId: string) => {
+    setScoreEntryMatch({ leagueId, opponentId });
+    setScore1(0);
+    setScore2(0);
+  };
+
+  const formatMatchDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
   return (
     <div className="min-h-screen bg-background animate-fade-in">
       {/* Header */}
@@ -343,12 +443,12 @@ export function PlayerProfile({
               {player.avatar_url ? (
                 <img 
                   src={player.avatar_url} 
-                  alt={player.name}
+                  alt={player.name || 'Oyuncu'}
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full bg-primary/20 flex items-center justify-center text-2xl font-bold text-primary">
-                  {player.name.charAt(0)}
+                  {player.name?.charAt(0) || '?'}
                 </div>
               )}
               {isOwnProfile && (
@@ -369,7 +469,7 @@ export function PlayerProfile({
               />
             </div>
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-foreground">{player.name}</h2>
+              <h2 className="text-xl font-bold text-foreground">{player.name || 'Bilinmeyen Oyuncu'}</h2>
               <p className="text-sm text-muted-foreground">
                 {rank > 0 ? (
                   <>Sıralama: <span className="text-primary font-semibold">#{rank}</span></>
@@ -469,44 +569,141 @@ export function PlayerProfile({
                   </button>
                   
                   {isExpanded && (
-                    <div className="border-t border-border divide-y divide-border/50">
-                      {ls.matches.map(match => {
-                        const isPlayer1 = match.player1_id === player.id;
-                        const opponent = getPlayerById(isPlayer1 ? match.player2_id : match.player1_id);
-                        const playerScore = isPlayer1 ? match.score1 : match.score2;
-                        const opponentScore = isPlayer1 ? match.score2 : match.score1;
-                        const isWin = match.winner_id === player.id;
+                    <div className="border-t border-border">
+                      {/* Played Matches Section */}
+                      {ls.matches.length > 0 && (
+                        <div className="divide-y divide-border/50">
+                          <div className="px-4 py-2 bg-secondary/30">
+                            <p className="text-xs font-medium text-muted-foreground">Oynanan Maçlar</p>
+                          </div>
+                          {ls.matches.map(match => {
+                            const isPlayer1 = match.player1_id === player.id;
+                            const opponent = getPlayerById(isPlayer1 ? match.player2_id : match.player1_id);
+                            const isWin = match.winner_id === player.id;
 
-                        return (
-                          <div key={match.id} className="p-4 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-2 h-2 rounded-full ${isWin ? 'bg-success' : 'bg-primary'}`} />
-                              <div className="flex items-center gap-2">
-                                {opponent?.avatar_url ? (
-                                  <img 
-                                    src={opponent.avatar_url} 
-                                    alt={opponent.name}
-                                    className="w-8 h-8 rounded-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-xs font-medium">
-                                    {opponent?.name?.charAt(0) || '?'}
+                            return (
+                              <div key={match.id} className="p-4">
+                                <p className="text-xs text-muted-foreground mb-2">{formatMatchDate(match.match_date)}</p>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <span className={`text-sm ${isWin ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>
+                                      {player.name || 'Oyuncu'}
+                                    </span>
                                   </div>
-                                )}
-                                <div>
-                                  <p className="font-medium text-foreground text-sm">
-                                    vs {opponent?.name || 'Bilinmeyen'}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">{match.match_date}</p>
+                                  <div className="flex items-center gap-2 text-lg font-bold">
+                                    <span className={isWin ? 'text-success' : 'text-primary'}>{isPlayer1 ? match.score1 : match.score2}</span>
+                                    <span className="text-muted-foreground">-</span>
+                                    <span className={!isWin ? 'text-success' : 'text-primary'}>{isPlayer1 ? match.score2 : match.score1}</span>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <span className={`text-sm ${!isWin ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>
+                                      {opponent?.name || 'Bilinmeyen'}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                            <div className={`text-lg font-bold ${isWin ? 'text-success' : 'text-primary'}`}>
-                              {playerScore} - {opponentScore}
-                            </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      
+                      {/* Remaining Matches Section */}
+                      {ls.remainingOpponents.length > 0 && (
+                        <div className="divide-y divide-border/50">
+                          <div className="px-4 py-2 bg-secondary/30 border-t border-border">
+                            <p className="text-xs font-medium text-muted-foreground">Kalan Maçlar</p>
                           </div>
-                        );
-                      })}
+                          {ls.remainingOpponents.map(opponent => {
+                            const isEditing = scoreEntryMatch?.leagueId === ls.league.id && scoreEntryMatch?.opponentId === opponent.id;
+                            
+                            return (
+                              <div key={opponent.id} className="p-4">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-sm text-foreground">{player.name || 'Oyuncu'}</span>
+                                  </div>
+                                  
+                                  {isEditing ? (
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex items-center gap-1">
+                                        <button
+                                          onClick={() => setScore1(Math.max(0, score1 - 1))}
+                                          className="w-6 h-6 rounded bg-secondary flex items-center justify-center text-xs hover:bg-secondary/80"
+                                        >
+                                          -
+                                        </button>
+                                        <span className="w-6 text-center font-bold">{score1}</span>
+                                        <button
+                                          onClick={() => setScore1(Math.min(9, score1 + 1))}
+                                          className="w-6 h-6 rounded bg-secondary flex items-center justify-center text-xs hover:bg-secondary/80"
+                                        >
+                                          +
+                                        </button>
+                                      </div>
+                                      <span className="text-muted-foreground">-</span>
+                                      <div className="flex items-center gap-1">
+                                        <button
+                                          onClick={() => setScore2(Math.max(0, score2 - 1))}
+                                          className="w-6 h-6 rounded bg-secondary flex items-center justify-center text-xs hover:bg-secondary/80"
+                                        >
+                                          -
+                                        </button>
+                                        <span className="w-6 text-center font-bold">{score2}</span>
+                                        <button
+                                          onClick={() => setScore2(Math.min(9, score2 + 1))}
+                                          className="w-6 h-6 rounded bg-secondary flex items-center justify-center text-xs hover:bg-secondary/80"
+                                        >
+                                          +
+                                        </button>
+                                      </div>
+                                      <button
+                                        onClick={() => handleScoreSubmit(ls.league.id, opponent.id)}
+                                        disabled={submittingMatch || score1 === score2}
+                                        className="w-7 h-7 rounded-full bg-success flex items-center justify-center hover:bg-success/80 disabled:opacity-50"
+                                      >
+                                        {submittingMatch ? (
+                                          <Loader2 className="w-4 h-4 text-white animate-spin" />
+                                        ) : (
+                                          <Check className="w-4 h-4 text-white" />
+                                        )}
+                                      </button>
+                                      <button
+                                        onClick={() => setScoreEntryMatch(null)}
+                                        className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center hover:bg-primary/30"
+                                      >
+                                        <X className="w-4 h-4 text-primary" />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-3">
+                                      {isOwnProfile ? (
+                                        <button
+                                          onClick={() => openScoreEntry(ls.league.id, opponent.id)}
+                                          className="px-3 py-1 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+                                        >
+                                          Skor Gir
+                                        </button>
+                                      ) : (
+                                        <span className="text-sm text-muted-foreground">- : -</span>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-sm text-foreground">{opponent.name || 'Bilinmeyen'}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      
+                      {ls.matches.length === 0 && ls.remainingOpponents.length === 0 && (
+                        <div className="p-4 text-center text-muted-foreground text-sm">
+                          Bu ligde maç bilgisi yok
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -515,63 +712,6 @@ export function PlayerProfile({
           ) : (
             <div className="bg-card rounded-xl p-8 border border-border text-center text-muted-foreground">
               <p>Henüz hiçbir ligde maç oynanmamış</p>
-            </div>
-          )}
-        </div>
-
-        {/* Recent Matches (Last 5 across all leagues) */}
-        <div className="bg-card rounded-xl border border-border overflow-hidden">
-          <div className="p-4 border-b border-border">
-            <h3 className="font-semibold">Son Maçlar</h3>
-          </div>
-          
-          {matches.length > 0 ? (
-            <div className="divide-y divide-border/50">
-              {matches.slice(0, 5).map(match => {
-                const isPlayer1 = match.player1_id === player.id;
-                const opponent = getPlayerById(isPlayer1 ? match.player2_id : match.player1_id);
-                const playerScore = isPlayer1 ? match.score1 : match.score2;
-                const opponentScore = isPlayer1 ? match.score2 : match.score1;
-                const isWin = match.winner_id === player.id;
-                const league = leagues.find(l => l.id === match.league_id);
-
-                return (
-                  <div key={match.id} className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-2 h-2 rounded-full ${isWin ? 'bg-success' : 'bg-primary'}`} />
-                      <div className="flex items-center gap-2">
-                        {opponent?.avatar_url ? (
-                          <img 
-                            src={opponent.avatar_url} 
-                            alt={opponent.name}
-                            className="w-8 h-8 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-xs font-medium">
-                            {opponent?.name?.charAt(0) || '?'}
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-medium text-foreground text-sm">
-                            vs {opponent?.name || 'Bilinmeyen'}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {match.match_date}
-                            {league && <span className="ml-1">• {league.name}</span>}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className={`text-lg font-bold ${isWin ? 'text-success' : 'text-primary'}`}>
-                      {playerScore} - {opponentScore}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="p-8 text-center text-muted-foreground">
-              <p>Henüz maç oynanmamış</p>
             </div>
           )}
         </div>

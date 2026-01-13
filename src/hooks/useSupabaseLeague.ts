@@ -361,6 +361,7 @@ export function useSupabaseLeague() {
     standings,
     players,
     matches,
+    leaguePlayers,
     loading,
     addMatch,
     getPlayerMatches,
