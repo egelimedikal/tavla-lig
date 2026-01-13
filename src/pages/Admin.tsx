@@ -85,7 +85,6 @@ const Admin = () => {
   const [editingAssociation, setEditingAssociation] = useState<Association | null>(null);
   
   const [newLeagueName, setNewLeagueName] = useState('');
-  const [newLeagueId, setNewLeagueId] = useState('');
   const [selectedAssociationForLeague, setSelectedAssociationForLeague] = useState('');
   const [editingLeague, setEditingLeague] = useState<League | null>(null);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
@@ -240,12 +239,11 @@ const Admin = () => {
     });
   };
 
-  // League CRUD
   const addLeague = async () => {
-    if (!newLeagueName.trim() || !newLeagueId.trim() || !selectedAssociationForLeague) {
+    if (!newLeagueName.trim() || !selectedAssociationForLeague) {
       toast({
         title: "Hata",
-        description: "Lig adı, ID'si ve dernek seçimi gerekli.",
+        description: "Lig adı ve dernek seçimi gerekli.",
         variant: "destructive",
       });
       return;
@@ -253,7 +251,7 @@ const Admin = () => {
 
     const { data, error } = await supabase
       .from('leagues')
-      .insert({ id: newLeagueId, name: newLeagueName, association_id: selectedAssociationForLeague })
+      .insert({ id: crypto.randomUUID(), name: newLeagueName, association_id: selectedAssociationForLeague })
       .select()
       .single();
 
@@ -269,7 +267,6 @@ const Admin = () => {
     if (data) {
       setLeagues(prev => [...prev, data]);
       setNewLeagueName('');
-      setNewLeagueId('');
       toast({
         title: "Başarılı",
         description: "Lig eklendi.",
@@ -805,12 +802,6 @@ const Admin = () => {
                     </Select>
                     <div className="flex gap-2">
                       <Input
-                        placeholder="Lig ID (örn: super-c)"
-                        value={newLeagueId}
-                        onChange={e => setNewLeagueId(e.target.value)}
-                        className="flex-1"
-                      />
-                      <Input
                         placeholder="Lig Adı"
                         value={newLeagueName}
                         onChange={e => setNewLeagueName(e.target.value)}
@@ -841,7 +832,6 @@ const Admin = () => {
                         >
                           <div>
                             <p className="font-medium">{league.name}</p>
-                            <p className="text-xs text-muted-foreground">ID: {league.id}</p>
                           </div>
                           <div className="flex gap-2">
                             <Dialog>
