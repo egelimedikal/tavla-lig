@@ -2,44 +2,43 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export function useAdminRole() {
+export function useSuperAdminRole() {
   const { user } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAdminRole = async () => {
+    const checkSuperAdminRole = async () => {
       if (!user) {
-        setIsAdmin(false);
+        setIsSuperAdmin(false);
         setLoading(false);
         return;
       }
 
       try {
-        // Check for both admin and super_admin roles
         const { data, error } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', user.id)
-          .in('role', ['admin', 'super_admin'])
+          .eq('role', 'super_admin')
           .maybeSingle();
 
         if (error) {
-          console.error('Error checking admin role:', error);
-          setIsAdmin(false);
+          console.error('Error checking super admin role:', error);
+          setIsSuperAdmin(false);
         } else {
-          setIsAdmin(!!data);
+          setIsSuperAdmin(!!data);
         }
       } catch (error) {
-        console.error('Error checking admin role:', error);
-        setIsAdmin(false);
+        console.error('Error checking super admin role:', error);
+        setIsSuperAdmin(false);
       } finally {
         setLoading(false);
       }
     };
 
-    checkAdminRole();
+    checkSuperAdminRole();
   }, [user]);
 
-  return { isAdmin, loading };
+  return { isSuperAdmin, loading };
 }

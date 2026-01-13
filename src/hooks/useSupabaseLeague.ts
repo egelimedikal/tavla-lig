@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { LeagueTab } from '@/types/league';
 import { useToast } from '@/hooks/use-toast';
 
 interface Profile {
@@ -26,6 +25,14 @@ interface Match {
 interface League {
   id: string;
   name: string;
+  association_id: string | null;
+}
+
+interface Association {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
 }
 
 interface PlayerStats {
@@ -43,10 +50,12 @@ interface PlayerStats {
 export function useSupabaseLeague() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [associations, setAssociations] = useState<Association[]>([]);
   const [leagues, setLeagues] = useState<League[]>([]);
   const [players, setPlayers] = useState<Profile[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
-  const [currentLeagueId, setCurrentLeagueId] = useState<LeagueTab>('super-a');
+  const [currentAssociationId, setCurrentAssociationId] = useState<string>('');
+  const [currentLeagueId, setCurrentLeagueId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [currentUserProfile, setCurrentUserProfile] = useState<Profile | null>(null);
 
@@ -55,6 +64,17 @@ export function useSupabaseLeague() {
     const fetchData = async () => {
       setLoading(true);
       try {
+        // Fetch associations
+        const { data: associationsData } = await supabase
+          .from('associations')
+          .select('*')
+          .order('name');
+        
+        if (associationsData && associationsData.length > 0) {
+          setAssociations(associationsData);
+          setCurrentAssociationId(associationsData[0].id);
+        }
+
         // Fetch leagues
         const { data: leaguesData } = await supabase
           .from('leagues')
@@ -86,6 +106,16 @@ export function useSupabaseLeague() {
     fetchData();
   }, []);
 
+  // Set initial league when association changes
+  useEffect(() => {
+    if (currentAssociationId) {
+      const associationLeagues = leagues.filter(l => l.association_id === currentAssociationId);
+      if (associationLeagues.length > 0 && !associationLeagues.find(l => l.id === currentLeagueId)) {
+        setCurrentLeagueId(associationLeagues[0].id);
+      }
+    }
+  }, [currentAssociationId, leagues]);
+
   // Get current user's profile
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -106,8 +136,18 @@ export function useSupabaseLeague() {
     fetchUserProfile();
   }, [user]);
 
+  const currentAssociation = useMemo(() => 
+    associations.find(a => a.id === currentAssociationId) || null,
+    [associations, currentAssociationId]
+  );
+
+  const associationLeagues = useMemo(() => 
+    leagues.filter(l => l.association_id === currentAssociationId),
+    [leagues, currentAssociationId]
+  );
+
   const currentLeague = useMemo(() => 
-    leagues.find(l => l.id === currentLeagueId) || { id: currentLeagueId, name: '' },
+    leagues.find(l => l.id === currentLeagueId) || { id: currentLeagueId, name: '', association_id: null },
     [leagues, currentLeagueId]
   );
 
@@ -252,6 +292,11 @@ export function useSupabaseLeague() {
   }, [players]);
 
   return {
+    associations,
+    currentAssociation,
+    currentAssociationId,
+    setCurrentAssociationId,
+    associationLeagues,
     leagues,
     currentLeague,
     currentLeagueId,
