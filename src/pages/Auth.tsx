@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Trophy, Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight } from 'lucide-react';
+import tavlaLogo from '@/assets/tavlalogo.png';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 
@@ -125,8 +126,8 @@ export default function Auth() {
         <div className="w-full max-w-sm space-y-8">
           {/* Logo */}
           <div className="text-center space-y-4">
-            <div className="w-20 h-20 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto glow-primary">
-              <Trophy className="w-10 h-10 text-primary" />
+            <div className="w-24 h-24 mx-auto">
+              <img src={tavlaLogo} alt="Türkiye Tavla Birliği Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground">Türkiye Tavla Birliği</h1>
