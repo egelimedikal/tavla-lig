@@ -57,6 +57,12 @@ interface UserRole {
   role: 'admin' | 'super_admin' | 'user';
 }
 
+interface AssociationAdmin {
+  id: string;
+  association_id: string;
+  user_id: string;
+}
+
 const Admin = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -70,6 +76,7 @@ const Admin = () => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [leaguePlayers, setLeaguePlayers] = useState<LeaguePlayer[]>([]);
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
+  const [associationAdmins, setAssociationAdmins] = useState<AssociationAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Form states
@@ -88,6 +95,10 @@ const Admin = () => {
   // Admin management
   const [selectedUserForRole, setSelectedUserForRole] = useState('');
   const [selectedRole, setSelectedRole] = useState<'admin' | 'user'>('admin');
+  
+  // Association admin management
+  const [selectedAssociationForAdmin, setSelectedAssociationForAdmin] = useState('');
+  const [selectedUserForAssociationAdmin, setSelectedUserForAssociationAdmin] = useState('');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -129,10 +140,14 @@ const Admin = () => {
       if (matchesRes.data) setMatches(matchesRes.data);
       if (leaguePlayersRes.data) setLeaguePlayers(leaguePlayersRes.data);
 
-      // Fetch user roles only for super admins
+      // Fetch user roles and association admins only for super admins
       if (isSuperAdmin) {
-        const { data: rolesData } = await supabase.from('user_roles').select('*');
-        if (rolesData) setUserRoles(rolesData);
+        const [rolesRes, assocAdminsRes] = await Promise.all([
+          supabase.from('user_roles').select('*'),
+          supabase.from('association_admins').select('*'),
+        ]);
+        if (rolesRes.data) setUserRoles(rolesRes.data);
+        if (assocAdminsRes.data) setAssociationAdmins(assocAdminsRes.data);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -514,6 +529,78 @@ const Admin = () => {
     toast({
       title: "Başarılı",
       description: "Rol kaldırıldı.",
+    });
+  };
+
+  // Association Admin Management
+  const addAssociationAdmin = async () => {
+    if (!selectedAssociationForAdmin || !selectedUserForAssociationAdmin) {
+      toast({
+        title: "Hata",
+        description: "Dernek ve kullanıcı seçimi gerekli.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if already an admin for this association
+    const existing = associationAdmins.find(
+      aa => aa.association_id === selectedAssociationForAdmin && aa.user_id === selectedUserForAssociationAdmin
+    );
+
+    if (existing) {
+      toast({
+        title: "Hata",
+        description: "Bu kullanıcı zaten bu derneğin admini.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('association_admins')
+      .insert({ association_id: selectedAssociationForAdmin, user_id: selectedUserForAssociationAdmin })
+      .select()
+      .single();
+
+    if (error) {
+      toast({
+        title: "Hata",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (data) {
+      setAssociationAdmins(prev => [...prev, data as AssociationAdmin]);
+      setSelectedUserForAssociationAdmin('');
+      toast({
+        title: "Başarılı",
+        description: "Dernek admini eklendi.",
+      });
+    }
+  };
+
+  const removeAssociationAdmin = async (aaId: string) => {
+    const { error } = await supabase
+      .from('association_admins')
+      .delete()
+      .eq('id', aaId);
+
+    if (error) {
+      toast({
+        title: "Hata",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAssociationAdmins(prev => prev.filter(aa => aa.id !== aaId));
+    toast({
+      title: "Başarılı",
+      description: "Dernek admini kaldırıldı.",
     });
   };
 
@@ -1092,10 +1179,14 @@ const Admin = () => {
                     Admin Yönetimi
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Add Admin Role */}
+                <CardContent className="space-y-6">
+                  {/* Add Global Admin Role */}
                   <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
-                    <Label>Admin Ekle</Label>
+                    <Label className="flex items-center gap-2">
+                      <Shield className="w-4 h-4" />
+                      Genel Admin Ekle
+                    </Label>
+                    <p className="text-xs text-muted-foreground">Genel adminler tüm dernekleri yönetebilir</p>
                     <div className="flex gap-2">
                       <Select value={selectedUserForRole} onValueChange={setSelectedUserForRole}>
                         <SelectTrigger className="flex-1">
@@ -1125,9 +1216,12 @@ const Admin = () => {
                     </div>
                   </div>
 
-                  {/* Role List */}
+                  {/* Global Role List */}
                   <div className="space-y-2">
-                    <h3 className="font-medium text-sm text-muted-foreground">Mevcut Roller</h3>
+                    <h3 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
+                      <Shield className="w-4 h-4" />
+                      Genel Roller
+                    </h3>
                     {userRoles.map(role => (
                       <div 
                         key={role.id}
@@ -1150,6 +1244,86 @@ const Admin = () => {
                         )}
                       </div>
                     ))}
+                  </div>
+
+                  {/* Divider */}
+                  <div className="border-t border-border my-4" />
+
+                  {/* Add Association Admin */}
+                  <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+                    <Label className="flex items-center gap-2">
+                      <Building2 className="w-4 h-4" />
+                      Dernek Admini Ekle
+                    </Label>
+                    <p className="text-xs text-muted-foreground">Dernek adminleri sadece kendi derneklerini yönetebilir</p>
+                    <div className="flex gap-2">
+                      <Select value={selectedAssociationForAdmin} onValueChange={setSelectedAssociationForAdmin}>
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Dernek Seç" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {associations.map(assoc => (
+                            <SelectItem key={assoc.id} value={assoc.id}>
+                              {assoc.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={selectedUserForAssociationAdmin} onValueChange={setSelectedUserForAssociationAdmin}>
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Kullanıcı Seç" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {players.map(player => (
+                            <SelectItem key={player.user_id} value={player.user_id}>
+                              {player.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button onClick={addAssociationAdmin} size="icon">
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Association Admins List */}
+                  <div className="space-y-3">
+                    <h3 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
+                      <Building2 className="w-4 h-4" />
+                      Dernek Adminleri
+                    </h3>
+                    {associations.map(assoc => {
+                      const admins = associationAdmins.filter(aa => aa.association_id === assoc.id);
+                      if (admins.length === 0) return null;
+
+                      return (
+                        <div key={assoc.id} className="space-y-2">
+                          <h4 className="text-sm font-medium">{assoc.name}</h4>
+                          {admins.map(aa => (
+                            <div 
+                              key={aa.id}
+                              className="flex items-center justify-between p-2 bg-muted/30 rounded ml-4"
+                            >
+                              <span className="text-sm">{getUserName(aa.user_id)}</span>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => removeAssociationAdmin(aa.id)}
+                              >
+                                <Trash2 className="w-3 h-3 text-destructive" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
+                    {associationAdmins.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-2">
+                        Henüz dernek admini atanmadı
+                      </p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
