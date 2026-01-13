@@ -3,6 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
+interface LeaguePlayer {
+  id: string;
+  league_id: string;
+  player_id: string;
+}
+
 interface Profile {
   id: string;
   user_id: string | null;
@@ -57,6 +63,7 @@ export function useSupabaseLeague() {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [players, setPlayers] = useState<Profile[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [leaguePlayers, setLeaguePlayers] = useState<LeaguePlayer[]>([]);
   const [currentAssociationId, setCurrentAssociationId] = useState<string>('');
   const [currentLeagueId, setCurrentLeagueId] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -99,6 +106,13 @@ export function useSupabaseLeague() {
           .order('match_date', { ascending: false });
         
         if (matchesData) setMatches(matchesData);
+
+        // Fetch league players assignments
+        const { data: leaguePlayersData } = await supabase
+          .from('league_players')
+          .select('*');
+        
+        if (leaguePlayersData) setLeaguePlayers(leaguePlayersData);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -163,15 +177,23 @@ export function useSupabaseLeague() {
     const leagueMatchesFiltered = matches.filter(m => m.league_id === leagueId);
     const statsMap = new Map<string, PlayerStats>();
 
-    // Get unique players from matches
-    const playerIds = new Set<string>();
+    // Get players assigned to this league via league_players table
+    const assignedPlayerIds = leaguePlayers
+      .filter(lp => lp.league_id === leagueId)
+      .map(lp => lp.player_id);
+
+    // Also get unique players from matches (for backwards compatibility)
+    const playerIdsFromMatches = new Set<string>();
     leagueMatchesFiltered.forEach(match => {
-      playerIds.add(match.player1_id);
-      playerIds.add(match.player2_id);
+      playerIdsFromMatches.add(match.player1_id);
+      playerIdsFromMatches.add(match.player2_id);
     });
 
+    // Combine both: assigned players + players who have matches
+    const allPlayerIds = new Set([...assignedPlayerIds, ...playerIdsFromMatches]);
+
     // Initialize stats for all players in this league
-    playerIds.forEach(playerId => {
+    allPlayerIds.forEach(playerId => {
       const player = players.find(p => p.id === playerId);
       if (player) {
         statsMap.set(playerId, {
@@ -246,7 +268,7 @@ export function useSupabaseLeague() {
 
   const standings = useMemo(() => 
     calculateStats(currentLeagueId),
-    [currentLeagueId, calculateStats]
+    [currentLeagueId, calculateStats, leaguePlayers]
   );
 
   const addMatch = useCallback(async (
