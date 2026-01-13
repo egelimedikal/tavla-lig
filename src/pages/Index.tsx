@@ -77,6 +77,12 @@ const Index = () => {
     }
   };
 
+  const handlePasswordChangeComplete = useCallback(() => {
+    setView('standings');
+    // Reload the page to refresh the profile data
+    window.location.reload();
+  }, []);
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -97,12 +103,6 @@ const Index = () => {
   const selectedPlayerMatches = selectedPlayerId ? getPlayerMatches(selectedPlayerId) : [];
   const selectedPlayerRank = selectedPlayerId ? standings.findIndex(s => s.playerId === selectedPlayerId) + 1 : 0;
   const isOwnProfile = selectedPlayerId === currentUserProfile?.id;
-
-  const handlePasswordChangeComplete = useCallback(() => {
-    setView('standings');
-    // Reload the page to refresh the profile data
-    window.location.reload();
-  }, []);
 
   if (view === 'force-password-change' && currentUserProfile) {
     return (
