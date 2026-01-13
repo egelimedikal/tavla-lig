@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminRole } from '@/hooks/useAdminRole';
-import { useAssociationAdminRole } from '@/hooks/useAssociationAdminRole';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Plus, Trash2, Edit, Megaphone, Loader2, Calendar, Building2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit, Megaphone, Loader2, Calendar, Building2, Upload, ImageIcon, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
@@ -25,6 +24,7 @@ interface Announcement {
   association_id: string | null;
   created_by: string;
   is_active: boolean;
+  image_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -39,7 +39,6 @@ const Announcements = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdminRole();
-  const { managedAssociationIds } = useAssociationAdminRole();
   const { toast } = useToast();
   
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -50,9 +49,17 @@ const Announcements = () => {
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
   const [selectedAssociation, setSelectedAssociation] = useState<string>('global');
+  const [newImage, setNewImage] = useState<File | null>(null);
+  const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+  const [editImage, setEditImage] = useState<File | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  
+  const newImageInputRef = useRef<HTMLInputElement>(null);
+  const editImageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -94,6 +101,69 @@ const Announcements = () => {
     }
   };
 
+  const uploadImage = async (file: File, announcementId: string): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${announcementId}-${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('announcement-images')
+      .upload(fileName, file, { upsert: true });
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('announcement-images')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  };
+
+  const handleNewImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNewImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleEditImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setEditImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const clearNewImage = () => {
+    setNewImage(null);
+    setNewImagePreview(null);
+    if (newImageInputRef.current) {
+      newImageInputRef.current.value = '';
+    }
+  };
+
+  const clearEditImage = () => {
+    setEditImage(null);
+    setEditImagePreview(null);
+    if (editImageInputRef.current) {
+      editImageInputRef.current.value = '';
+    }
+    if (editingAnnouncement) {
+      setEditingAnnouncement({ ...editingAnnouncement, image_url: null });
+    }
+  };
+
   const addAnnouncement = async () => {
     if (!newTitle.trim() || !newContent.trim()) {
       toast({
@@ -105,6 +175,7 @@ const Announcements = () => {
     }
 
     setSaving(true);
+    setUploadingImage(!!newImage);
 
     try {
       const { data, error } = await supabase
@@ -129,10 +200,23 @@ const Announcements = () => {
       }
 
       if (data) {
-        setAnnouncements(prev => [data, ...prev]);
+        let imageUrl: string | null = null;
+
+        if (newImage) {
+          imageUrl = await uploadImage(newImage, data.id);
+          if (imageUrl) {
+            await supabase
+              .from('announcements')
+              .update({ image_url: imageUrl })
+              .eq('id', data.id);
+          }
+        }
+
+        setAnnouncements(prev => [{ ...data, image_url: imageUrl }, ...prev]);
         setNewTitle('');
         setNewContent('');
         setSelectedAssociation('global');
+        clearNewImage();
         setIsDialogOpen(false);
         toast({
           title: "Başarılı",
@@ -141,6 +225,7 @@ const Announcements = () => {
       }
     } finally {
       setSaving(false);
+      setUploadingImage(false);
     }
   };
 
@@ -148,8 +233,18 @@ const Announcements = () => {
     if (!editingAnnouncement) return;
 
     setSaving(true);
+    setUploadingImage(!!editImage);
 
     try {
+      let imageUrl = editingAnnouncement.image_url;
+
+      if (editImage) {
+        const newImageUrl = await uploadImage(editImage, editingAnnouncement.id);
+        if (newImageUrl) {
+          imageUrl = newImageUrl;
+        }
+      }
+
       const { error } = await supabase
         .from('announcements')
         .update({
@@ -157,6 +252,7 @@ const Announcements = () => {
           content: editingAnnouncement.content,
           association_id: editingAnnouncement.association_id,
           is_active: editingAnnouncement.is_active,
+          image_url: imageUrl,
         })
         .eq('id', editingAnnouncement.id);
 
@@ -170,15 +266,18 @@ const Announcements = () => {
       }
 
       setAnnouncements(prev => prev.map(a => 
-        a.id === editingAnnouncement.id ? editingAnnouncement : a
+        a.id === editingAnnouncement.id ? { ...editingAnnouncement, image_url: imageUrl } : a
       ));
       setEditingAnnouncement(null);
+      setEditImage(null);
+      setEditImagePreview(null);
       toast({
         title: "Başarılı",
         description: "Duyuru güncellendi.",
       });
     } finally {
       setSaving(false);
+      setUploadingImage(false);
     }
   };
 
@@ -230,6 +329,12 @@ const Announcements = () => {
     return assoc?.name || 'Bilinmiyor';
   };
 
+  const openEditDialog = (announcement: Announcement) => {
+    setEditingAnnouncement(announcement);
+    setEditImage(null);
+    setEditImagePreview(null);
+  };
+
   if (authLoading || adminLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -253,7 +358,12 @@ const Announcements = () => {
             </div>
           </div>
           
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) {
+              clearNewImage();
+            }
+          }}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
@@ -285,6 +395,41 @@ const Announcements = () => {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label>Resim (Opsiyonel)</Label>
+                  {newImagePreview ? (
+                    <div className="relative">
+                      <img
+                        src={newImagePreview}
+                        alt="Preview"
+                        className="w-full h-32 object-cover rounded-lg"
+                      />
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-6 w-6"
+                        onClick={clearNewImage}
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div
+                      className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                      onClick={() => newImageInputRef.current?.click()}
+                    >
+                      <ImageIcon className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">Resim yüklemek için tıklayın</p>
+                    </div>
+                  )}
+                  <input
+                    ref={newImageInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleNewImageChange}
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label>Dernek</Label>
                   <Select value={selectedAssociation} onValueChange={setSelectedAssociation}>
                     <SelectTrigger>
@@ -307,7 +452,7 @@ const Announcements = () => {
                 </DialogClose>
                 <Button onClick={addAnnouncement} disabled={saving}>
                   {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  Ekle
+                  {uploadingImage ? 'Yükleniyor...' : 'Ekle'}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -326,117 +471,169 @@ const Announcements = () => {
           ) : (
             announcements.map(announcement => (
               <Card key={announcement.id} className={!announcement.is_active ? 'opacity-60' : ''}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <CardTitle className="text-lg">{announcement.title}</CardTitle>
-                        {!announcement.is_active && (
-                          <Badge variant="secondary">Pasif</Badge>
-                        )}
-                      </div>
-                      <CardDescription className="flex items-center gap-2 text-xs">
-                        <Calendar className="w-3 h-3" />
-                        {format(new Date(announcement.created_at), 'dd MMM yyyy HH:mm', { locale: tr })}
-                        <span className="mx-1">•</span>
-                        <Building2 className="w-3 h-3" />
-                        {getAssociationName(announcement.association_id)}
-                      </CardDescription>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={announcement.is_active}
-                        onCheckedChange={() => toggleActive(announcement)}
+                <div className="flex">
+                  {announcement.image_url && (
+                    <div className="w-32 h-32 flex-shrink-0">
+                      <img
+                        src={announcement.image_url}
+                        alt={announcement.title}
+                        className="w-full h-full object-cover rounded-l-lg"
                       />
-                      <Dialog>
-                        <DialogTrigger asChild>
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <CardTitle className="text-lg">{announcement.title}</CardTitle>
+                            {!announcement.is_active && (
+                              <Badge variant="secondary">Pasif</Badge>
+                            )}
+                          </div>
+                          <CardDescription className="flex items-center gap-2 text-xs">
+                            <Calendar className="w-3 h-3" />
+                            {format(new Date(announcement.created_at), 'dd MMM yyyy HH:mm', { locale: tr })}
+                            <span className="mx-1">•</span>
+                            <Building2 className="w-3 h-3" />
+                            {getAssociationName(announcement.association_id)}
+                          </CardDescription>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={announcement.is_active}
+                            onCheckedChange={() => toggleActive(announcement)}
+                          />
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openEditDialog(announcement)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-lg">
+                              <DialogHeader>
+                                <DialogTitle>Duyuru Düzenle</DialogTitle>
+                              </DialogHeader>
+                              {editingAnnouncement && (
+                                <div className="space-y-4 py-4">
+                                  <div className="space-y-2">
+                                    <Label>Başlık</Label>
+                                    <Input
+                                      value={editingAnnouncement.title}
+                                      onChange={(e) => setEditingAnnouncement({
+                                        ...editingAnnouncement,
+                                        title: e.target.value
+                                      })}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label>İçerik</Label>
+                                    <Textarea
+                                      value={editingAnnouncement.content}
+                                      onChange={(e) => setEditingAnnouncement({
+                                        ...editingAnnouncement,
+                                        content: e.target.value
+                                      })}
+                                      rows={5}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label>Resim</Label>
+                                    {(editImagePreview || editingAnnouncement.image_url) ? (
+                                      <div className="relative">
+                                        <img
+                                          src={editImagePreview || editingAnnouncement.image_url || ''}
+                                          alt="Preview"
+                                          className="w-full h-32 object-cover rounded-lg"
+                                        />
+                                        <Button
+                                          variant="destructive"
+                                          size="icon"
+                                          className="absolute top-2 right-2 h-6 w-6"
+                                          onClick={clearEditImage}
+                                        >
+                                          <X className="w-3 h-3" />
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <div
+                                        className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                                        onClick={() => editImageInputRef.current?.click()}
+                                      >
+                                        <ImageIcon className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                                        <p className="text-sm text-muted-foreground">Resim yüklemek için tıklayın</p>
+                                      </div>
+                                    )}
+                                    <input
+                                      ref={editImageInputRef}
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={handleEditImageChange}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label>Dernek</Label>
+                                    <Select
+                                      value={editingAnnouncement.association_id || 'global'}
+                                      onValueChange={(val) => setEditingAnnouncement({
+                                        ...editingAnnouncement,
+                                        association_id: val === 'global' ? null : val
+                                      })}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="global">Genel (Tüm Dernekler)</SelectItem>
+                                        {associations.map(assoc => (
+                                          <SelectItem key={assoc.id} value={assoc.id}>
+                                            {assoc.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                              )}
+                              <DialogFooter>
+                                <DialogClose asChild>
+                                  <Button variant="outline" onClick={() => {
+                                    setEditingAnnouncement(null);
+                                    setEditImage(null);
+                                    setEditImagePreview(null);
+                                  }}>
+                                    İptal
+                                  </Button>
+                                </DialogClose>
+                                <Button onClick={updateAnnouncement} disabled={saving}>
+                                  {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                  {uploadingImage ? 'Yükleniyor...' : 'Kaydet'}
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => setEditingAnnouncement(announcement)}
+                            onClick={() => deleteAnnouncement(announcement.id)}
                           >
-                            <Edit className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4 text-destructive" />
                           </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-lg">
-                          <DialogHeader>
-                            <DialogTitle>Duyuru Düzenle</DialogTitle>
-                          </DialogHeader>
-                          {editingAnnouncement && (
-                            <div className="space-y-4 py-4">
-                              <div className="space-y-2">
-                                <Label>Başlık</Label>
-                                <Input
-                                  value={editingAnnouncement.title}
-                                  onChange={(e) => setEditingAnnouncement({
-                                    ...editingAnnouncement,
-                                    title: e.target.value
-                                  })}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>İçerik</Label>
-                                <Textarea
-                                  value={editingAnnouncement.content}
-                                  onChange={(e) => setEditingAnnouncement({
-                                    ...editingAnnouncement,
-                                    content: e.target.value
-                                  })}
-                                  rows={5}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Dernek</Label>
-                                <Select
-                                  value={editingAnnouncement.association_id || 'global'}
-                                  onValueChange={(val) => setEditingAnnouncement({
-                                    ...editingAnnouncement,
-                                    association_id: val === 'global' ? null : val
-                                  })}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="global">Genel (Tüm Dernekler)</SelectItem>
-                                    {associations.map(assoc => (
-                                      <SelectItem key={assoc.id} value={assoc.id}>
-                                        {assoc.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                          )}
-                          <DialogFooter>
-                            <DialogClose asChild>
-                              <Button variant="outline" onClick={() => setEditingAnnouncement(null)}>
-                                İptal
-                              </Button>
-                            </DialogClose>
-                            <Button onClick={updateAnnouncement} disabled={saving}>
-                              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                              Kaydet
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteAnnouncement(announcement.id)}
-                      >
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap line-clamp-2">
+                        {announcement.content}
+                      </p>
+                    </CardContent>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {announcement.content}
-                  </p>
-                </CardContent>
+                </div>
               </Card>
             ))
           )}
