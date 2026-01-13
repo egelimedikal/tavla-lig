@@ -363,7 +363,6 @@ export type Database = {
           avatar_url: string | null
           created_at: string | null
           id: string | null
-          must_change_password: boolean | null
           name: string | null
           updated_at: string | null
           user_id: string | null
@@ -372,7 +371,6 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           id?: string | null
-          must_change_password?: boolean | null
           name?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -381,7 +379,6 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           id?: string | null
-          must_change_password?: boolean | null
           name?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -390,6 +387,8 @@ export type Database = {
       }
     }
     Functions: {
+      get_default_player_password: { Args: never; Returns: string }
+      get_player_phone: { Args: { player_user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
