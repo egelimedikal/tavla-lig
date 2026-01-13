@@ -1000,9 +1000,32 @@ const Admin = () => {
     );
   }
 
-  if (!isAdmin) {
+  // Check if user has any admin access (super_admin, admin, or association_admin)
+  const hasAnyAdminAccess = isAdmin || isSuperAdmin || managedAssociationIds.length > 0;
+
+  if (!hasAnyAdminAccess) {
     return null;
   }
+
+  // Determine which tabs to show based on role
+  const showAssociationsTab = isSuperAdmin || isAdmin;
+  const showLeaguesTab = isSuperAdmin || isAdmin;
+  const showPlayersTab = isSuperAdmin || isAdmin || managedAssociationIds.length > 0;
+  const showMatchesTab = isSuperAdmin || isAdmin;
+  const showAdminsTab = isSuperAdmin;
+
+  // Calculate grid columns based on visible tabs
+  const visibleTabCount = [showAssociationsTab, showLeaguesTab, showPlayersTab, showMatchesTab, showAdminsTab].filter(Boolean).length;
+  const gridColsClass = `grid-cols-${visibleTabCount}`;
+
+  // Determine default tab based on role
+  const getDefaultTab = () => {
+    if (showAssociationsTab) return 'associations';
+    if (showLeaguesTab) return 'leagues';
+    if (showPlayersTab) return 'players';
+    if (showMatchesTab) return 'matches';
+    return 'players';
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -1015,36 +1038,53 @@ const Admin = () => {
           <div className="flex items-center gap-2">
             <Shield className="w-5 h-5 text-primary" />
             <h1 className="text-lg font-bold">Admin Paneli</h1>
-            {isSuperAdmin && (
+            {isSuperAdmin ? (
               <Badge variant="secondary" className="ml-2">
                 <Crown className="w-3 h-3 mr-1" />
                 Süper Admin
               </Badge>
-            )}
+            ) : isAdmin ? (
+              <Badge variant="outline" className="ml-2">
+                Genel Admin
+              </Badge>
+            ) : managedAssociationIds.length > 0 ? (
+              <Badge variant="outline" className="ml-2">
+                <Building2 className="w-3 h-3 mr-1" />
+                Dernek Admini
+              </Badge>
+            ) : null}
           </div>
         </div>
       </div>
 
       <div className="p-4">
-        <Tabs defaultValue="associations" className="w-full">
-          <TabsList className={`grid w-full mb-4 ${isSuperAdmin ? 'grid-cols-5' : 'grid-cols-4'}`}>
-            <TabsTrigger value="associations" className="flex items-center gap-1 text-xs px-2">
-              <Building2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Dernekler</span>
-            </TabsTrigger>
-            <TabsTrigger value="leagues" className="flex items-center gap-1 text-xs px-2">
-              <Trophy className="w-4 h-4" />
-              <span className="hidden sm:inline">Ligler</span>
-            </TabsTrigger>
-            <TabsTrigger value="players" className="flex items-center gap-1 text-xs px-2">
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Oyuncular</span>
-            </TabsTrigger>
-            <TabsTrigger value="matches" className="flex items-center gap-1 text-xs px-2">
-              <Gamepad2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Maçlar</span>
-            </TabsTrigger>
-            {isSuperAdmin && (
+        <Tabs defaultValue={getDefaultTab()} className="w-full">
+          <TabsList className={`grid w-full mb-4`} style={{ gridTemplateColumns: `repeat(${visibleTabCount}, minmax(0, 1fr))` }}>
+            {showAssociationsTab && (
+              <TabsTrigger value="associations" className="flex items-center gap-1 text-xs px-2">
+                <Building2 className="w-4 h-4" />
+                <span className="hidden sm:inline">Dernekler</span>
+              </TabsTrigger>
+            )}
+            {showLeaguesTab && (
+              <TabsTrigger value="leagues" className="flex items-center gap-1 text-xs px-2">
+                <Trophy className="w-4 h-4" />
+                <span className="hidden sm:inline">Ligler</span>
+              </TabsTrigger>
+            )}
+            {showPlayersTab && (
+              <TabsTrigger value="players" className="flex items-center gap-1 text-xs px-2">
+                <Users className="w-4 h-4" />
+                <span className="hidden sm:inline">Oyuncular</span>
+              </TabsTrigger>
+            )}
+            {showMatchesTab && (
+              <TabsTrigger value="matches" className="flex items-center gap-1 text-xs px-2">
+                <Gamepad2 className="w-4 h-4" />
+                <span className="hidden sm:inline">Maçlar</span>
+              </TabsTrigger>
+            )}
+            {showAdminsTab && (
               <TabsTrigger value="admins" className="flex items-center gap-1 text-xs px-2">
                 <Crown className="w-4 h-4" />
                 <span className="hidden sm:inline">Adminler</span>
@@ -1053,6 +1093,7 @@ const Admin = () => {
           </TabsList>
 
           {/* Associations Tab */}
+          {showAssociationsTab && (
           <TabsContent value="associations">
             <Card>
               <CardHeader>
@@ -1211,8 +1252,10 @@ const Admin = () => {
               </CardContent>
             </Card>
           </TabsContent>
+          )}
 
           {/* Leagues Tab */}
+          {showLeaguesTab && (
           <TabsContent value="leagues">
             <Card>
               <CardHeader>
@@ -1419,8 +1462,10 @@ const Admin = () => {
               </CardContent>
             </Card>
           </TabsContent>
+          )}
 
           {/* Players Tab */}
+          {showPlayersTab && (
           <TabsContent value="players">
             <Card>
               <CardHeader>
@@ -1636,8 +1681,10 @@ const Admin = () => {
               </CardContent>
             </Card>
           </TabsContent>
+          )}
 
           {/* Matches Tab */}
+          {showMatchesTab && (
           <TabsContent value="matches">
             <Card>
               <CardHeader>
@@ -1734,9 +1781,10 @@ const Admin = () => {
               </CardContent>
             </Card>
           </TabsContent>
+          )}
 
           {/* Admins Tab - Super Admin only */}
-          {isSuperAdmin && (
+          {showAdminsTab && (
             <TabsContent value="admins">
               <Card>
                 <CardHeader>
