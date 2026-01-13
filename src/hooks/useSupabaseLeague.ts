@@ -294,6 +294,20 @@ export function useSupabaseLeague() {
     return players.find(p => p.id === playerId);
   }, [players]);
 
+  const refetchProfiles = useCallback(async () => {
+    const { data: profilesData } = await supabase
+      .from('profiles')
+      .select('*');
+    
+    if (profilesData) setPlayers(profilesData);
+    
+    // Also update current user profile
+    if (user) {
+      const currentProfile = profilesData?.find(p => p.user_id === user.id);
+      if (currentProfile) setCurrentUserProfile(currentProfile);
+    }
+  }, [user]);
+
   return {
     associations,
     currentAssociation,
@@ -306,10 +320,12 @@ export function useSupabaseLeague() {
     setCurrentLeagueId,
     standings,
     players,
+    matches,
     loading,
     addMatch,
     getPlayerMatches,
     getPlayerById,
     currentUserProfile,
+    refetchProfiles,
   };
 }

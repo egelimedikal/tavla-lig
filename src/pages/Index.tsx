@@ -25,16 +25,19 @@ const Index = () => {
     currentAssociationId,
     setCurrentAssociationId,
     associationLeagues,
+    leagues,
     currentLeague, 
     currentLeagueId, 
     setCurrentLeagueId, 
     standings, 
     players,
+    matches: allMatches,
     loading,
     addMatch,
     getPlayerMatches,
     getPlayerById,
     currentUserProfile,
+    refetchProfiles,
   } = useSupabaseLeague();
   
   const [view, setView] = useState<View>('standings');
@@ -120,10 +123,14 @@ const Index = () => {
         player={selectedPlayer}
         stats={selectedPlayerStats}
         matches={selectedPlayerMatches}
+        allMatches={allMatches}
+        leagues={leagues}
+        associations={associations}
         rank={selectedPlayerRank}
         getPlayerById={getPlayerById}
         onBack={() => setView('standings')}
         isOwnProfile={isOwnProfile}
+        onProfileUpdate={refetchProfiles}
       />
     );
   }
