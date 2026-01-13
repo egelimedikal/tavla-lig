@@ -222,7 +222,7 @@ export default function Auth() {
       {/* Footer */}
       <div className="py-6 text-center text-xs text-muted-foreground">
         <p>© 2026 Türkiye Tavla Birliği</p>
-        <p className="mt-1">Geliştiren: Yavuz Kalmaz</p>
+        <p className="mt-1">Geliştiren: Yavuz Kanmaz</p>
       </div>
     </div>
   );
