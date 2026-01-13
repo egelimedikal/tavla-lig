@@ -2,3 +2,6 @@ project_id = "ulgqfbyuhzodzidabyaw"
 
 [functions.create-player]
 verify_jwt = false
+
+[functions.reset-player-password]
+verify_jwt = false
