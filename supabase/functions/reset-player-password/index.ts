@@ -15,6 +15,66 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+    // Verify caller is an admin
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Yetkilendirme gerekli' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: 'Geçersiz oturum' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+
+    // Check if user has admin role
+    const { data: roles, error: rolesError } = await supabaseClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId);
+
+    if (rolesError) {
+      console.error('Role check error:', rolesError);
+      return new Response(
+        JSON.stringify({ error: 'Rol kontrolü başarısız' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const isAdmin = roles?.some(r => r.role === 'admin' || r.role === 'super_admin');
+    
+    // Check if user is association admin
+    const { data: assocAdmins } = await supabaseClient
+      .from('association_admins')
+      .select('id')
+      .eq('user_id', userId)
+      .limit(1);
+
+    const isAssociationAdmin = assocAdmins && assocAdmins.length > 0;
+
+    if (!isAdmin && !isAssociationAdmin) {
+      return new Response(
+        JSON.stringify({ error: 'Bu işlem için admin yetkisi gerekli' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Admin verified for password reset, user_id:', userId);
     
     // Create admin client with service role key
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
