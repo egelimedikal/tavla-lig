@@ -99,6 +99,8 @@ const Admin = () => {
   // New player form
   const [newPlayerName, setNewPlayerName] = useState('');
   const [newPlayerPhone, setNewPlayerPhone] = useState('');
+  const [newPlayerPassword, setNewPlayerPassword] = useState('');
+  const [creatingPlayer, setCreatingPlayer] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Profile | null>(null);
   
   // Admin management
@@ -399,10 +401,10 @@ const Admin = () => {
   };
 
   const addPlayer = async () => {
-    if (!newPlayerName.trim() || !newPlayerPhone.trim()) {
+    if (!newPlayerName.trim() || !newPlayerPhone.trim() || !newPlayerPassword.trim()) {
       toast({
         title: "Hata",
-        description: "Oyuncu adı ve telefon numarası gerekli.",
+        description: "Oyuncu adı, telefon numarası ve şifre gerekli.",
         variant: "destructive",
       });
       return;
@@ -417,9 +419,18 @@ const Admin = () => {
       return;
     }
 
+    if (newPlayerPassword.length < 4) {
+      toast({
+        title: "Hata",
+        description: "Şifre en az 4 karakter olmalı.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const formattedPhone = formatPhoneNumber(newPlayerPhone);
 
-    // Check if phone already exists
+    // Check if phone already exists in profiles
     const existingPlayer = players.find(p => p.phone === formattedPhone);
     if (existingPlayer) {
       toast({
@@ -430,32 +441,56 @@ const Admin = () => {
       return;
     }
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .insert({ 
-        name: newPlayerName.trim(), 
-        phone: formattedPhone 
-      } as any)
-      .select()
-      .single();
+    setCreatingPlayer(true);
 
-    if (error) {
-      toast({
-        title: "Hata",
-        description: error.message,
-        variant: "destructive",
+    try {
+      // Call edge function to create auth user and profile
+      const { data, error } = await supabase.functions.invoke('create-player', {
+        body: {
+          phone: newPlayerPhone,
+          password: newPlayerPassword,
+          name: newPlayerName.trim(),
+        },
       });
-      return;
-    }
 
-    if (data) {
-      setPlayers(prev => [...prev, data]);
+      if (error) {
+        toast({
+          title: "Hata",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data?.error) {
+        toast({
+          title: "Hata",
+          description: data.error,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data?.profile) {
+        setPlayers(prev => [...prev, data.profile]);
+      }
+      
       setNewPlayerName('');
       setNewPlayerPhone('');
+      setNewPlayerPassword('');
       toast({
         title: "Başarılı",
-        description: "Oyuncu eklendi. Oyuncu artık telefon numarası ile giriş yapabilir.",
+        description: `Oyuncu eklendi. Giriş bilgileri: +90${newPlayerPhone} / ${newPlayerPassword}`,
       });
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Bilinmeyen hata';
+      toast({
+        title: "Hata",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingPlayer(false);
     }
   };
 
@@ -1255,7 +1290,7 @@ const Admin = () => {
                 <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
                   <Label className="text-base font-medium">Yeni Oyuncu Ekle</Label>
                   <p className="text-xs text-muted-foreground">
-                    Oyuncu adı ve telefon numarasını girin. Oyuncu bu numara ile sisteme giriş yapabilecek.
+                    Oyuncu adı, telefon numarası ve şifre girin. Oyuncu bu bilgilerle sisteme giriş yapabilecek.
                   </p>
                   <div className="grid gap-3">
                     <Input
@@ -1263,21 +1298,29 @@ const Admin = () => {
                       value={newPlayerName}
                       onChange={e => setNewPlayerName(e.target.value)}
                     />
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">+90</span>
-                        <Input
-                          placeholder="5XX XXX XX XX"
-                          value={newPlayerPhone}
-                          onChange={e => setNewPlayerPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                          className="pl-12"
-                        />
-                      </div>
-                      <Button onClick={addPlayer}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Ekle
-                      </Button>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">+90</span>
+                      <Input
+                        placeholder="5XX XXX XX XX"
+                        value={newPlayerPhone}
+                        onChange={e => setNewPlayerPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                        className="pl-12"
+                      />
                     </div>
+                    <Input
+                      type="password"
+                      placeholder="Şifre (en az 4 karakter)"
+                      value={newPlayerPassword}
+                      onChange={e => setNewPlayerPassword(e.target.value)}
+                    />
+                    <Button onClick={addPlayer} disabled={creatingPlayer} className="w-full">
+                      {creatingPlayer ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Plus className="w-4 h-4 mr-2" />
+                      )}
+                      {creatingPlayer ? 'Oluşturuluyor...' : 'Oyuncu Ekle'}
+                    </Button>
                   </div>
                 </div>
 
