@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { AssociationSelector } from '@/components/AssociationSelector';
@@ -7,12 +7,13 @@ import { StandingsTable } from '@/components/StandingsTable';
 import { MatchEntryForm } from '@/components/MatchEntryForm';
 import { PlayerProfile } from '@/components/PlayerProfile';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
+import { ForcePasswordChange } from '@/components/ForcePasswordChange';
 import { useSupabaseLeague } from '@/hooks/useSupabaseLeague';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
-type View = 'standings' | 'profile';
+type View = 'standings' | 'profile' | 'force-password-change';
 
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
@@ -39,6 +40,13 @@ const Index = () => {
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [showMatchForm, setShowMatchForm] = useState(false);
   const { toast } = useToast();
+
+  // Check if user needs to change password
+  useEffect(() => {
+    if (currentUserProfile?.must_change_password) {
+      setView('force-password-change');
+    }
+  }, [currentUserProfile]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -89,6 +97,21 @@ const Index = () => {
   const selectedPlayerMatches = selectedPlayerId ? getPlayerMatches(selectedPlayerId) : [];
   const selectedPlayerRank = selectedPlayerId ? standings.findIndex(s => s.playerId === selectedPlayerId) + 1 : 0;
   const isOwnProfile = selectedPlayerId === currentUserProfile?.id;
+
+  const handlePasswordChangeComplete = useCallback(() => {
+    setView('standings');
+    // Reload the page to refresh the profile data
+    window.location.reload();
+  }, []);
+
+  if (view === 'force-password-change' && currentUserProfile) {
+    return (
+      <ForcePasswordChange 
+        profileId={currentUserProfile.id} 
+        onComplete={handlePasswordChangeComplete}
+      />
+    );
+  }
 
   if (view === 'profile' && selectedPlayer) {
     return (

@@ -9,6 +9,7 @@ interface Profile {
   name: string;
   phone: string | null;
   avatar_url: string | null;
+  must_change_password: boolean;
 }
 
 interface Match {
