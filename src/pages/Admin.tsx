@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { useSuperAdminRole } from '@/hooks/useSuperAdminRole';
+import { useAssociationAdminRole } from '@/hooks/useAssociationAdminRole';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -70,6 +71,7 @@ const Admin = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdminRole();
   const { isSuperAdmin, loading: superAdminLoading } = useSuperAdminRole();
+  const { managedAssociationIds } = useAssociationAdminRole();
   const { toast } = useToast();
   
   const [associations, setAssociations] = useState<Association[]>([]);
@@ -938,6 +940,33 @@ const Admin = () => {
     return associations.find(a => a.id === assocId)?.name || 'Bilinmeyen';
   };
 
+  // Get associations a player belongs to (via leagues)
+  const getPlayerAssociationIds = (playerId: string): string[] => {
+    const playerLeagues = leaguePlayers.filter(lp => lp.player_id === playerId);
+    const associationIds: string[] = [];
+    playerLeagues.forEach(lp => {
+      const league = leagues.find(l => l.id === lp.league_id);
+      if (league?.association_id && !associationIds.includes(league.association_id)) {
+        associationIds.push(league.association_id);
+      }
+    });
+    return associationIds;
+  };
+
+  // Check if current user can view a player's phone number
+  const canViewPlayerPhone = (playerId: string): boolean => {
+    // Super admin and general admin can see all phone numbers
+    if (isSuperAdmin || isAdmin) {
+      return true;
+    }
+    // Association admin can only see phone numbers of players in their associations
+    if (managedAssociationIds.length > 0) {
+      const playerAssociationIds = getPlayerAssociationIds(playerId);
+      return playerAssociationIds.some(assocId => managedAssociationIds.includes(assocId));
+    }
+    return false;
+  };
+
   if (authLoading || adminLoading || superAdminLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -1420,7 +1449,10 @@ const Admin = () => {
                         <div className="flex-1">
                           <p className="font-medium">{player.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {player.phone || 'Telefon yok'}
+                            {canViewPlayerPhone(player.id) 
+                              ? (player.phone || 'Telefon yok')
+                              : '••••••••••'
+                            }
                             {player.user_id && <span className="ml-2 text-green-500">✓ Giriş yapmış</span>}
                           </p>
                         </div>
@@ -1462,17 +1494,26 @@ const Admin = () => {
                                     onChange={e => setEditingPlayer(prev => prev ? { ...prev, name: e.target.value } : null)}
                                   />
                                 </div>
-                                <div>
-                                  <Label>Telefon Numarası</Label>
-                                  <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">+90</span>
-                                    <Input
-                                      value={editingPlayer?.phone?.replace('+90', '') || ''}
-                                      onChange={e => setEditingPlayer(prev => prev ? { ...prev, phone: e.target.value.replace(/\D/g, '').slice(0, 10) } : null)}
-                                      className="pl-12"
-                                    />
+                                {canViewPlayerPhone(player.id) ? (
+                                  <div>
+                                    <Label>Telefon Numarası</Label>
+                                    <div className="relative">
+                                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">+90</span>
+                                      <Input
+                                        value={editingPlayer?.phone?.replace('+90', '') || ''}
+                                        onChange={e => setEditingPlayer(prev => prev ? { ...prev, phone: e.target.value.replace(/\D/g, '').slice(0, 10) } : null)}
+                                        className="pl-12"
+                                      />
+                                    </div>
                                   </div>
-                                </div>
+                                ) : (
+                                  <div>
+                                    <Label>Telefon Numarası</Label>
+                                    <p className="text-sm text-muted-foreground py-2">
+                                      Bu oyuncunun telefon numarasını görme yetkiniz yok.
+                                    </p>
+                                  </div>
+                                )}
                               </div>
                               <DialogFooter>
                                 <DialogClose asChild>
