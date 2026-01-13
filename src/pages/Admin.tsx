@@ -29,6 +29,8 @@ interface Association {
   slug: string;
   description: string | null;
   logo_url: string | null;
+  current_year: number | null;
+  active_season: string | null;
 }
 
 interface League {
@@ -277,7 +279,9 @@ const Admin = () => {
         .update({ 
           name: editingAssociation.name, 
           slug: editingAssociation.slug,
-          logo_url: logoUrl
+          logo_url: logoUrl,
+          current_year: editingAssociation.current_year,
+          active_season: editingAssociation.active_season
         })
         .eq('id', editingAssociation.id);
 
@@ -1206,6 +1210,32 @@ const Admin = () => {
                                   value={editingAssociation?.slug || ''}
                                   onChange={e => setEditingAssociation(prev => prev ? { ...prev, slug: e.target.value } : null)}
                                 />
+                              </div>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <Label>Aktif Yıl</Label>
+                                  <Select
+                                    value={editingAssociation?.current_year?.toString() || ''}
+                                    onValueChange={value => setEditingAssociation(prev => prev ? { ...prev, current_year: parseInt(value) } : null)}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Yıl seç" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 2 + i).map(year => (
+                                        <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div>
+                                  <Label>Aktif Sezon</Label>
+                                  <Input
+                                    value={editingAssociation?.active_season || ''}
+                                    onChange={e => setEditingAssociation(prev => prev ? { ...prev, active_season: e.target.value } : null)}
+                                    placeholder="Örn: Şubat - Mart Sezonu"
+                                  />
+                                </div>
                               </div>
                               <div>
                                 <Label>Logo</Label>

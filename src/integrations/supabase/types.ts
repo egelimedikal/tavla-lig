@@ -116,7 +116,9 @@ export type Database = {
       }
       associations: {
         Row: {
+          active_season: string | null
           created_at: string
+          current_year: number | null
           description: string | null
           id: string
           logo_url: string | null
@@ -125,7 +127,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          active_season?: string | null
           created_at?: string
+          current_year?: number | null
           description?: string | null
           id?: string
           logo_url?: string | null
@@ -134,7 +138,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          active_season?: string | null
           created_at?: string
+          current_year?: number | null
           description?: string | null
           id?: string
           logo_url?: string | null

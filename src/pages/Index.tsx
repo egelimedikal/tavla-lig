@@ -148,6 +148,20 @@ const Index = () => {
 
       <div className="mt-4">
         <div className="px-4 mb-4">
+          {currentAssociation && (currentAssociation.current_year || currentAssociation.active_season) && (
+            <div className="flex items-center gap-3 mb-2 text-sm">
+              {currentAssociation.current_year && (
+                <span className="bg-primary/10 text-primary px-2 py-1 rounded-md font-medium">
+                  {currentAssociation.current_year}
+                </span>
+              )}
+              {currentAssociation.active_season && (
+                <span className="text-muted-foreground">
+                  {currentAssociation.active_season}
+                </span>
+              )}
+            </div>
+          )}
           <h2 className="text-lg font-bold text-foreground">{currentLeague?.name || 'Lig'}</h2>
           <p className="text-sm text-muted-foreground">Puan Durumu</p>
         </div>
