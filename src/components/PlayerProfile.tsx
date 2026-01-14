@@ -359,10 +359,22 @@ export function PlayerProfile({
   }, [leagueStats, selectedLeagueId]);
 
   const handleScoreSubmit = async (leagueId: string, opponentId: string) => {
+    // Beraberlik kontrolü
     if (score1 === score2) {
       toast({
         title: 'Hata',
-        description: 'Skorlar eşit olamaz!',
+        description: 'Berabere skor girilemez! (Örn: 9-9)',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Galip mutlaka 9 olmalı kontrolü
+    const maxScore = Math.max(score1, score2);
+    if (maxScore !== 9) {
+      toast({
+        title: 'Hata',
+        description: 'Kazanan oyuncunun skoru 9 olmalıdır!',
         variant: 'destructive',
       });
       return;
@@ -646,7 +658,7 @@ export function PlayerProfile({
                                   </div>
                                   <button
                                     onClick={() => handleScoreSubmit(selectedLeague.league.id, opponent.id)}
-                                    disabled={submittingMatch || score1 === score2}
+                                    disabled={submittingMatch || score1 === score2 || Math.max(score1, score2) !== 9}
                                     className="w-7 h-7 rounded-full bg-success flex items-center justify-center hover:bg-success/80 disabled:opacity-50"
                                   >
                                     {submittingMatch ? (
