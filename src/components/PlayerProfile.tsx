@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo } from 'react';
-import { ArrowLeft, Trophy, LogOut, Key, Loader2, Camera, ChevronDown, ChevronUp, Check, X } from 'lucide-react';
+import { ArrowLeft, Trophy, LogOut, Key, Loader2, Camera, Check, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -113,7 +113,7 @@ export function PlayerProfile({
   const [passwordError, setPasswordError] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [expandedLeagues, setExpandedLeagues] = useState<Set<string>>(new Set());
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
   const [scoreEntryMatch, setScoreEntryMatch] = useState<{ leagueId: string; opponentId: string } | null>(null);
   const [score1, setScore1] = useState(0);
   const [score2, setScore2] = useState(0);
@@ -347,17 +347,16 @@ export function PlayerProfile({
     }
   };
 
-  const toggleLeagueExpand = (leagueId: string) => {
-    setExpandedLeagues(prev => {
-      const next = new Set(prev);
-      if (next.has(leagueId)) {
-        next.delete(leagueId);
-      } else {
-        next.add(leagueId);
-      }
-      return next;
-    });
-  };
+  // Set default selected league when leagueStats changes
+  useMemo(() => {
+    if (leagueStats.length > 0 && !selectedLeagueId) {
+      setSelectedLeagueId(leagueStats[0].league.id);
+    }
+  }, [leagueStats, selectedLeagueId]);
+
+  const selectedLeague = useMemo(() => {
+    return leagueStats.find(ls => ls.league.id === selectedLeagueId) || leagueStats[0] || null;
+  }, [leagueStats, selectedLeagueId]);
 
   const handleScoreSubmit = async (leagueId: string, opponentId: string) => {
     if (score1 === score2) {
@@ -488,233 +487,204 @@ export function PlayerProfile({
           </div>
         </div>
 
-        {/* Overall Stats */}
-        <div className="bg-card rounded-xl p-4 border border-border">
-          <h3 className="font-semibold mb-3">Genel İstatistikler</h3>
-          <div className="grid grid-cols-4 gap-3 text-center">
-            <div>
-              <p className="text-2xl font-bold text-foreground">{totalStats.played}</p>
-              <p className="text-xs text-muted-foreground">Toplam Maç</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-success">{totalStats.won}</p>
-              <p className="text-xs text-muted-foreground">Galibiyet</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-primary">{totalStats.lost}</p>
-              <p className="text-xs text-muted-foreground">Mağlubiyet</p>
-            </div>
-            <div>
-              <div className="flex items-center justify-center gap-1 mb-1">
-                <Trophy className="w-4 h-4 text-gold" />
-              </div>
-              <p className="text-2xl font-bold text-foreground">{winRate}%</p>
-              <p className="text-xs text-muted-foreground">Oran</p>
-            </div>
-          </div>
-          {leagueStats.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-border">
-              <p className="text-xs text-muted-foreground mb-2">Oynadığı Ligler:</p>
-              <div className="flex flex-wrap gap-2 justify-center">
-                {leagueStats.map(ls => (
-                  <span 
-                    key={ls.league.id}
-                    className="bg-primary/10 text-primary px-2 py-1 rounded-md text-xs font-medium"
-                  >
-                    {ls.league.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+        {/* Stats Table */}
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <table className="w-full text-sm">
+            <tbody className="divide-y divide-border">
+              <tr>
+                <td className="px-4 py-3 font-medium text-muted-foreground">Oynadığı Grup(lar)</td>
+                <td className="px-4 py-3 text-foreground">
+                  {leagueStats.length > 0 
+                    ? leagueStats.map(ls => ls.league.name).join(' - ')
+                    : '-'
+                  }
+                </td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 font-medium text-muted-foreground">Toplam Maç</td>
+                <td className="px-4 py-3 text-foreground">{totalStats.played}</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 font-medium text-muted-foreground">Galibiyet</td>
+                <td className="px-4 py-3 text-foreground">{totalStats.won}</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 font-medium text-muted-foreground">Mağlubiyet</td>
+                <td className="px-4 py-3 text-foreground">{totalStats.lost}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
-        {/* Leagues & Matches */}
-        <div className="space-y-4">
-          <h3 className="font-semibold px-1">Oynadığı Ligler</h3>
-          
-          {leagueStats.length > 0 ? (
-            leagueStats.map(ls => {
-              const isExpanded = expandedLeagues.has(ls.league.id);
-              return (
-                <div key={ls.league.id} className="bg-card rounded-xl border border-border overflow-hidden">
-                  <button
-                    onClick={() => toggleLeagueExpand(ls.league.id)}
-                    className="w-full p-4 flex items-center justify-between hover:bg-secondary/30 transition-colors"
-                  >
-                    <div className="text-left">
-                      <p className="font-semibold text-foreground">{ls.league.name}</p>
-                      {ls.association && (
-                        <p className="text-xs text-muted-foreground">
-                          {ls.association.current_year && (
-                            <span className="text-primary">{ls.association.current_year}</span>
-                          )}
-                          {ls.association.current_year && ls.association.active_season && ' • '}
-                          {ls.association.active_season}
-                        </p>
-                      )}
-                      <div className="flex gap-3 mt-1 text-xs">
-                        <span className="text-muted-foreground">
-                          {ls.played} maç
-                        </span>
-                        <span className="text-success">{ls.won} G</span>
-                        <span className="text-primary">{ls.lost} M</span>
-                      </div>
-                    </div>
-                    {isExpanded ? (
-                      <ChevronUp className="w-5 h-5 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="w-5 h-5 text-muted-foreground" />
-                    )}
-                  </button>
-                  
-                  {isExpanded && (
-                    <div className="border-t border-border">
-                      {/* Played Matches Section */}
-                      {ls.matches.length > 0 && (
-                        <div className="divide-y divide-border/50">
-                          <div className="px-4 py-2 bg-secondary/30">
-                            <p className="text-xs font-medium text-muted-foreground">Oynanan Maçlar</p>
-                          </div>
-                          {ls.matches.map(match => {
-                            const isPlayer1 = match.player1_id === player.id;
-                            const opponent = getPlayerById(isPlayer1 ? match.player2_id : match.player1_id);
-                            const isWin = match.winner_id === player.id;
+        {/* Son Oynadığı Maçlar with League Tabs */}
+        {leagueStats.length > 0 && (
+          <div className="space-y-4">
+            <h3 className="font-semibold px-1">Son Oynadığı Maçlar</h3>
+            
+            {/* League Tab Buttons */}
+            <div className="flex flex-wrap gap-2 border-b border-border pb-3">
+              {leagueStats.map(ls => (
+                <button
+                  key={ls.league.id}
+                  onClick={() => setSelectedLeagueId(ls.league.id)}
+                  className={`px-4 py-2 text-sm font-medium transition-colors ${
+                    selectedLeagueId === ls.league.id
+                      ? 'text-primary border-b-2 border-primary'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {ls.league.name}
+                </button>
+              ))}
+            </div>
 
-                            return (
-                              <div key={match.id} className="p-4">
-                                <p className="text-xs text-muted-foreground mb-2">{formatMatchDate(match.match_date)}</p>
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-3">
-                                    <span className={`text-sm ${isWin ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>
-                                      {player.name || 'Oyuncu'}
-                                    </span>
+            {/* Matches Table */}
+            {selectedLeague && (
+              <div className="bg-card rounded-xl border border-border overflow-hidden">
+                {selectedLeague.matches.length > 0 ? (
+                  <table className="w-full text-sm">
+                    <thead className="bg-secondary/50">
+                      <tr>
+                        <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Zaman</th>
+                        <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Oyuncular</th>
+                        <th className="px-4 py-3 text-center font-semibold text-muted-foreground">Skor</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/50">
+                      {selectedLeague.matches.map(match => {
+                        const isPlayer1 = match.player1_id === player.id;
+                        const opponent = getPlayerById(isPlayer1 ? match.player2_id : match.player1_id);
+                        const playerWon = match.winner_id === player.id;
+                        const opponentWon = match.winner_id !== player.id;
+                        
+                        const playerName = player.name?.toUpperCase() || 'OYUNCU';
+                        const opponentName = opponent?.name?.toUpperCase() || 'BİLİNMEYEN';
+
+                        return (
+                          <tr key={match.id}>
+                            <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                              {formatMatchDate(match.match_date)}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={playerWon ? 'font-bold text-foreground' : 'text-muted-foreground'}>
+                                {playerName}
+                              </span>
+                              <span className="text-muted-foreground"> - </span>
+                              <span className={opponentWon ? 'font-bold text-foreground' : 'text-muted-foreground'}>
+                                {opponentName}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center font-medium">
+                              {isPlayer1 ? match.score1 : match.score2} - {isPlayer1 ? match.score2 : match.score1}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="p-6 text-center text-muted-foreground">
+                    Bu ligde henüz maç oynanmamış
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Kalan Maçlar */}
+            {selectedLeague && selectedLeague.remainingOpponents.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-semibold px-1 text-sm">Kalan Maçları</h4>
+                <div className="bg-card rounded-xl border border-border overflow-hidden">
+                  <table className="w-full text-sm">
+                    <tbody className="divide-y divide-border/50">
+                      {selectedLeague.remainingOpponents.map(opponent => {
+                        const isEditing = scoreEntryMatch?.leagueId === selectedLeague.league.id && scoreEntryMatch?.opponentId === opponent.id;
+                        const playerName = player.name?.toUpperCase() || 'OYUNCU';
+                        const opponentName = opponent.name?.toUpperCase() || 'BİLİNMEYEN';
+                        
+                        return (
+                          <tr key={opponent.id}>
+                            <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">-</td>
+                            <td className="px-4 py-3">
+                              <span className="text-muted-foreground">{playerName}</span>
+                              <span className="text-muted-foreground"> - </span>
+                              <span className="text-muted-foreground">{opponentName}</span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              {isEditing ? (
+                                <div className="flex items-center justify-center gap-2">
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() => setScore1(Math.max(0, score1 - 1))}
+                                      className="w-6 h-6 rounded bg-secondary flex items-center justify-center text-xs hover:bg-secondary/80"
+                                    >
+                                      -
+                                    </button>
+                                    <span className="w-6 text-center font-bold">{score1}</span>
+                                    <button
+                                      onClick={() => setScore1(Math.min(9, score1 + 1))}
+                                      className="w-6 h-6 rounded bg-secondary flex items-center justify-center text-xs hover:bg-secondary/80"
+                                    >
+                                      +
+                                    </button>
                                   </div>
-                                  <div className="flex items-center gap-2 text-lg font-bold">
-                                    <span className={isWin ? 'text-success' : 'text-primary'}>{isPlayer1 ? match.score1 : match.score2}</span>
-                                    <span className="text-muted-foreground">-</span>
-                                    <span className={!isWin ? 'text-success' : 'text-primary'}>{isPlayer1 ? match.score2 : match.score1}</span>
+                                  <span className="text-muted-foreground">-</span>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() => setScore2(Math.max(0, score2 - 1))}
+                                      className="w-6 h-6 rounded bg-secondary flex items-center justify-center text-xs hover:bg-secondary/80"
+                                    >
+                                      -
+                                    </button>
+                                    <span className="w-6 text-center font-bold">{score2}</span>
+                                    <button
+                                      onClick={() => setScore2(Math.min(9, score2 + 1))}
+                                      className="w-6 h-6 rounded bg-secondary flex items-center justify-center text-xs hover:bg-secondary/80"
+                                    >
+                                      +
+                                    </button>
                                   </div>
-                                  <div className="flex items-center gap-3">
-                                    <span className={`text-sm ${!isWin ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>
-                                      {opponent?.name || 'Bilinmeyen'}
-                                    </span>
-                                  </div>
+                                  <button
+                                    onClick={() => handleScoreSubmit(selectedLeague.league.id, opponent.id)}
+                                    disabled={submittingMatch || score1 === score2}
+                                    className="w-7 h-7 rounded-full bg-success flex items-center justify-center hover:bg-success/80 disabled:opacity-50"
+                                  >
+                                    {submittingMatch ? (
+                                      <Loader2 className="w-4 h-4 text-white animate-spin" />
+                                    ) : (
+                                      <Check className="w-4 h-4 text-white" />
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={() => setScoreEntryMatch(null)}
+                                    className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center hover:bg-primary/30"
+                                  >
+                                    <X className="w-4 h-4 text-primary" />
+                                  </button>
                                 </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                      
-                      {/* Remaining Matches Section */}
-                      {ls.remainingOpponents.length > 0 && (
-                        <div className="divide-y divide-border/50">
-                          <div className="px-4 py-2 bg-secondary/30 border-t border-border">
-                            <p className="text-xs font-medium text-muted-foreground">Kalan Maçlar</p>
-                          </div>
-                          {ls.remainingOpponents.map(opponent => {
-                            const isEditing = scoreEntryMatch?.leagueId === ls.league.id && scoreEntryMatch?.opponentId === opponent.id;
-                            
-                            return (
-                              <div key={opponent.id} className="p-4">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-3">
-                                    <span className="text-sm text-foreground">{player.name || 'Oyuncu'}</span>
-                                  </div>
-                                  
-                                  {isEditing ? (
-                                    <div className="flex items-center gap-2">
-                                      <div className="flex items-center gap-1">
-                                        <button
-                                          onClick={() => setScore1(Math.max(0, score1 - 1))}
-                                          className="w-6 h-6 rounded bg-secondary flex items-center justify-center text-xs hover:bg-secondary/80"
-                                        >
-                                          -
-                                        </button>
-                                        <span className="w-6 text-center font-bold">{score1}</span>
-                                        <button
-                                          onClick={() => setScore1(Math.min(9, score1 + 1))}
-                                          className="w-6 h-6 rounded bg-secondary flex items-center justify-center text-xs hover:bg-secondary/80"
-                                        >
-                                          +
-                                        </button>
-                                      </div>
-                                      <span className="text-muted-foreground">-</span>
-                                      <div className="flex items-center gap-1">
-                                        <button
-                                          onClick={() => setScore2(Math.max(0, score2 - 1))}
-                                          className="w-6 h-6 rounded bg-secondary flex items-center justify-center text-xs hover:bg-secondary/80"
-                                        >
-                                          -
-                                        </button>
-                                        <span className="w-6 text-center font-bold">{score2}</span>
-                                        <button
-                                          onClick={() => setScore2(Math.min(9, score2 + 1))}
-                                          className="w-6 h-6 rounded bg-secondary flex items-center justify-center text-xs hover:bg-secondary/80"
-                                        >
-                                          +
-                                        </button>
-                                      </div>
-                                      <button
-                                        onClick={() => handleScoreSubmit(ls.league.id, opponent.id)}
-                                        disabled={submittingMatch || score1 === score2}
-                                        className="w-7 h-7 rounded-full bg-success flex items-center justify-center hover:bg-success/80 disabled:opacity-50"
-                                      >
-                                        {submittingMatch ? (
-                                          <Loader2 className="w-4 h-4 text-white animate-spin" />
-                                        ) : (
-                                          <Check className="w-4 h-4 text-white" />
-                                        )}
-                                      </button>
-                                      <button
-                                        onClick={() => setScoreEntryMatch(null)}
-                                        className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center hover:bg-primary/30"
-                                      >
-                                        <X className="w-4 h-4 text-primary" />
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-center gap-3">
-                                      {isOwnProfile ? (
-                                        <button
-                                          onClick={() => openScoreEntry(ls.league.id, opponent.id)}
-                                          className="px-3 py-1 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
-                                        >
-                                          Skor Gir
-                                        </button>
-                                      ) : (
-                                        <span className="text-sm text-muted-foreground">- : -</span>
-                                      )}
-                                    </div>
-                                  )}
-                                  
-                                  <div className="flex items-center gap-3">
-                                    <span className="text-sm text-foreground">{opponent.name || 'Bilinmeyen'}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                      
-                      {ls.matches.length === 0 && ls.remainingOpponents.length === 0 && (
-                        <div className="p-4 text-center text-muted-foreground text-sm">
-                          Bu ligde maç bilgisi yok
-                        </div>
-                      )}
-                    </div>
-                  )}
+                              ) : (
+                                isOwnProfile ? (
+                                  <button
+                                    onClick={() => openScoreEntry(selectedLeague.league.id, opponent.id)}
+                                    className="px-3 py-1 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+                                  >
+                                    Skor Gir
+                                  </button>
+                                ) : (
+                                  <span className="text-muted-foreground">- : -</span>
+                                )
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-              );
-            })
-          ) : (
-            <div className="bg-card rounded-xl p-8 border border-border text-center text-muted-foreground">
-              <p>Henüz hiçbir ligde maç oynanmamış</p>
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Password Change Dialog */}
