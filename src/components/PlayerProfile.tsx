@@ -625,37 +625,25 @@ export function PlayerProfile({
                             <td className="px-4 py-3 text-center">
                               {isEditing ? (
                                 <div className="flex items-center justify-center gap-2">
-                                  <div className="flex items-center gap-1">
-                                    <button
-                                      onClick={() => setScore1(Math.max(0, score1 - 1))}
-                                      className="w-6 h-6 rounded bg-secondary flex items-center justify-center text-xs hover:bg-secondary/80"
-                                    >
-                                      -
-                                    </button>
-                                    <span className="w-6 text-center font-bold">{score1}</span>
-                                    <button
-                                      onClick={() => setScore1(Math.min(9, score1 + 1))}
-                                      className="w-6 h-6 rounded bg-secondary flex items-center justify-center text-xs hover:bg-secondary/80"
-                                    >
-                                      +
-                                    </button>
-                                  </div>
-                                  <span className="text-muted-foreground">-</span>
-                                  <div className="flex items-center gap-1">
-                                    <button
-                                      onClick={() => setScore2(Math.max(0, score2 - 1))}
-                                      className="w-6 h-6 rounded bg-secondary flex items-center justify-center text-xs hover:bg-secondary/80"
-                                    >
-                                      -
-                                    </button>
-                                    <span className="w-6 text-center font-bold">{score2}</span>
-                                    <button
-                                      onClick={() => setScore2(Math.min(9, score2 + 1))}
-                                      className="w-6 h-6 rounded bg-secondary flex items-center justify-center text-xs hover:bg-secondary/80"
-                                    >
-                                      +
-                                    </button>
-                                  </div>
+                                  <select
+                                    value={score1}
+                                    onChange={(e) => setScore1(Number(e.target.value))}
+                                    className="w-12 h-8 rounded border border-border bg-background text-center font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                  >
+                                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                                      <option key={num} value={num}>{num}</option>
+                                    ))}
+                                  </select>
+                                  <span className="text-muted-foreground font-bold">-</span>
+                                  <select
+                                    value={score2}
+                                    onChange={(e) => setScore2(Number(e.target.value))}
+                                    className="w-12 h-8 rounded border border-border bg-background text-center font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                  >
+                                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                                      <option key={num} value={num}>{num}</option>
+                                    ))}
+                                  </select>
                                   <button
                                     onClick={() => handleScoreSubmit(selectedLeague.league.id, opponent.id)}
                                     disabled={submittingMatch || score1 === score2 || Math.max(score1, score2) !== 9}
