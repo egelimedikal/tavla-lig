@@ -110,7 +110,7 @@ export default function Auth() {
               <img src={logo} alt="Mustafa Çakır Mahalle Kahvesi Logo" className="w-full h-full object-contain" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Türkiye Tavla Birliği</h1>
+              <h1 className="text-2xl font-bold text-foreground">Tavla Lig</h1>
               <p className="text-muted-foreground">Tavla Ligi</p>
             </div>
           </div>
@@ -178,7 +178,7 @@ export default function Auth() {
 
       {/* Footer */}
       <div className="py-6 text-center text-xs text-muted-foreground">
-        <p>© 2026 Türkiye Tavla Birliği</p>
+        <p>© 2026 Tavla Lig</p>
         <p className="mt-1">Geliştiren: Yavuz Kanmaz</p>
       </div>
     </div>
