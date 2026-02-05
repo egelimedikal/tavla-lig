@@ -19,7 +19,7 @@ export function Header({ onProfileClick }: HeaderProps) {
           </div>
           <div>
             <h1 className="text-lg font-bold text-foreground">Tavla Lig</h1>
-            <p className="text-xs text-muted-foreground">Tavla Ligi</p>
+            
           </div>
         </div>
         <div className="flex items-center gap-2">

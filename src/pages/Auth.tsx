@@ -111,7 +111,7 @@ export default function Auth() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground">Tavla Lig</h1>
-              <p className="text-muted-foreground">Tavla Ligi</p>
+              
             </div>
           </div>
 
