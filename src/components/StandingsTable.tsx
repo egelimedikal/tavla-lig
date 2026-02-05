@@ -41,12 +41,12 @@ export function StandingsTable({ standings, onPlayerClick }: StandingsTableProps
   };
 
   return (
-    <div className="px-4 animate-fade-in">
-      <div className="bg-card rounded-xl overflow-hidden border border-border overflow-x-auto">
+    <div className="px-2 animate-fade-in">
+      <div className="bg-card rounded-xl overflow-hidden border border-border">
         {/* Table Header */}
-        <div className="grid grid-cols-[32px_minmax(100px,1fr)_28px_28px_28px_32px_32px_32px_36px] gap-0.5 px-2 py-3 bg-secondary/50 text-xs font-semibold text-muted-foreground min-w-[360px]">
+        <div className="grid grid-cols-[24px_1fr_22px_22px_22px_26px_26px_28px_28px] gap-0 px-1.5 py-2.5 bg-secondary/50 text-[10px] font-semibold text-muted-foreground">
           <div className="text-center">#</div>
-          <div>Oyuncu</div>
+          <div className="pl-1">Oyuncu</div>
           <div className="text-center">O</div>
           <div className="text-center">G</div>
           <div className="text-center">M</div>
@@ -62,12 +62,12 @@ export function StandingsTable({ standings, onPlayerClick }: StandingsTableProps
             <button
               key={stat.playerId}
               onClick={() => onPlayerClick(stat.playerId)}
-              className={`w-full grid grid-cols-[32px_minmax(100px,1fr)_28px_28px_28px_32px_32px_32px_36px] gap-0.5 px-2 py-3 text-sm hover:bg-secondary/30 transition-colors min-w-[360px] ${getRankClass(index + 1)}`}
+              className={`w-full grid grid-cols-[24px_1fr_22px_22px_22px_26px_26px_28px_28px] gap-0 px-1.5 py-2.5 text-xs hover:bg-secondary/30 transition-colors ${getRankClass(index + 1)}`}
             >
               <div className="flex items-center justify-center">
                 {getRankIcon(index + 1)}
               </div>
-              <div className="flex items-center gap-1.5 text-left min-w-0 overflow-hidden">
+              <div className="flex items-center gap-1 text-left min-w-0 overflow-hidden pl-1">
                 {stat.player?.avatar_url ? (
                   <img 
                     src={stat.player.avatar_url} 
@@ -75,23 +75,23 @@ export function StandingsTable({ standings, onPlayerClick }: StandingsTableProps
                     className="w-5 h-5 rounded-full object-cover flex-shrink-0"
                   />
                 ) : (
-                  <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary flex-shrink-0">
+                  <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-medium text-primary flex-shrink-0">
                     {stat.player?.name?.charAt(0) || '?'}
                   </div>
                 )}
-                <span className="font-medium text-foreground truncate text-xs">
+                <span className="font-medium text-foreground truncate text-[11px]">
                   {stat.player?.name || 'Bilinmeyen Oyuncu'}
                 </span>
               </div>
-              <div className="text-center text-muted-foreground text-xs">{stat.played}</div>
-              <div className="text-center text-success font-medium text-xs">{stat.won}</div>
-              <div className="text-center text-primary font-medium text-xs">{stat.lost}</div>
-              <div className="text-center text-muted-foreground text-xs">{stat.scored}</div>
-              <div className="text-center text-muted-foreground text-xs">{stat.conceded}</div>
-              <div className={`text-center font-medium text-xs ${stat.average > 0 ? 'text-success' : stat.average < 0 ? 'text-primary' : 'text-muted-foreground'}`}>
+              <div className="text-center text-muted-foreground text-[11px]">{stat.played}</div>
+              <div className="text-center text-success font-medium text-[11px]">{stat.won}</div>
+              <div className="text-center text-primary font-medium text-[11px]">{stat.lost}</div>
+              <div className="text-center text-muted-foreground text-[11px]">{stat.scored}</div>
+              <div className="text-center text-muted-foreground text-[11px]">{stat.conceded}</div>
+              <div className={`text-center font-medium text-[11px] ${stat.average > 0 ? 'text-success' : stat.average < 0 ? 'text-primary' : 'text-muted-foreground'}`}>
                 {stat.average > 0 ? `+${stat.average}` : stat.average}
               </div>
-              <div className="text-center font-bold text-foreground text-xs">{stat.points}</div>
+              <div className="text-center font-bold text-foreground text-[11px]">{stat.points}</div>
             </button>
           ))}
         </div>
