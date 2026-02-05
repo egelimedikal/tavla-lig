@@ -1047,10 +1047,6 @@ const Admin = () => {
                 <Crown className="w-3 h-3 mr-1" />
                 Süper Admin
               </Badge>
-            ) : isAdmin ? (
-              <Badge variant="outline" className="ml-2">
-                Genel Admin
-              </Badge>
             ) : managedAssociationIds.length > 0 ? (
               <Badge variant="outline" className="ml-2">
                 <Building2 className="w-3 h-3 mr-1" />
@@ -1113,49 +1109,6 @@ const Admin = () => {
                 <CardTitle className="text-base">Dernek Yönetimi</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Add Association */}
-                <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
-                  <Label>Yeni Dernek Ekle</Label>
-                  <div className="flex gap-2 flex-wrap">
-                    <Input
-                      placeholder="Dernek Adı"
-                      value={newAssociationName}
-                      onChange={e => setNewAssociationName(e.target.value)}
-                      className="flex-1 min-w-[150px]"
-                    />
-                    <Input
-                      placeholder="Kısaltma (örn: bursa)"
-                      value={newAssociationSlug}
-                      onChange={e => setNewAssociationSlug(e.target.value)}
-                      className="flex-1 min-w-[150px]"
-                    />
-                  </div>
-                  <div className="flex gap-2 items-center">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={e => setNewAssociationLogo(e.target.files?.[0] || null)}
-                      />
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground">
-                        <Upload className="w-4 h-4" />
-                        <span className="text-sm">{newAssociationLogo ? newAssociationLogo.name : 'Logo Seç'}</span>
-                      </div>
-                    </label>
-                    {newAssociationLogo && (
-                      <img 
-                        src={URL.createObjectURL(newAssociationLogo)} 
-                        alt="Önizleme" 
-                        className="w-10 h-10 object-contain rounded"
-                      />
-                    )}
-                    <Button onClick={addAssociation} disabled={uploadingLogo} className="ml-auto">
-                      {uploadingLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                      <span className="ml-1">Ekle</span>
-                    </Button>
-                  </div>
-                </div>
 
                 {/* Association List */}
                 <div className="space-y-2">
@@ -1277,13 +1230,6 @@ const Admin = () => {
                             </DialogFooter>
                           </DialogContent>
                         </Dialog>
-                        <Button 
-                          variant="destructive" 
-                          size="icon"
-                          onClick={() => deleteAssociation(assoc.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
                       </div>
                     </div>
                   ))}
@@ -1863,74 +1809,6 @@ const Admin = () => {
                     </p>
                   </div>
 
-                  {/* Add Global Admin Role */}
-                  <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
-                    <Label className="flex items-center gap-2">
-                      <Shield className="w-4 h-4" />
-                      Genel Admin Ekle
-                    </Label>
-                    <p className="text-xs text-muted-foreground">Genel adminler tüm dernekleri yönetebilir</p>
-                    <div className="flex gap-2">
-                      <Select value={selectedUserForRole} onValueChange={setSelectedUserForRole}>
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="Kullanıcı Seç" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {players
-                            .filter(p => !userRoles.find(r => r.user_id === p.user_id))
-                            .map(player => (
-                              <SelectItem key={player.user_id} value={player.user_id}>
-                                {player.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                      <Select value={selectedRole} onValueChange={(val) => setSelectedRole(val as 'admin' | 'user')}>
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button onClick={addAdminRole} size="icon">
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Global Role List */}
-                  <div className="space-y-2">
-                    <h3 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
-                      <Shield className="w-4 h-4" />
-                      Genel Roller
-                    </h3>
-                    {userRoles.map(role => (
-                      <div 
-                        key={role.id}
-                        className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="font-medium">{getUserName(role.user_id)}</span>
-                          <Badge variant={role.role === 'super_admin' ? 'default' : 'secondary'}>
-                            {role.role === 'super_admin' ? 'Süper Admin' : 'Admin'}
-                          </Badge>
-                        </div>
-                        {role.user_id !== user?.id && (
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => removeAdminRole(role.id, role.user_id)}
-                          >
-                            <Trash2 className="w-4 h-4 text-destructive" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Divider */}
-                  <div className="border-t border-border my-4" />
 
                   {/* Add Association Admin */}
                   <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
