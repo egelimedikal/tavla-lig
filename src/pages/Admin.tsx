@@ -234,6 +234,8 @@ const Admin = () => {
         .update({
           name: editingAssociation.name,
           logo_url: logoUrl,
+          current_year: editingAssociation.current_year,
+          active_season: editingAssociation.active_season,
         })
         .eq('id', editingAssociation.id);
 
@@ -247,7 +249,7 @@ const Admin = () => {
       }
 
       setAssociations(prev => prev.map(a => 
-        a.id === editingAssociation.id ? { ...editingAssociation, logo_url: logoUrl } : a
+        a.id === editingAssociation.id ? { ...editingAssociation, logo_url: logoUrl, current_year: editingAssociation.current_year, active_season: editingAssociation.active_season } : a
       ));
       setEditingAssociation(null);
       clearAssociationLogo();
@@ -1072,7 +1074,11 @@ const Admin = () => {
                     )}
                     <div>
                       <p className="font-semibold text-lg">{associations[0].name}</p>
-                      <p className="text-sm text-muted-foreground">/{associations[0].slug}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {associations[0].current_year && `${associations[0].current_year} Yılı`}
+                        {associations[0].current_year && associations[0].active_season && ' • '}
+                        {associations[0].active_season && `${associations[0].active_season} Sezonu`}
+                      </p>
                     </div>
                   </div>
                   
@@ -1103,6 +1109,25 @@ const Admin = () => {
                             onChange={e => setEditingAssociation(prev => prev ? { ...prev, name: e.target.value } : null)}
                             placeholder="Dernek adını girin"
                           />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Mevcut Yıl</Label>
+                            <Input
+                              type="number"
+                              value={editingAssociation?.current_year || new Date().getFullYear()}
+                              onChange={e => setEditingAssociation(prev => prev ? { ...prev, current_year: parseInt(e.target.value) || null } : null)}
+                              placeholder="2025"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Aktif Sezon</Label>
+                            <Input
+                              value={editingAssociation?.active_season || ''}
+                              onChange={e => setEditingAssociation(prev => prev ? { ...prev, active_season: e.target.value || null } : null)}
+                              placeholder="Bahar, Güz, vb."
+                            />
+                          </div>
                         </div>
                         <div className="space-y-2">
                           <Label>Logo</Label>
