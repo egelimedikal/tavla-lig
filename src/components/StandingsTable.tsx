@@ -108,7 +108,7 @@ export function StandingsTable({ standings, onPlayerClick }: StandingsTableProps
         <span><strong>O:</strong> Oynadı</span>
         <span><strong>G:</strong> Galibiyet</span>
         <span><strong>M:</strong> Mağlubiyet</span>
-        <span><strong>A:</strong> Attığı</span>
+        <span><strong>A:</strong> Aldığı</span>
         <span><strong>Y:</strong> Yediği</span>
         <span><strong>Av:</strong> Averaj</span>
         <span><strong>P:</strong> Puan</span>
