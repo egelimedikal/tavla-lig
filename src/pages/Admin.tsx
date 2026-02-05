@@ -824,10 +824,21 @@ const Admin = () => {
 
   // Association Admin Management
   const addAssociationAdmin = async () => {
-    if (!selectedAssociationForAdmin || !selectedUserForAssociationAdmin) {
+    if (!selectedUserForAssociationAdmin) {
       toast({
         title: "Hata",
-        description: "Dernek ve kullanıcı seçimi gerekli.",
+        description: "Kullanıcı seçimi gerekli.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Use first association automatically (single association model)
+    const associationId = associations[0]?.id;
+    if (!associationId) {
+      toast({
+        title: "Hata",
+        description: "Dernek bulunamadı.",
         variant: "destructive",
       });
       return;
@@ -835,13 +846,13 @@ const Admin = () => {
 
     // Check if already an admin for this association
     const existing = associationAdmins.find(
-      aa => aa.association_id === selectedAssociationForAdmin && aa.user_id === selectedUserForAssociationAdmin
+      aa => aa.association_id === associationId && aa.user_id === selectedUserForAssociationAdmin
     );
 
     if (existing) {
       toast({
         title: "Hata",
-        description: "Bu kullanıcı zaten bu derneğin admini.",
+        description: "Bu kullanıcı zaten admin.",
         variant: "destructive",
       });
       return;
@@ -849,7 +860,7 @@ const Admin = () => {
 
     const { data, error } = await supabase
       .from('association_admins')
-      .insert({ association_id: selectedAssociationForAdmin, user_id: selectedUserForAssociationAdmin })
+      .insert({ association_id: associationId, user_id: selectedUserForAssociationAdmin })
       .select()
       .single();
 
@@ -867,7 +878,7 @@ const Admin = () => {
       setSelectedUserForAssociationAdmin('');
       toast({
         title: "Başarılı",
-        description: "Dernek admini eklendi.",
+        description: "Admin eklendi.",
       });
     }
   };
@@ -1802,23 +1813,11 @@ const Admin = () => {
                   {/* Add Association Admin */}
                   <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
                     <Label className="flex items-center gap-2">
-                      <Building2 className="w-4 h-4" />
-                      Dernek Admini Ekle
+                      <Shield className="w-4 h-4" />
+                      Admin Ekle
                     </Label>
-                    <p className="text-xs text-muted-foreground">Dernek adminleri sadece kendi derneklerini yönetebilir</p>
+                    <p className="text-xs text-muted-foreground">Adminler oyuncu ve maç yönetimi yapabilir</p>
                     <div className="flex gap-2">
-                      <Select value={selectedAssociationForAdmin} onValueChange={setSelectedAssociationForAdmin}>
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="Dernek Seç" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {associations.map(assoc => (
-                            <SelectItem key={assoc.id} value={assoc.id}>
-                              {assoc.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
                       <Select value={selectedUserForAssociationAdmin} onValueChange={setSelectedUserForAssociationAdmin}>
                         <SelectTrigger className="flex-1">
                           <SelectValue placeholder="Kullanıcı Seç" />
@@ -1840,38 +1839,28 @@ const Admin = () => {
                   {/* Association Admins List */}
                   <div className="space-y-3">
                     <h3 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
-                      <Building2 className="w-4 h-4" />
-                      Dernek Adminleri
+                      <Shield className="w-4 h-4" />
+                      Adminler
                     </h3>
-                    {associations.map(assoc => {
-                      const admins = associationAdmins.filter(aa => aa.association_id === assoc.id);
-                      if (admins.length === 0) return null;
-
-                      return (
-                        <div key={assoc.id} className="space-y-2">
-                          <h4 className="text-sm font-medium">{assoc.name}</h4>
-                          {admins.map(aa => (
-                            <div 
-                              key={aa.id}
-                              className="flex items-center justify-between p-2 bg-muted/30 rounded ml-4"
-                            >
-                              <span className="text-sm">{getUserName(aa.user_id)}</span>
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => removeAssociationAdmin(aa.id)}
-                              >
-                                <Trash2 className="w-3 h-3 text-destructive" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })}
+                    {associationAdmins.map(aa => (
+                      <div 
+                        key={aa.id}
+                        className="flex items-center justify-between p-2 bg-muted/30 rounded"
+                      >
+                        <span className="text-sm">{getUserName(aa.user_id)}</span>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => removeAssociationAdmin(aa.id)}
+                        >
+                          <Trash2 className="w-3 h-3 text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
                     {associationAdmins.length === 0 && (
                       <p className="text-sm text-muted-foreground text-center py-2">
-                        Henüz dernek admini atanmadı
+                        Henüz admin atanmadı
                       </p>
                     )}
                   </div>
