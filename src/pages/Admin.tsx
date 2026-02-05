@@ -1597,7 +1597,7 @@ const Admin = () => {
                         <SelectContent>
                           {manageableLeagues.map(league => (
                             <SelectItem key={league.id} value={league.id}>
-                              {league.name} ({getAssociationName(league.association_id)})
+                              {league.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -1629,7 +1629,7 @@ const Admin = () => {
                   return (
                     <div key={league.id} className="space-y-2">
                       <h3 className="font-medium text-sm text-muted-foreground">
-                        {league.name} ({getAssociationName(league.association_id)})
+                        {league.name}
                       </h3>
                       <div className="space-y-1">
                         {playersInLeague.map(lp => (
