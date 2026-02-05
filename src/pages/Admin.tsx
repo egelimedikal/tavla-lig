@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Trash2, Edit, Users, Trophy, Gamepad2, Loader2, Shield, Crown, Key, RefreshCw, Megaphone } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit, Users, Trophy, Gamepad2, Loader2, Shield, Crown, Key, RefreshCw, Megaphone, Building2, Upload, ImageIcon, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface Profile {
@@ -84,6 +84,12 @@ const Admin = () => {
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [associationAdmins, setAssociationAdmins] = useState<AssociationAdmin[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Association editing
+  const [editingAssociation, setEditingAssociation] = useState<Association | null>(null);
+  const [associationLogo, setAssociationLogo] = useState<File | null>(null);
+  const [associationLogoPreview, setAssociationLogoPreview] = useState<string | null>(null);
+  const [savingAssociation, setSavingAssociation] = useState(false);
   
   // Form states (removed association-related states for single-association model)
   const [newLeagueName, setNewLeagueName] = useState('');
@@ -170,7 +176,91 @@ const Admin = () => {
     }
   };
 
-  // League CRUD (association CRUD removed for single-association model)
+  // Association management
+  const uploadAssociationLogo = async (file: File, associationId: string): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${associationId}-${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('association-logos')
+      .upload(fileName, file, { upsert: true });
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('association-logos')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  };
+
+  const handleAssociationLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAssociationLogo(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAssociationLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const clearAssociationLogo = () => {
+    setAssociationLogo(null);
+    setAssociationLogoPreview(null);
+  };
+
+  const updateAssociation = async () => {
+    if (!editingAssociation) return;
+
+    setSavingAssociation(true);
+
+    try {
+      let logoUrl = editingAssociation.logo_url;
+
+      if (associationLogo) {
+        const newLogoUrl = await uploadAssociationLogo(associationLogo, editingAssociation.id);
+        if (newLogoUrl) {
+          logoUrl = newLogoUrl;
+        }
+      }
+
+      const { error } = await supabase
+        .from('associations')
+        .update({
+          name: editingAssociation.name,
+          logo_url: logoUrl,
+        })
+        .eq('id', editingAssociation.id);
+
+      if (error) {
+        toast({
+          title: "Hata",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setAssociations(prev => prev.map(a => 
+        a.id === editingAssociation.id ? { ...editingAssociation, logo_url: logoUrl } : a
+      ));
+      setEditingAssociation(null);
+      clearAssociationLogo();
+      toast({
+        title: "Başarılı",
+        description: "Dernek bilgileri güncellendi.",
+      });
+    } finally {
+      setSavingAssociation(false);
+    }
+  };
+
+  // League CRUD
 
   const addLeague = async () => {
     if (!newLeagueName.trim()) {
@@ -869,17 +959,19 @@ const Admin = () => {
     return null;
   }
 
-  // Determine which tabs to show based on role (single association model - no associations tab)
+  // Determine which tabs to show based on role
+  const showAssociationTab = isSuperAdmin || isAdmin;
   const showLeaguesTab = isSuperAdmin || isAdmin;
   const showPlayersTab = isSuperAdmin || isAdmin || managedAssociationIds.length > 0;
   const showMatchesTab = isSuperAdmin || isAdmin;
   const showAdminsTab = isSuperAdmin;
 
   // Calculate grid columns based on visible tabs
-  const visibleTabCount = [showLeaguesTab, showPlayersTab, showMatchesTab, showAdminsTab].filter(Boolean).length;
+  const visibleTabCount = [showAssociationTab, showLeaguesTab, showPlayersTab, showMatchesTab, showAdminsTab].filter(Boolean).length;
 
   // Determine default tab based on role
   const getDefaultTab = () => {
+    if (showAssociationTab) return 'association';
     if (showLeaguesTab) return 'leagues';
     if (showPlayersTab) return 'players';
     if (showMatchesTab) return 'matches';
@@ -924,6 +1016,12 @@ const Admin = () => {
       <div className="p-4">
         <Tabs defaultValue={getDefaultTab()} className="w-full">
           <TabsList className={`grid w-full mb-4`} style={{ gridTemplateColumns: `repeat(${visibleTabCount}, minmax(0, 1fr))` }}>
+            {showAssociationTab && (
+              <TabsTrigger value="association" className="flex items-center gap-1 text-xs px-2">
+                <Building2 className="w-4 h-4" />
+                <span className="hidden sm:inline">Dernek</span>
+              </TabsTrigger>
+            )}
             {showLeaguesTab && (
               <TabsTrigger value="leagues" className="flex items-center gap-1 text-xs px-2">
                 <Trophy className="w-4 h-4" />
@@ -950,6 +1048,132 @@ const Admin = () => {
             )}
           </TabsList>
 
+          {/* Association Tab */}
+          {showAssociationTab && associations[0] && (
+          <TabsContent value="association">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Dernek Bilgileri</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                  {/* Current Association Info */}
+                  <div className="flex items-center gap-4">
+                    {associations[0].logo_url ? (
+                      <img 
+                        src={associations[0].logo_url} 
+                        alt={associations[0].name} 
+                        className="w-16 h-16 object-contain rounded-lg border"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                        <Building2 className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-semibold text-lg">{associations[0].name}</p>
+                      <p className="text-sm text-muted-foreground">/{associations[0].slug}</p>
+                    </div>
+                  </div>
+                  
+                  {/* Edit Button */}
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => {
+                          setEditingAssociation({ ...associations[0] });
+                          setAssociationLogoPreview(associations[0].logo_url);
+                        }}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Düzenle
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Dernek Bilgilerini Düzenle</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <Label>Dernek Adı</Label>
+                          <Input
+                            value={editingAssociation?.name || ''}
+                            onChange={e => setEditingAssociation(prev => prev ? { ...prev, name: e.target.value } : null)}
+                            placeholder="Dernek adını girin"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Logo</Label>
+                          {(associationLogoPreview || editingAssociation?.logo_url) ? (
+                            <div className="relative">
+                              <img
+                                src={associationLogoPreview || editingAssociation?.logo_url || ''}
+                                alt="Logo"
+                                className="w-full h-32 object-contain rounded-lg border bg-muted"
+                              />
+                              <Button
+                                variant="destructive"
+                                size="icon"
+                                className="absolute top-2 right-2 h-6 w-6"
+                                onClick={() => {
+                                  clearAssociationLogo();
+                                  setEditingAssociation(prev => prev ? { ...prev, logo_url: null } : null);
+                                }}
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <label className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 transition-colors block">
+                              <ImageIcon className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                              <p className="text-sm text-muted-foreground">Logo yüklemek için tıklayın</p>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleAssociationLogoChange}
+                              />
+                            </label>
+                          )}
+                          {(associationLogoPreview || editingAssociation?.logo_url) && (
+                            <label className="cursor-pointer">
+                              <Button variant="outline" size="sm" className="w-full" asChild>
+                                <span>
+                                  <Upload className="w-4 h-4 mr-2" />
+                                  Farklı Logo Yükle
+                                </span>
+                              </Button>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleAssociationLogoChange}
+                              />
+                            </label>
+                          )}
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <DialogClose asChild>
+                          <Button variant="outline" onClick={() => {
+                            setEditingAssociation(null);
+                            clearAssociationLogo();
+                          }}>İptal</Button>
+                        </DialogClose>
+                        <Button onClick={updateAssociation} disabled={savingAssociation}>
+                          {savingAssociation && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                          Kaydet
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          )}
 
           {/* Leagues Tab */}
           {showLeaguesTab && (
