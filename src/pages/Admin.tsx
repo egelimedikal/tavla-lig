@@ -329,18 +329,21 @@ const Admin = () => {
   };
 
   const addLeague = async () => {
-    if (!newLeagueName.trim() || !selectedAssociationForLeague) {
+    if (!newLeagueName.trim()) {
       toast({
         title: "Hata",
-        description: "Lig adı ve dernek seçimi gerekli.",
+        description: "Lig adı gerekli.",
         variant: "destructive",
       });
       return;
     }
 
+    // Use first association automatically (single association model)
+    const associationId = associations[0]?.id;
+
     const { data, error } = await supabase
       .from('leagues')
-      .insert({ id: crypto.randomUUID(), name: newLeagueName, association_id: selectedAssociationForLeague })
+      .insert({ id: crypto.randomUUID(), name: newLeagueName, association_id: associationId })
       .select()
       .single();
 
@@ -1250,30 +1253,16 @@ const Admin = () => {
                 {/* Add League */}
                 <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
                   <Label>Yeni Lig Ekle</Label>
-                  <div className="space-y-2">
-                    <Select value={selectedAssociationForLeague} onValueChange={setSelectedAssociationForLeague}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Dernek Seç" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {associations.map(assoc => (
-                          <SelectItem key={assoc.id} value={assoc.id}>
-                            {assoc.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Lig Adı"
-                        value={newLeagueName}
-                        onChange={e => setNewLeagueName(e.target.value)}
-                        className="flex-1"
-                      />
-                      <Button onClick={addLeague} size="icon">
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Lig Adı"
+                      value={newLeagueName}
+                      onChange={e => setNewLeagueName(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button onClick={addLeague} size="icon">
+                      <Plus className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
 
