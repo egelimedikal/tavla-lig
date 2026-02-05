@@ -183,7 +183,7 @@ const Announcements = () => {
         .insert({
           title: newTitle.trim(),
           content: newContent.trim(),
-          association_id: selectedAssociation || null,
+          association_id: associations[0]?.id || null,
           created_by: user!.id,
           is_active: true,
         })
@@ -428,21 +428,6 @@ const Announcements = () => {
                     className="hidden"
                     onChange={handleNewImageChange}
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label>Dernek</Label>
-                  <Select value={selectedAssociation} onValueChange={setSelectedAssociation}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Dernek seçin" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {associations.map(assoc => (
-                        <SelectItem key={assoc.id} value={assoc.id}>
-                          {assoc.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
               <DialogFooter>
