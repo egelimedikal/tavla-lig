@@ -1,7 +1,7 @@
 import { User, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAdminRole } from '@/hooks/useAdminRole';
-import tavlaLogo from '@/assets/tavlalogo.png';
+import logo from '@/assets/logo.png';
 
 interface HeaderProps {
   onProfileClick: () => void;
@@ -15,7 +15,7 @@ export function Header({ onProfileClick }: HeaderProps) {
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10">
-            <img src={tavlaLogo} alt="Türkiye Tavla Birliği Logo" className="w-full h-full object-contain" />
+            <img src={logo} alt="Mustafa Çakır Mahalle Kahvesi Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-foreground">Türkiye Tavla Birliği</h1>

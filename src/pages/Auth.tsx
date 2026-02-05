@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Phone, Lock, ArrowRight, Loader2 } from 'lucide-react';
-import tavlaLogo from '@/assets/tavlalogo.png';
+import logo from '@/assets/logo.png';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 
@@ -107,7 +107,7 @@ export default function Auth() {
           {/* Logo */}
           <div className="text-center space-y-4">
             <div className="w-24 h-24 mx-auto">
-              <img src={tavlaLogo} alt="Türkiye Tavla Birliği Logo" className="w-full h-full object-contain" />
+              <img src={logo} alt="Mustafa Çakır Mahalle Kahvesi Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground">Türkiye Tavla Birliği</h1>
