@@ -18,7 +18,7 @@ export function Header({ onProfileClick }: HeaderProps) {
             <img src={logo} alt="Mustafa Çakır Mahalle Kahvesi Logo" className="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-foreground">Türkiye Tavla Birliği</h1>
+            <h1 className="text-lg font-bold text-foreground">Tavla Lig</h1>
             <p className="text-xs text-muted-foreground">Tavla Ligi</p>
           </div>
         </div>
