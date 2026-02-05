@@ -1646,11 +1646,13 @@ const Admin = () => {
                           <SelectValue placeholder="Kullanıcı Seç" />
                         </SelectTrigger>
                         <SelectContent>
-                          {players.map(player => (
-                            <SelectItem key={player.user_id} value={player.user_id}>
-                              {player.name}
-                            </SelectItem>
-                          ))}
+                          {players
+                            .filter(player => player.user_id !== null)
+                            .map(player => (
+                              <SelectItem key={player.user_id!} value={player.user_id!}>
+                                {player.name}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                       <Button onClick={addAssociationAdmin} size="icon">
