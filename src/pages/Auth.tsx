@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Phone, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { Phone, Lock, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +15,7 @@ const passwordSchema = z.string().min(4, 'Şifre en az 4 karakter olmalı');
 export default function Auth() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ phone?: string; password?: string }>({});
   
@@ -141,12 +142,19 @@ export default function Auth() {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full pl-11 pr-12 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="••••••••"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
               {errors.password && <p className="text-xs text-primary">{errors.password}</p>}
               <p className="text-xs text-muted-foreground">
