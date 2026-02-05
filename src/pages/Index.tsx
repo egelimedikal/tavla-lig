@@ -8,7 +8,6 @@ import { MatchEntryForm } from '@/components/MatchEntryForm';
 import { PlayerProfile } from '@/components/PlayerProfile';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { ForcePasswordChange } from '@/components/ForcePasswordChange';
-import { AnnouncementsBanner } from '@/components/AnnouncementsBanner';
 import { useSupabaseLeague } from '@/hooks/useSupabaseLeague';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -150,8 +149,6 @@ const Index = () => {
         currentLeagueId={currentLeagueId} 
         onLeagueChange={setCurrentLeagueId} 
       />
-
-      <AnnouncementsBanner associationId={currentAssociationId} />
 
       <div className="mt-4">
         <div className="px-4 mb-4">
