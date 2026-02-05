@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
-import { AssociationSelector } from '@/components/AssociationSelector';
+
 import { LeagueTabs } from '@/components/LeagueTabs';
 import { StandingsTable } from '@/components/StandingsTable';
 import { MatchEntryForm } from '@/components/MatchEntryForm';
@@ -142,11 +142,6 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-24">
       <Header onProfileClick={handleProfileClick} />
       
-      <AssociationSelector
-        associations={associations}
-        currentAssociationId={currentAssociationId}
-        onAssociationChange={setCurrentAssociationId}
-      />
       
       <LeagueTabs 
         leagues={associationLeagues}
