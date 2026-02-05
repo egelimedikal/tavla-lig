@@ -88,6 +88,7 @@ interface PlayerProfileProps {
   isOwnProfile?: boolean;
   onProfileUpdate?: () => void;
   addMatch: (player1Id: string, player2Id: string, score1: number, score2: number) => Promise<Match | null>;
+  calculateStats?: (leagueId: string) => PlayerStats[];
 }
 
 export function PlayerProfile({ 
@@ -103,7 +104,8 @@ export function PlayerProfile({
   onBack, 
   isOwnProfile,
   onProfileUpdate,
-  addMatch
+  addMatch,
+  calculateStats
 }: PlayerProfileProps) {
   const { signOut, updatePassword, user } = useAuth();
   const { toast } = useToast();
@@ -358,6 +360,14 @@ export function PlayerProfile({
     return leagueStats.find(ls => ls.league.id === selectedLeagueId) || leagueStats[0] || null;
   }, [leagueStats, selectedLeagueId]);
 
+  // Calculate dynamic rank for selected league
+  const dynamicRank = useMemo(() => {
+    if (!selectedLeagueId || !calculateStats) return rank;
+    const leagueStandings = calculateStats(selectedLeagueId);
+    const playerIndex = leagueStandings.findIndex(s => s.playerId === player.id);
+    return playerIndex >= 0 ? playerIndex + 1 : 0;
+  }, [selectedLeagueId, calculateStats, player.id, rank]);
+
   const handleScoreSubmit = async (leagueId: string, opponentId: string) => {
     // Beraberlik kontrolü
     if (score1 === score2) {
@@ -482,8 +492,8 @@ export function PlayerProfile({
             <div className="flex-1">
               <h2 className="text-xl font-bold text-foreground">{player.name || 'Bilinmeyen Oyuncu'}</h2>
               <p className="text-sm text-muted-foreground">
-                {rank > 0 ? (
-                  <>Sıralama: <span className="text-primary font-semibold">#{rank}</span></>
+                {dynamicRank > 0 ? (
+                  <>Sıralama: <span className="text-primary font-semibold">#{dynamicRank}</span></>
                 ) : (
                   'Henüz sıralama yok'
                 )}
@@ -499,7 +509,7 @@ export function PlayerProfile({
           </div>
         </div>
 
-        {/* Stats Table */}
+        {/* Stats Table - shows stats for selected league */}
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <table className="w-full text-sm">
             <tbody className="divide-y divide-border">
@@ -513,16 +523,31 @@ export function PlayerProfile({
                 </td>
               </tr>
               <tr>
-                <td className="px-4 py-3 font-medium text-muted-foreground">Toplam Maç</td>
-                <td className="px-4 py-3 text-foreground">{totalStats.played}</td>
+                <td className="px-4 py-3 font-medium text-muted-foreground">Oynanan Maç</td>
+                <td className="px-4 py-3 text-foreground">{selectedLeague?.played ?? totalStats.played}</td>
               </tr>
               <tr>
                 <td className="px-4 py-3 font-medium text-muted-foreground">Galibiyet</td>
-                <td className="px-4 py-3 text-foreground">{totalStats.won}</td>
+                <td className="px-4 py-3 text-success font-medium">{selectedLeague?.won ?? totalStats.won}</td>
               </tr>
               <tr>
                 <td className="px-4 py-3 font-medium text-muted-foreground">Mağlubiyet</td>
-                <td className="px-4 py-3 text-foreground">{totalStats.lost}</td>
+                <td className="px-4 py-3 text-primary font-medium">{selectedLeague?.lost ?? totalStats.lost}</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 font-medium text-muted-foreground">Galibiyet Oranı</td>
+                <td className="px-4 py-3 text-foreground">
+                  {selectedLeague && selectedLeague.played > 0 
+                    ? <span className={selectedLeague.won / selectedLeague.played >= 0.5 ? 'text-success font-semibold' : 'text-primary font-semibold'}>
+                        %{Math.round((selectedLeague.won / selectedLeague.played) * 100)}
+                      </span>
+                    : totalStats.played > 0 
+                      ? <span className={totalStats.won / totalStats.played >= 0.5 ? 'text-success font-semibold' : 'text-primary font-semibold'}>
+                          %{Math.round((totalStats.won / totalStats.played) * 100)}
+                        </span>
+                      : '-'
+                  }
+                </td>
               </tr>
             </tbody>
           </table>
