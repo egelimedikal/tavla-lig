@@ -39,6 +39,7 @@ const Index = () => {
     getPlayerById,
     currentUserProfile,
     refetchProfiles,
+    calculateStats,
   } = useSupabaseLeague();
   
   const [view, setView] = useState<View>('standings');
@@ -134,6 +135,7 @@ const Index = () => {
         isOwnProfile={isOwnProfile}
         onProfileUpdate={refetchProfiles}
         addMatch={addMatch}
+        calculateStats={calculateStats}
       />
     );
   }

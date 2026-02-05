@@ -368,5 +368,6 @@ export function useSupabaseLeague() {
     getPlayerById,
     currentUserProfile,
     refetchProfiles,
+    calculateStats,
   };
 }
