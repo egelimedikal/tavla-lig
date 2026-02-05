@@ -48,7 +48,7 @@ const Announcements = () => {
   // Form states
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
-  const [selectedAssociation, setSelectedAssociation] = useState<string>('global');
+  const [selectedAssociation, setSelectedAssociation] = useState<string>('');
   const [newImage, setNewImage] = useState<File | null>(null);
   const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -183,7 +183,7 @@ const Announcements = () => {
         .insert({
           title: newTitle.trim(),
           content: newContent.trim(),
-          association_id: selectedAssociation === 'global' ? null : selectedAssociation,
+          association_id: selectedAssociation || null,
           created_by: user!.id,
           is_active: true,
         })
@@ -215,7 +215,7 @@ const Announcements = () => {
         setAnnouncements(prev => [{ ...data, image_url: imageUrl }, ...prev]);
         setNewTitle('');
         setNewContent('');
-        setSelectedAssociation('global');
+        setSelectedAssociation('');
         clearNewImage();
         setIsDialogOpen(false);
         toast({
@@ -436,7 +436,6 @@ const Announcements = () => {
                       <SelectValue placeholder="Dernek seçin" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="global">Genel (Tüm Dernekler)</SelectItem>
                       {associations.map(assoc => (
                         <SelectItem key={assoc.id} value={assoc.id}>
                           {assoc.name}
