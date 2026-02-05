@@ -156,20 +156,31 @@ const Index = () => {
       <div className="mt-4">
         <div className="px-4 mb-4">
           {currentAssociation && (
-            <h1 className="text-xl font-bold text-foreground mb-2">{currentAssociation.name}</h1>
-          )}
-          {currentAssociation && (currentAssociation.current_year || currentAssociation.active_season) && (
-            <div className="flex items-center gap-3 mb-2 text-sm">
-              {currentAssociation.current_year && (
-                <span className="bg-primary/10 text-primary px-2 py-1 rounded-md font-medium">
-                  {currentAssociation.current_year}
-                </span>
+            <div className="flex items-center gap-3 mb-2">
+              {currentAssociation.logo_url && (
+                <img 
+                  src={currentAssociation.logo_url} 
+                  alt={currentAssociation.name} 
+                  className="w-12 h-12 object-contain rounded-lg"
+                />
               )}
-              {currentAssociation.active_season && (
-                <span className="text-muted-foreground">
-                  {currentAssociation.active_season}
-                </span>
-              )}
+              <div>
+                <h1 className="text-xl font-bold text-foreground">{currentAssociation.name}</h1>
+                {(currentAssociation.current_year || currentAssociation.active_season) && (
+                  <div className="flex items-center gap-2 text-sm">
+                    {currentAssociation.current_year && (
+                      <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-md font-medium">
+                        {currentAssociation.current_year}
+                      </span>
+                    )}
+                    {currentAssociation.active_season && (
+                      <span className="text-muted-foreground">
+                        {currentAssociation.active_season}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           )}
           <h2 className="text-lg font-bold text-foreground">{currentLeague?.name || 'Lig'}</h2>

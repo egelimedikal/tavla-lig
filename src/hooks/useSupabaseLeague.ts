@@ -40,6 +40,7 @@ interface Association {
   name: string;
   slug: string;
   description: string | null;
+  logo_url: string | null;
   current_year: number | null;
   active_season: string | null;
 }
