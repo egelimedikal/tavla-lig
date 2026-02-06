@@ -332,6 +332,15 @@ export function useSupabaseLeague() {
     return players.find(p => p.id === playerId);
   }, [players]);
 
+  const refetchMatches = useCallback(async () => {
+    const { data: matchesData } = await supabase
+      .from('matches')
+      .select('*')
+      .order('match_date', { ascending: false });
+    
+    if (matchesData) setMatches(matchesData);
+  }, []);
+
   const refetchProfiles = useCallback(async () => {
     const { data: profilesData } = await supabase
       .from('profiles_public')
@@ -347,7 +356,10 @@ export function useSupabaseLeague() {
       const currentProfile = profilesData?.find(p => p.user_id === user.id);
       if (currentProfile) setCurrentUserProfile(currentProfile as Profile);
     }
-  }, [user]);
+    
+    // Also refetch matches to ensure data is in sync
+    await refetchMatches();
+  }, [user, refetchMatches]);
 
   return {
     associations,
@@ -369,6 +381,7 @@ export function useSupabaseLeague() {
     getPlayerById,
     currentUserProfile,
     refetchProfiles,
+    refetchMatches,
     calculateStats,
   };
 }
