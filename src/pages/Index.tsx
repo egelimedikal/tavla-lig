@@ -207,7 +207,7 @@ const Index = () => {
         />
       )}
 
-      <FloatingActionButton onClick={() => setShowMatchForm(true)} />
+      
     </div>
   );
 };
