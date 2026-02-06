@@ -87,7 +87,7 @@ interface PlayerProfileProps {
   onBack: () => void;
   isOwnProfile?: boolean;
   onProfileUpdate?: () => void;
-  addMatch: (player1Id: string, player2Id: string, score1: number, score2: number) => Promise<Match | null>;
+  addMatch: (player1Id: string, player2Id: string, score1: number, score2: number, leagueId?: string) => Promise<Match | null>;
   calculateStats?: (leagueId: string) => PlayerStats[];
 }
 
@@ -394,12 +394,14 @@ export function PlayerProfile({
     
     setSubmittingMatch(true);
     try {
-      const result = await addMatch(player.id, opponentId, score1, score2);
+      // leagueId'yi addMatch'e doğru şekilde geçir
+      const result = await addMatch(player.id, opponentId, score1, score2, leagueId);
       if (result) {
         const winner = score1 > score2 ? player.name : getPlayerById(opponentId)?.name;
+        const leagueName = leagues.find(l => l.id === leagueId)?.name || '';
         toast({
           title: 'Maç Kaydedildi! ⚔️',
-          description: `${winner} maçı kazandı (${score1}-${score2})`,
+          description: `${leagueName}: ${winner} maçı kazandı (${score1}-${score2})`,
         });
         setScoreEntryMatch(null);
         setScore1(0);
