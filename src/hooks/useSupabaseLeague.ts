@@ -291,14 +291,16 @@ export function useSupabaseLeague() {
     player1Id: string,
     player2Id: string,
     score1: number,
-    score2: number
+    score2: number,
+    leagueId?: string
   ) => {
     const winnerId = score1 > score2 ? player1Id : player2Id;
+    const targetLeagueId = leagueId || currentLeagueId;
 
     const { data, error } = await supabase
       .from('matches')
       .insert({
-        league_id: currentLeagueId,
+        league_id: targetLeagueId,
         player1_id: player1Id,
         player2_id: player2Id,
         score1,
