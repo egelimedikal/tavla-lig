@@ -463,26 +463,44 @@ const Admin = () => {
   };
 
   const deletePlayer = async (playerId: string) => {
-    const { error } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', playerId);
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-player', {
+        body: { playerId },
+      });
 
-    if (error) {
+      if (error) {
+        toast({
+          title: "Hata",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data?.error) {
+        toast({
+          title: "Hata",
+          description: data.error,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setPlayers(prev => prev.filter(p => p.id !== playerId));
+      setLeaguePlayers(prev => prev.filter(lp => lp.player_id !== playerId));
+      setMatches(prev => prev.filter(m => m.player1_id !== playerId && m.player2_id !== playerId));
+      toast({
+        title: "Başarılı",
+        description: "Oyuncu tamamen silindi.",
+      });
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Bilinmeyen hata';
       toast({
         title: "Hata",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
-      return;
     }
-
-    setPlayers(prev => prev.filter(p => p.id !== playerId));
-    setLeaguePlayers(prev => prev.filter(lp => lp.player_id !== playerId));
-    toast({
-      title: "Başarılı",
-      description: "Oyuncu silindi.",
-    });
   };
 
   const resetPlayerPassword = async (player: Profile) => {
