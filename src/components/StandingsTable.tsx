@@ -51,7 +51,7 @@ export function StandingsTable({ standings, onPlayerClick }: StandingsTableProps
           <div className="text-center">G</div>
           <div className="text-center">M</div>
           <div className="text-center">A</div>
-          <div className="text-center">Y</div>
+          <div className="text-center">V</div>
           <div className="text-center">Av</div>
           <div className="text-center">P</div>
         </div>
@@ -109,7 +109,7 @@ export function StandingsTable({ standings, onPlayerClick }: StandingsTableProps
         <span><strong>G:</strong> Galibiyet</span>
         <span><strong>M:</strong> Mağlubiyet</span>
         <span><strong>A:</strong> Aldığı</span>
-        <span><strong>Y:</strong> Yediği</span>
+        <span><strong>V:</strong> Verdiği</span>
         <span><strong>Av:</strong> Averaj</span>
         <span><strong>P:</strong> Puan</span>
       </div>
