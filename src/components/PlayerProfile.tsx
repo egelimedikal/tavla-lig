@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { ArrowLeft, Trophy, LogOut, Key, Loader2, Camera, Check, X, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -354,7 +354,7 @@ export function PlayerProfile({
   };
 
   // Set default selected league when leagueStats changes
-  useMemo(() => {
+  useEffect(() => {
     if (leagueStats.length > 0 && !selectedLeagueId) {
       setSelectedLeagueId(leagueStats[0].league.id);
     }
