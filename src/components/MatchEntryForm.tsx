@@ -34,7 +34,7 @@ export function MatchEntryForm({ players, currentPlayerId, onSubmit, onClose }: 
   };
 
   const handleSubmit = async () => {
-    if (player1Id && player2Id && (score1 !== score2)) {
+    if (player1Id && player2Id && score1 !== score2 && Math.max(score1, score2) === 9) {
       setSubmitting(true);
       await onSubmit(player1Id, player2Id, score1, score2);
       setSubmitting(false);
@@ -42,7 +42,8 @@ export function MatchEntryForm({ players, currentPlayerId, onSubmit, onClose }: 
     }
   };
 
-  const isValid = player1Id && player2Id && score1 !== score2;
+  const maxScore = Math.max(score1, score2);
+  const isValid = player1Id && player2Id && score1 !== score2 && maxScore === 9;
   const player1 = players.find(p => p.id === player1Id);
   const player2 = players.find(p => p.id === player2Id);
 
@@ -166,6 +167,9 @@ export function MatchEntryForm({ players, currentPlayerId, onSubmit, onClose }: 
 
                   {score1 === score2 && score1 > 0 && (
                     <p className="text-xs text-warning text-center">Beraberlik olamaz, skorları değiştirin</p>
+                  )}
+                  {score1 !== score2 && maxScore !== 9 && maxScore > 0 && (
+                    <p className="text-xs text-warning text-center">Kazanan oyuncunun skoru 9 olmalıdır</p>
                   )}
                 </div>
               )}
