@@ -133,10 +133,10 @@ const Admin = () => {
   }, [isAdmin, adminLoading, user, navigate, toast]);
 
   useEffect(() => {
-    if (isAdmin) {
+    if (isAdmin && !superAdminLoading) {
       fetchData();
     }
-  }, [isAdmin]);
+  }, [isAdmin, isSuperAdmin, superAdminLoading]);
 
   const fetchData = async () => {
     setLoading(true);
