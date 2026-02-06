@@ -442,7 +442,9 @@ const Admin = () => {
   const updatePlayer = async () => {
     if (!editingPlayer) return;
 
-    const formattedPhone = editingPlayer.phone ? formatPhoneNumber(editingPlayer.phone) : null;
+    // Only format phone if it has actual digits, otherwise keep existing or null
+    const phoneDigits = editingPlayer.phone?.replace(/\D/g, '') || '';
+    const formattedPhone = phoneDigits.length >= 10 ? formatPhoneNumber(editingPlayer.phone!) : editingPlayer.phone;
 
     const { error } = await supabase
       .from('profiles')
@@ -1378,9 +1380,13 @@ const Admin = () => {
                                     <div className="relative">
                                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">+90</span>
                                       <Input
-                                        value={editingPlayer?.phone?.replace('+90', '') || ''}
-                                        onChange={e => setEditingPlayer(prev => prev ? { ...prev, phone: e.target.value.replace(/\D/g, '').slice(0, 10) } : null)}
+                                        value={editingPlayer?.phone?.replace(/^\+90/, '').replace(/^\+/, '') || ''}
+                                        onChange={e => {
+                                          const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                          setEditingPlayer(prev => prev ? { ...prev, phone: digits ? `+90${digits}` : prev.phone } : null);
+                                        }}
                                         className="pl-12"
+                                        placeholder="5XX XXX XX XX"
                                       />
                                     </div>
                                   </div>
