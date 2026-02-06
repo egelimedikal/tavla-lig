@@ -145,21 +145,28 @@ serve(async (req) => {
     // Format phone for profile
     const profilePhone = phone.startsWith('+') ? phone : `+90${formattedPhone}`;
 
-    // Check if profile with this phone exists (admin pre-created)
-    const { data: existingProfile } = await supabaseAdmin
+    // Wait a bit for the trigger to create the profile
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Check if profile was created by trigger (handle_new_user)
+    const { data: triggerCreatedProfile } = await supabaseAdmin
       .from('profiles')
       .select('*')
-      .eq('phone', profilePhone)
+      .eq('user_id', authData.user!.id)
       .maybeSingle();
 
     let profile;
 
-    if (existingProfile) {
-      // Update existing profile with user_id
+    if (triggerCreatedProfile) {
+      // Trigger already created profile, update it with phone and name
       const { data: updatedProfile, error: updateError } = await supabaseAdmin
         .from('profiles')
-        .update({ user_id: authData.user!.id, name: name })
-        .eq('id', existingProfile.id)
+        .update({ 
+          name: name, 
+          phone: profilePhone,
+          must_change_password: true 
+        })
+        .eq('id', triggerCreatedProfile.id)
         .select()
         .single();
 
@@ -167,25 +174,48 @@ serve(async (req) => {
         console.error('Profile update error:', updateError);
       }
       profile = updatedProfile;
-      console.log('Profile updated:', profile?.id);
+      console.log('Profile updated (trigger-created):', profile?.id);
     } else {
-      // Create new profile
-      const { data: newProfile, error: profileError } = await supabaseAdmin
+      // Check if profile with this phone exists (admin pre-created)
+      const { data: existingProfile } = await supabaseAdmin
         .from('profiles')
-        .insert({
-          user_id: authData.user!.id,
-          name: name,
-          phone: profilePhone,
-          must_change_password: true,
-        })
-        .select()
-        .single();
+        .select('*')
+        .eq('phone', profilePhone)
+        .maybeSingle();
 
-      if (profileError) {
-        console.error('Profile creation error:', profileError);
+      if (existingProfile) {
+        // Update existing profile with user_id
+        const { data: updatedProfile, error: updateError } = await supabaseAdmin
+          .from('profiles')
+          .update({ user_id: authData.user!.id, name: name, must_change_password: true })
+          .eq('id', existingProfile.id)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('Profile update error:', updateError);
+        }
+        profile = updatedProfile;
+        console.log('Profile updated (pre-created):', profile?.id);
+      } else {
+        // Create new profile (fallback - shouldn't happen with trigger)
+        const { data: newProfile, error: profileError } = await supabaseAdmin
+          .from('profiles')
+          .insert({
+            user_id: authData.user!.id,
+            name: name,
+            phone: profilePhone,
+            must_change_password: true,
+          })
+          .select()
+          .single();
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+        }
+        profile = newProfile;
+        console.log('Profile created:', profile?.id);
       }
-      profile = newProfile;
-      console.log('Profile created:', profile?.id);
     }
 
     return new Response(
