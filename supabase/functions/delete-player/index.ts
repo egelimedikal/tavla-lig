@@ -101,6 +101,19 @@ serve(async (req) => {
 
     const userId = profile?.user_id;
 
+    // Check if the player has a super_admin role
+    let isSuperAdmin = false;
+    if (userId) {
+      const { data: playerRoles } = await supabaseAdmin
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'super_admin')
+        .maybeSingle();
+      
+      isSuperAdmin = !!playerRoles;
+    }
+
     // Delete league_players entries first
     const { error: lpError } = await supabaseAdmin
       .from('league_players')
@@ -121,7 +134,16 @@ serve(async (req) => {
       console.error('Matches delete error:', matchesError);
     }
 
-    // Delete the profile
+    // If super_admin, keep profile and auth account but remove from leagues/matches only
+    if (isSuperAdmin) {
+      console.log('Super admin player - keeping auth account and profile, only removed league/match data:', playerId);
+      return new Response(
+        JSON.stringify({ success: true, message: 'Super admin oyuncu lig ve maç verilerinden silindi, hesabı korundu.' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Delete the profile (non-super-admin users)
     const { error: deleteProfileError } = await supabaseAdmin
       .from('profiles')
       .delete()
@@ -137,13 +159,12 @@ serve(async (req) => {
 
     console.log('Profile deleted:', playerId);
 
-    // Delete the auth user if exists
+    // Delete the auth user if exists (non-super-admin users only)
     if (userId) {
       const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
       
       if (authDeleteError) {
         console.error('Auth user delete error:', authDeleteError);
-        // Don't fail the request, profile is already deleted
       } else {
         console.log('Auth user deleted:', userId);
       }
