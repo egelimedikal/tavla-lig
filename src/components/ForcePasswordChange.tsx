@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Key, Loader2, Eye, EyeOff } from 'lucide-react';
+import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -58,7 +59,7 @@ export function ForcePasswordChange({ profileId, onComplete }: ForcePasswordChan
         .eq('id', profileId);
 
       if (updateError) {
-        console.error('Profile update error:', updateError);
+        logger.error('Profile update error:', updateError);
       }
 
       toast({

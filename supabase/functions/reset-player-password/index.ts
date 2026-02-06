@@ -12,6 +12,21 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_MIN_LENGTH = 4;
 const PASSWORD_MAX_LENGTH = 72;
 
+// --- In-Memory Rate Limiter ---
+const rateLimitMap = new Map<string, number[]>();
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+const RATE_LIMIT_MAX = 20; // max 20 resets per 10 minutes per user
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const timestamps = rateLimitMap.get(userId) || [];
+  const recent = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+  if (recent.length >= RATE_LIMIT_MAX) return false;
+  recent.push(now);
+  rateLimitMap.set(userId, recent);
+  return true;
+}
+
 function validateResetPasswordInput(body: unknown): { user_id: string; new_password: string; new_email?: string } | string {
   if (!body || typeof body !== 'object') return 'Geçersiz istek gövdesi';
   const { user_id, new_password, new_email } = body as Record<string, unknown>;
@@ -100,6 +115,14 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Bu işlem için admin yetkisi gerekli' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Rate limit check
+    if (!checkRateLimit(userId)) {
+      return new Response(
+        JSON.stringify({ error: 'Çok fazla istek. Lütfen birkaç dakika bekleyin.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

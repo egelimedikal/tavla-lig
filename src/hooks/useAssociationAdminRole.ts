@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { logger } from '@/lib/logger';
 
 interface AssociationAdmin {
   id: string;
@@ -28,13 +29,13 @@ export function useAssociationAdminRole() {
           .eq('user_id', user.id);
 
         if (error) {
-          console.error('Error fetching association admins:', error);
+          logger.error('Error fetching association admins:', error);
           setAssociationAdmins([]);
         } else {
           setAssociationAdmins(data || []);
         }
       } catch (error) {
-        console.error('Error fetching association admins:', error);
+        logger.error('Error fetching association admins:', error);
         setAssociationAdmins([]);
       } finally {
         setLoading(false);

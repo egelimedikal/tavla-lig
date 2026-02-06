@@ -14,6 +14,21 @@ const NAME_MIN_LENGTH = 2;
 const PASSWORD_MIN_LENGTH = 4;
 const PASSWORD_MAX_LENGTH = 72;
 
+// --- In-Memory Rate Limiter ---
+const rateLimitMap = new Map<string, number[]>();
+const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+const RATE_LIMIT_MAX = 10; // max 10 creations per 5 minutes per user
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const timestamps = rateLimitMap.get(userId) || [];
+  const recent = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+  if (recent.length >= RATE_LIMIT_MAX) return false;
+  recent.push(now);
+  rateLimitMap.set(userId, recent);
+  return true;
+}
+
 function validateCreatePlayerInput(body: unknown): { phone: string; password: string; name: string } | string {
   if (!body || typeof body !== 'object') return 'Geçersiz istek gövdesi';
   const { phone, password, name } = body as Record<string, unknown>;
@@ -100,6 +115,14 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Bu işlem için admin yetkisi gerekli' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Rate limit check
+    if (!checkRateLimit(userId)) {
+      return new Response(
+        JSON.stringify({ error: 'Çok fazla istek. Lütfen birkaç dakika bekleyin.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

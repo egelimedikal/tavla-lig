@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 interface AuthContextType {
   user: User | null;
@@ -59,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await supabase.auth.signOut({ scope: 'local' });
     } catch (error) {
-      console.error('Sign out cleanup error:', error);
+      logger.error('Sign out cleanup error:', error);
     }
   };
 

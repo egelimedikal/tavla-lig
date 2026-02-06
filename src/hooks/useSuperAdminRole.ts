@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { logger } from '@/lib/logger';
 
 export function useSuperAdminRole() {
   const { user } = useAuth();
@@ -24,13 +25,13 @@ export function useSuperAdminRole() {
           .maybeSingle();
 
         if (error) {
-          console.error('Error checking super admin role:', error);
+          logger.error('Error checking super admin role:', error);
           setIsSuperAdmin(false);
         } else {
           setIsSuperAdmin(!!data);
         }
       } catch (error) {
-        console.error('Error checking super admin role:', error);
+        logger.error('Error checking super admin role:', error);
         setIsSuperAdmin(false);
       } finally {
         setLoading(false);
