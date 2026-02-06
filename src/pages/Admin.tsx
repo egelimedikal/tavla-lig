@@ -1185,10 +1185,12 @@ const Admin = () => {
                             clearAssociationLogo();
                           }}>İptal</Button>
                         </DialogClose>
-                        <Button onClick={updateAssociation} disabled={savingAssociation}>
-                          {savingAssociation && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                          Kaydet
-                        </Button>
+                        <DialogClose asChild>
+                          <Button onClick={updateAssociation} disabled={savingAssociation}>
+                            {savingAssociation && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                            Kaydet
+                          </Button>
+                        </DialogClose>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
