@@ -196,7 +196,7 @@ const Index = () => {
         )}
       </div>
 
-      <FloatingActionButton onClick={() => setShowMatchForm(true)} />
+      
 
       {showMatchForm && (
         <MatchEntryForm
