@@ -6,6 +6,35 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// --- Input Validation ---
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const PHONE_REGEX = /^\+?[0-9]{10,15}$/;
+const NAME_MAX_LENGTH = 100;
+const NAME_MIN_LENGTH = 2;
+const PASSWORD_MIN_LENGTH = 4;
+const PASSWORD_MAX_LENGTH = 72;
+
+function validateCreatePlayerInput(body: unknown): { phone: string; password: string; name: string } | string {
+  if (!body || typeof body !== 'object') return 'Geçersiz istek gövdesi';
+  const { phone, password, name } = body as Record<string, unknown>;
+
+  if (typeof phone !== 'string' || !phone.trim()) return 'Telefon numarası gerekli';
+  if (typeof password !== 'string' || !password) return 'Şifre gerekli';
+  if (typeof name !== 'string' || !name.trim()) return 'İsim gerekli';
+
+  const trimmedName = name.trim();
+  if (trimmedName.length < NAME_MIN_LENGTH) return `İsim en az ${NAME_MIN_LENGTH} karakter olmalı`;
+  if (trimmedName.length > NAME_MAX_LENGTH) return `İsim en fazla ${NAME_MAX_LENGTH} karakter olmalı`;
+
+  if (password.length < PASSWORD_MIN_LENGTH) return `Şifre en az ${PASSWORD_MIN_LENGTH} karakter olmalı`;
+  if (password.length > PASSWORD_MAX_LENGTH) return `Şifre en fazla ${PASSWORD_MAX_LENGTH} karakter olmalı`;
+
+  const strippedPhone = phone.replace(/[\s\-\(\)]/g, '');
+  if (!PHONE_REGEX.test(strippedPhone)) return 'Geçersiz telefon numarası formatı (örn: +905551234567)';
+
+  return { phone: strippedPhone, password, name: trimmedName };
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -84,20 +113,20 @@ serve(async (req) => {
       },
     });
 
-    // Get request body
-    const { phone, password, name } = await req.json();
-
-    console.log('Creating player with phone:', phone);
-
-    if (!phone || !password || !name) {
+    // Get and validate request body
+    const rawBody = await req.json();
+    const validation = validateCreatePlayerInput(rawBody);
+    
+    if (typeof validation === 'string') {
       return new Response(
-        JSON.stringify({ error: 'Telefon, şifre ve isim gerekli' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ error: validation }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const { phone, password, name } = validation;
+
+    console.log('Creating player with phone:', phone.substring(0, 5) + '***');
 
     // Format phone to email format for auth
     const formattedPhone = phone.replace(/\D/g, '');
@@ -133,7 +162,7 @@ serve(async (req) => {
         if (deleteError) {
           console.error('Failed to delete orphaned user:', deleteError);
           return new Response(
-            JSON.stringify({ error: 'Eski kullanıcı kaydı silinemedi: ' + deleteError.message }),
+            JSON.stringify({ error: 'Eski kullanıcı kaydı silinemedi' }),
             { 
               status: 500, 
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -158,7 +187,7 @@ serve(async (req) => {
     if (authError) {
       console.error('Auth error:', authError);
       return new Response(
-        JSON.stringify({ error: authError.message }),
+        JSON.stringify({ error: 'Kullanıcı oluşturulamadı' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -258,9 +287,8 @@ serve(async (req) => {
 
   } catch (error: unknown) {
     console.error('Error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'Sunucu hatası oluştu' }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

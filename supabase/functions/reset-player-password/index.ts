@@ -6,6 +6,35 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// --- Input Validation ---
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PASSWORD_MIN_LENGTH = 4;
+const PASSWORD_MAX_LENGTH = 72;
+
+function validateResetPasswordInput(body: unknown): { user_id: string; new_password: string; new_email?: string } | string {
+  if (!body || typeof body !== 'object') return 'Geçersiz istek gövdesi';
+  const { user_id, new_password, new_email } = body as Record<string, unknown>;
+
+  if (typeof user_id !== 'string' || !user_id.trim()) return 'Kullanıcı ID gerekli';
+  if (!UUID_REGEX.test(user_id.trim())) return 'Geçersiz kullanıcı ID formatı';
+
+  if (typeof new_password !== 'string' || !new_password) return 'Yeni şifre gerekli';
+  if (new_password.length < PASSWORD_MIN_LENGTH) return `Şifre en az ${PASSWORD_MIN_LENGTH} karakter olmalı`;
+  if (new_password.length > PASSWORD_MAX_LENGTH) return `Şifre en fazla ${PASSWORD_MAX_LENGTH} karakter olmalı`;
+
+  if (new_email !== undefined && new_email !== null) {
+    if (typeof new_email !== 'string') return 'Geçersiz e-posta formatı';
+    if (new_email.trim() && !EMAIL_REGEX.test(new_email.trim())) return 'Geçersiz e-posta formatı';
+  }
+
+  return {
+    user_id: user_id.trim(),
+    new_password,
+    new_email: typeof new_email === 'string' && new_email.trim() ? new_email.trim() : undefined,
+  };
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -84,20 +113,20 @@ serve(async (req) => {
       },
     });
 
-    // Get request body
-    const { user_id, new_password, new_email } = await req.json();
+    // Get and validate request body
+    const rawBody = await req.json();
+    const validation = validateResetPasswordInput(rawBody);
 
-    console.log('Resetting password for user_id:', user_id);
-
-    if (!user_id || !new_password) {
+    if (typeof validation === 'string') {
       return new Response(
-        JSON.stringify({ error: 'Kullanıcı ID ve yeni şifre gerekli' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ error: validation }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const { user_id, new_password, new_email } = validation;
+
+    console.log('Resetting password for user_id:', user_id);
 
     // Build update object
     const updateData: { password: string; email?: string } = { password: new_password };
@@ -114,7 +143,7 @@ serve(async (req) => {
     if (error) {
       console.error('Password reset error:', error);
       return new Response(
-        JSON.stringify({ error: error.message }),
+        JSON.stringify({ error: 'Şifre sıfırlama başarısız' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -147,9 +176,8 @@ serve(async (req) => {
 
   } catch (error: unknown) {
     console.error('Error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'Sunucu hatası oluştu' }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
