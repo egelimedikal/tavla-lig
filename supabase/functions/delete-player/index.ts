@@ -6,6 +6,35 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// --- Input Validation ---
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function validateDeletePlayerInput(body: unknown): { playerId: string } | string {
+  if (!body || typeof body !== 'object') return 'Geçersiz istek gövdesi';
+  const { playerId } = body as Record<string, unknown>;
+
+  if (typeof playerId !== 'string' || !playerId.trim()) return 'Oyuncu ID gerekli';
+  const trimmedId = playerId.trim();
+  if (!UUID_REGEX.test(trimmedId)) return 'Geçersiz oyuncu ID formatı';
+
+  return { playerId: trimmedId };
+}
+
+// --- In-Memory Rate Limiter ---
+const rateLimitMap = new Map<string, number[]>();
+const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+const RATE_LIMIT_MAX = 10; // max 10 deletions per 5 minutes per user
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const timestamps = rateLimitMap.get(userId) || [];
+  const recent = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+  if (recent.length >= RATE_LIMIT_MAX) return false;
+  recent.push(now);
+  rateLimitMap.set(userId, recent);
+  return true;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -64,17 +93,28 @@ serve(async (req) => {
       );
     }
 
+    // Rate limit check
+    if (!checkRateLimit(callerId)) {
+      return new Response(
+        JSON.stringify({ error: 'Çok fazla istek. Lütfen birkaç dakika bekleyin.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log('Admin verified, caller_id:', callerId);
 
-    // Get request body
-    const { playerId } = await req.json();
+    // Validate input
+    const rawBody = await req.json();
+    const validation = validateDeletePlayerInput(rawBody);
 
-    if (!playerId) {
+    if (typeof validation === 'string') {
       return new Response(
-        JSON.stringify({ error: 'Oyuncu ID gerekli' }),
+        JSON.stringify({ error: validation }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const { playerId } = validation;
 
     // Create admin client with service role key
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
@@ -152,7 +192,7 @@ serve(async (req) => {
     if (deleteProfileError) {
       console.error('Profile delete error:', deleteProfileError);
       return new Response(
-        JSON.stringify({ error: deleteProfileError.message }),
+        JSON.stringify({ error: 'Oyuncu profili silinemedi' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

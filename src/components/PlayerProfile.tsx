@@ -1,5 +1,6 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { ArrowLeft, Trophy, LogOut, Key, Loader2, Camera, Check, X, Eye, EyeOff } from 'lucide-react';
+import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -342,7 +343,7 @@ export function PlayerProfile({
 
       onProfileUpdate?.();
     } catch (error: any) {
-      console.error('Avatar upload error:', error);
+      logger.error('Avatar upload error:', error);
       toast({
         title: 'Hata',
         description: error.message || 'Fotoğraf yüklenirken hata oluştu.',

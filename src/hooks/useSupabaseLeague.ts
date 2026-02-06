@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 interface LeaguePlayer {
   id: string;
@@ -119,7 +120,7 @@ export function useSupabaseLeague() {
         
         if (leaguePlayersData) setLeaguePlayers(leaguePlayersData);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        logger.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
