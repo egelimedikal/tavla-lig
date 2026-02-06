@@ -1,6 +1,7 @@
-import { User, Shield } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { User, Shield, LogOut } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAdminRole } from '@/hooks/useAdminRole';
+import { useAuth } from '@/contexts/AuthContext';
 import logo from '@/assets/logo.png';
 
 interface HeaderProps {
@@ -9,6 +10,13 @@ interface HeaderProps {
 
 export function Header({ onProfileClick }: HeaderProps) {
   const { isAdmin } = useAdminRole();
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
@@ -19,7 +27,6 @@ export function Header({ onProfileClick }: HeaderProps) {
           </div>
           <div>
             <h1 className="text-lg font-bold text-foreground">Tavla Lig</h1>
-            
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -36,6 +43,13 @@ export function Header({ onProfileClick }: HeaderProps) {
             className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
           >
             <User className="w-5 h-5 text-foreground" />
+          </button>
+          <button
+            onClick={handleSignOut}
+            className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center hover:bg-destructive/30 transition-colors"
+            title="Çıkış Yap"
+          >
+            <LogOut className="w-4 h-4 text-destructive" />
           </button>
         </div>
       </div>
