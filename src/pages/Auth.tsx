@@ -187,7 +187,7 @@ export default function Auth() {
       {/* Footer */}
       <div className="py-6 text-center text-xs text-muted-foreground">
         <p>© 2026 Tavla Lig</p>
-        <p className="mt-1">Geliştiren: Yavuz Kanmaz</p>
+        <p className="mt-1">Geliştiren: Y.Kanmaz</p>
       </div>
     </div>
   );
