@@ -374,19 +374,6 @@ const Admin = () => {
       return;
     }
 
-    const formattedPhone = formatPhoneNumber(newPlayerPhone);
-
-    // Check if phone already exists in profiles
-    const existingPlayer = players.find(p => p.phone === formattedPhone);
-    if (existingPlayer) {
-      toast({
-        title: "Hata",
-        description: "Bu telefon numarası zaten kayıtlı.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setCreatingPlayer(true);
 
     try {
