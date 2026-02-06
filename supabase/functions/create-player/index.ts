@@ -103,19 +103,45 @@ serve(async (req) => {
     const formattedPhone = phone.replace(/\D/g, '');
     const phoneEmail = `${formattedPhone}@tavla.app`;
 
-    // Check if user already exists
+    // Check if user already exists in auth
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
     const existingUser = existingUsers?.users?.find(u => u.email === phoneEmail);
 
     if (existingUser) {
       console.log('User already exists with email:', phoneEmail);
-      return new Response(
-        JSON.stringify({ error: 'Bu telefon numarası zaten kayıtlı' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      
+      // Check if this user has a profile
+      const { data: existingProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .eq('user_id', existingUser.id)
+        .maybeSingle();
+      
+      if (existingProfile) {
+        // User exists with profile - this is a real duplicate
+        return new Response(
+          JSON.stringify({ error: 'Bu telefon numarası zaten kayıtlı' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      } else {
+        // Orphaned auth user (no profile) - delete it first
+        console.log('Found orphaned auth user, deleting:', existingUser.id);
+        const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(existingUser.id);
+        if (deleteError) {
+          console.error('Failed to delete orphaned user:', deleteError);
+          return new Response(
+            JSON.stringify({ error: 'Eski kullanıcı kaydı silinemedi: ' + deleteError.message }),
+            { 
+              status: 500, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
         }
-      );
+        console.log('Orphaned user deleted, proceeding with creation');
+      }
     }
 
     // Create auth user
