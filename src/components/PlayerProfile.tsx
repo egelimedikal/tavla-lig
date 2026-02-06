@@ -320,15 +320,17 @@ export function PlayerProfile({
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
+      // Get public URL with cache-busting parameter
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
+      const cacheBustedUrl = `${publicUrl}?t=${Date.now()}`;
+
       // Update profile with avatar URL
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ avatar_url: publicUrl })
+        .update({ avatar_url: cacheBustedUrl })
         .eq('id', player.id);
 
       if (updateError) throw updateError;
