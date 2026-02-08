@@ -284,7 +284,10 @@ export function useSupabaseLeague() {
       // 3. Goal difference (descending)
       if (b.average !== a.average) return b.average - a.average;
 
-      // 4. Alphabetical fallback
+      // 4. Fewer matches played = higher rank
+      if (a.played !== b.played) return a.played - b.played;
+
+      // 5. Alphabetical fallback
       return (a.player.name || '').localeCompare(b.player.name || '', 'tr');
     });
 
