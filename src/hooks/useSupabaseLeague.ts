@@ -263,6 +263,11 @@ export function useSupabaseLeague() {
 
     // Sort with tiebreakers
     const sortedStats = Array.from(statsMap.values()).sort((a, b) => {
+      // If neither player has played, sort alphabetically
+      if (a.played === 0 && b.played === 0) {
+        return (a.player.name || '').localeCompare(b.player.name || '', 'tr');
+      }
+
       // 1. Total Points (descending)
       if (b.points !== a.points) return b.points - a.points;
 
@@ -277,7 +282,10 @@ export function useSupabaseLeague() {
       }
 
       // 3. Goal difference (descending)
-      return b.average - a.average;
+      if (b.average !== a.average) return b.average - a.average;
+
+      // 4. Alphabetical fallback
+      return (a.player.name || '').localeCompare(b.player.name || '', 'tr');
     });
 
     return sortedStats;
