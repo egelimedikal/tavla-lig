@@ -10,6 +10,7 @@ import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { ForcePasswordChange } from '@/components/ForcePasswordChange';
 import { useSupabaseLeague } from '@/hooks/useSupabaseLeague';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdminRole } from '@/hooks/useAdminRole';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
@@ -17,6 +18,7 @@ type View = 'standings' | 'profile' | 'force-password-change';
 
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
+  const { isAdmin } = useAdminRole();
   const navigate = useNavigate();
   const { 
     associations,
@@ -207,7 +209,7 @@ const Index = () => {
         />
       )}
 
-      <FloatingActionButton onClick={() => setShowMatchForm(true)} />
+      {isAdmin && <FloatingActionButton onClick={() => setShowMatchForm(true)} />}
     </div>
   );
 };
