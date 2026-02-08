@@ -1,4 +1,4 @@
-import { Trophy, Medal, Flame, Zap, Shield, Target, Crown } from 'lucide-react';
+import { Trophy, Medal } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -24,47 +24,6 @@ interface StandingsTableProps {
   standings: PlayerStats[];
   onPlayerClick: (playerId: string) => void;
 }
-
-const getBadges = (stat: PlayerStats, standings: PlayerStats[]) => {
-  const badges: { icon: React.ReactNode; title: string }[] = [];
-  if (stat.played === 0) return badges;
-
-  // 🔥 Undefeated (played at least 3 and no losses)
-  if (stat.played >= 3 && stat.lost === 0) {
-    badges.push({ icon: <Flame className="w-3 h-3 text-orange-400" />, title: 'Yenilmez' });
-  }
-
-  // ⚡ High win rate (>=75% with at least 4 games)
-  if (stat.played >= 4 && (stat.won / stat.played) >= 0.75) {
-    badges.push({ icon: <Zap className="w-3 h-3 text-yellow-400" />, title: 'Yüksek galibiyet' });
-  }
-
-  // 🛡️ Solid defense (lowest conceded per game, min 3 games)
-  const playedPlayers = standings.filter(s => s.played >= 3);
-  if (stat.played >= 3 && playedPlayers.length > 0) {
-    const concededPerGame = stat.conceded / stat.played;
-    const bestDefense = Math.min(...playedPlayers.map(s => s.conceded / s.played));
-    if (concededPerGame === bestDefense) {
-      badges.push({ icon: <Shield className="w-3 h-3 text-sky-400" />, title: 'En iyi savunma' });
-    }
-  }
-
-  // 🎯 Best average (highest average among all who played)
-  if (playedPlayers.length > 0) {
-    const bestAvg = Math.max(...playedPlayers.map(s => s.average));
-    if (stat.average === bestAvg && stat.average > 0) {
-      badges.push({ icon: <Target className="w-3 h-3 text-emerald-400" />, title: 'En iyi averaj' });
-    }
-  }
-
-  // 👑 Most points overall
-  const maxPoints = Math.max(...standings.filter(s => s.played > 0).map(s => s.points));
-  if (stat.points === maxPoints && stat.points > 0) {
-    badges.push({ icon: <Crown className="w-3 h-3 text-amber-300" />, title: 'Lider' });
-  }
-
-  return badges;
-};
 
 export function StandingsTable({ standings, onPlayerClick }: StandingsTableProps) {
   const getRankIcon = (rank: number) => {
@@ -123,11 +82,6 @@ export function StandingsTable({ standings, onPlayerClick }: StandingsTableProps
                 <span className="font-medium text-foreground truncate text-[11px]">
                   {stat.player?.name || 'Bilinmeyen Oyuncu'}
                 </span>
-                {getBadges(stat, standings).map((badge, i) => (
-                  <span key={i} title={badge.title} className="flex-shrink-0">
-                    {badge.icon}
-                  </span>
-                ))}
               </div>
               <div className="text-center text-muted-foreground text-[11px]">{stat.played}</div>
               <div className="text-center text-success font-medium text-[11px]">{stat.won}</div>
