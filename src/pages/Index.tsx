@@ -196,18 +196,18 @@ const Index = () => {
         )}
       </div>
 
-      
-
       {showMatchForm && (
         <MatchEntryForm
-          players={players}
+          players={players.filter(p => 
+            leaguePlayers.some(lp => lp.league_id === currentLeagueId && lp.player_id === p.id)
+          )}
           currentPlayerId={currentUserProfile?.id}
           onSubmit={handleMatchSubmit}
           onClose={() => setShowMatchForm(false)}
         />
       )}
 
-      
+      <FloatingActionButton onClick={() => setShowMatchForm(true)} />
     </div>
   );
 };
