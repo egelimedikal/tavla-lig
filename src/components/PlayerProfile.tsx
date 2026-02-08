@@ -160,11 +160,12 @@ export function PlayerProfile({
           playedOpponentIds.add(opponentId);
         });
       
-      // Calculate remaining opponents
+      // Calculate remaining opponents (sorted alphabetically by name)
       const remainingOpponents = leaguePlayerIds
         .filter(id => !playedOpponentIds.has(id))
         .map(id => getPlayerById(id))
-        .filter((p): p is Profile => p !== undefined);
+        .filter((p): p is Profile => p !== undefined)
+        .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr'));
       
       leagueMap.set(leagueId, {
         league,
