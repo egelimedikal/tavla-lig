@@ -193,6 +193,22 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
 
       {/* Standings Table */}
       <div className="px-2">
+        {/* Champion highlight when tournament is completed or only 1 active player */}
+        {(() => {
+          const activePlayers = currentPlayers.filter(tp => !tp.is_eliminated);
+          const isFinished = selectedTournament?.status === 'completed' || (activePlayers.length <= 1 && currentMatches.length > 0);
+          const champion = isFinished && sortedPlayers.length > 0 ? sortedPlayers[0] : null;
+          const championPlayer = champion ? getPlayerById(champion.player_id) : null;
+
+          return isFinished && championPlayer ? (
+            <div className="mb-4 p-4 bg-gradient-to-r from-yellow-500/20 via-amber-500/10 to-yellow-500/20 border-2 border-yellow-500/40 rounded-xl text-center animate-fade-in">
+              <Trophy className="w-10 h-10 text-yellow-400 mx-auto mb-2" />
+              <p className="text-lg font-bold text-foreground">{championPlayer.name}</p>
+              <p className="text-sm text-yellow-500 font-semibold">🏆 Turnuva Şampiyonu</p>
+            </div>
+          ) : null;
+        })()}
+
         <div className="bg-card rounded-xl overflow-hidden border border-border">
           <div className="grid grid-cols-[22px_minmax(0,1fr)_28px_28px_28px] gap-0 px-1 py-2 bg-secondary/50 text-[10px] font-semibold text-muted-foreground">
             <div className="text-center">#</div>
@@ -206,12 +222,14 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
               const player = getPlayerById(tp.player_id);
               const wins = currentMatches.filter(m => m.winner_id === tp.player_id).length;
               const byeCount = currentMatches.filter(m => m.is_bye && m.player1_id === tp.player_id).length;
+              const activePlayers = currentPlayers.filter(p => !p.is_eliminated);
+              const isChampion = index === 0 && (selectedTournament?.status === 'completed' || (activePlayers.length <= 1 && currentMatches.length > 0));
 
               return (
                 <button
                   key={tp.id}
                   onClick={() => onPlayerClick(tp.player_id)}
-                  className={`w-full grid grid-cols-[22px_minmax(0,1fr)_28px_28px_28px] gap-0 px-1 py-2 text-xs hover:bg-secondary/30 transition-colors ${getGroupBorder(index)} ${tp.is_eliminated ? 'bg-destructive/10' : ''}`}
+                  className={`w-full grid grid-cols-[22px_minmax(0,1fr)_28px_28px_28px] gap-0 px-1 py-2 text-xs hover:bg-secondary/30 transition-colors ${getGroupBorder(index)} ${tp.is_eliminated ? 'bg-destructive/10' : ''} ${isChampion ? 'bg-yellow-500/10 border-l-4 border-l-yellow-400' : ''}`}
                 >
                   <div className="flex items-center justify-center text-muted-foreground">
                     {index === 0 ? <Trophy className="w-4 h-4 text-yellow-400" /> : index === 1 ? <Trophy className="w-4 h-4 text-gray-300" /> : index === 2 ? <Trophy className="w-4 h-4 text-amber-600" /> : index + 1}
@@ -224,7 +242,7 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
                         {player?.name?.charAt(0) || '?'}
                       </div>
                     )}
-                    <span className={`font-medium truncate text-[11px] ${tp.is_eliminated ? 'text-destructive/70' : 'text-foreground'}`}>
+                    <span className={`font-medium truncate text-[11px] ${tp.is_eliminated ? 'text-destructive/70' : isChampion ? 'text-yellow-400 font-bold' : 'text-foreground'}`}>
                       {player?.name || 'Bilinmeyen'}
                     </span>
                   </div>
