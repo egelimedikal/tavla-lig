@@ -720,15 +720,15 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
                         {t.status === 'active' && (
-                          <Button variant="outline" size="sm" onClick={() => completeTournament(t.id)}>
+                          <Button variant="outline" size="sm" className="h-8 px-3 text-xs" onClick={() => completeTournament(t.id)}>
                             Kaydet
                           </Button>
                         )}
                         {isSuperAdmin && (
-                          <Button variant="destructive" size="icon" onClick={() => deleteTournament(t.id)}>
-                            <Trash2 className="w-4 h-4" />
+                          <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => deleteTournament(t.id)}>
+                            <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         )}
                       </div>
