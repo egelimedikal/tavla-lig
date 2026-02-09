@@ -462,12 +462,7 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
     return Math.max(0, 4 - tp.losses);
   };
 
-  const getLossRowColor = (losses: number, isEliminated: boolean) => {
-    if (isEliminated) return 'bg-red-500/30 border-l-4 border-l-red-500';
-    if (losses === 0) return 'bg-green-500/20 border-l-4 border-l-green-500';
-    if (losses === 1) return 'bg-yellow-400/25 border-l-4 border-l-yellow-400';
-    if (losses === 2) return 'bg-orange-500/25 border-l-4 border-l-orange-500';
-    if (losses === 3) return 'bg-pink-500/25 border-l-4 border-l-pink-500';
+  const getLossRowColor = (_losses: number, _isEliminated: boolean) => {
     return '';
   };
 
