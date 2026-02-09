@@ -255,10 +255,6 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
                       <td className="px-4 py-2 font-bold text-primary">{rank}/{totalPlayers}</td>
                     </tr>
                     <tr>
-                      <td className="px-4 py-2 font-medium text-muted-foreground">Kalan Hak</td>
-                      <td className="px-4 py-2 font-bold text-foreground">{remainingRights}</td>
-                    </tr>
-                    <tr>
                       <td className="px-4 py-2 font-medium text-muted-foreground">Oynanan</td>
                       <td className="px-4 py-2 text-foreground">{played}</td>
                     </tr>
