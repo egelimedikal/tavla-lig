@@ -796,12 +796,11 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
                       return (
                         <div
                           key={tp.id}
-                          className={`grid grid-cols-[30px_1fr_40px_40px_40px] gap-0 px-3 py-2 text-xs items-center ${getGroupBorder(index)}`}
+                          className={`grid grid-cols-[30px_1fr_40px_40px_40px] gap-0 px-3 py-2 text-xs items-center ${getGroupBorder(index)} ${tp.is_eliminated ? 'bg-destructive/10' : ''}`}
                         >
                           <div className="text-center text-muted-foreground font-medium">{index + 1}</div>
-                          <div className="font-medium truncate">
+                          <div className={`font-medium truncate ${tp.is_eliminated ? 'text-destructive/70' : ''}`}>
                             {getPlayerName(tp.player_id)}
-                            {tp.is_eliminated && <span className="ml-1 text-[9px] text-destructive font-bold">(ELENDİ)</span>}
                           </div>
                           <div className="text-center text-success">{wins}</div>
                           <div className="text-center text-primary">{tp.losses}</div>
