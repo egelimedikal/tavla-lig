@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Trophy } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
@@ -72,7 +73,10 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
         if (tRes.data) {
           const ts = tRes.data as Tournament[];
           setTournaments(ts);
-          if (ts.length > 0) setSelectedTournamentId(ts[0].id);
+          if (ts.length > 0) {
+            const active = ts.find(t => t.status === 'active');
+            setSelectedTournamentId(active ? active.id : ts[0].id);
+          }
         }
         if (tpRes.data) setTournamentPlayers(tpRes.data as TournamentPlayer[]);
         if (tmRes.data) setTournamentMatches(tmRes.data as TournamentMatch[]);
@@ -168,24 +172,21 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
 
   return (
     <div className="animate-fade-in">
-      {/* Tournament Tabs */}
+      {/* Tournament Selector */}
       {tournaments.length > 1 && (
-        <div className="overflow-x-auto scrollbar-hide">
-          <div className="flex gap-2 px-4 py-3 min-w-max">
-            {tournaments.map(t => (
-              <button
-                key={t.id}
-                onClick={() => setSelectedTournamentId(t.id)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-                  selectedTournamentId === t.id
-                    ? 'bg-primary text-primary-foreground glow-primary'
-                    : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
-                }`}
-              >
-                {t.name}
-              </button>
-            ))}
-          </div>
+        <div className="px-4 py-3">
+          <Select value={selectedTournamentId || ''} onValueChange={setSelectedTournamentId}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Turnuva seçin" />
+            </SelectTrigger>
+            <SelectContent>
+              {tournaments.map(t => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.name} {t.status === 'completed' ? '(Tamamlandı)' : '(Aktif)'}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
 
