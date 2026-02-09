@@ -34,6 +34,8 @@ interface League {
   id: string;
   name: string;
   association_id: string | null;
+  status: string;
+  updated_at: string;
 }
 
 interface Association {

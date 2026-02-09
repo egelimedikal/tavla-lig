@@ -199,18 +199,24 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          status: string
+          updated_at: string
         }
         Insert: {
           association_id?: string | null
           created_at?: string
           id: string
           name: string
+          status?: string
+          updated_at?: string
         }
         Update: {
           association_id?: string | null
           created_at?: string
           id?: string
           name?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: [
           {
