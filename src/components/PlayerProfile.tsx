@@ -1,5 +1,6 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { ArrowLeft, Trophy, LogOut, Key, Loader2, Camera, Check, X, Eye, EyeOff } from 'lucide-react';
+import { TournamentPlayerProfile } from '@/components/TournamentPlayerProfile';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -718,9 +719,13 @@ export function PlayerProfile({
             )}
           </div>
         )}
-      </div>
 
-      {/* Password Change Dialog */}
+        {/* Tournament Stats */}
+        <TournamentPlayerProfile 
+          playerId={player.id} 
+          getPlayerById={getPlayerById} 
+        />
+      </div>
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
