@@ -184,27 +184,33 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
       </h3>
 
       {/* Overall Stats */}
-      <div className="bg-card rounded-xl border border-border p-4">
-        <div className="grid grid-cols-4 gap-3 text-center">
-          <div>
-            <p className="text-lg font-bold text-foreground">{overallStats.totalPlayed}</p>
-            <p className="text-[10px] text-muted-foreground">Oynanan</p>
-          </div>
-          <div>
-            <p className="text-lg font-bold text-success">{overallStats.totalWins}</p>
-            <p className="text-[10px] text-muted-foreground">Galibiyet</p>
-          </div>
-          <div>
-            <p className="text-lg font-bold text-primary">{overallStats.totalLosses}</p>
-            <p className="text-[10px] text-muted-foreground">Mağlubiyet</p>
-          </div>
-          <div>
-            <p className={`text-lg font-bold ${overallStats.overallWinRate >= 50 ? 'text-success' : 'text-primary'}`}>
-              %{overallStats.overallWinRate}
-            </p>
-            <p className="text-[10px] text-muted-foreground">Oran</p>
-          </div>
-        </div>
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
+        <table className="w-full text-sm">
+          <tbody className="divide-y divide-border">
+            <tr>
+              <td className="px-4 py-3 font-medium text-muted-foreground">Oynanan Maç</td>
+              <td className="px-4 py-3 text-foreground">{overallStats.totalPlayed}</td>
+            </tr>
+            <tr>
+              <td className="px-4 py-3 font-medium text-muted-foreground">Galibiyet</td>
+              <td className="px-4 py-3 text-success font-medium">{overallStats.totalWins}</td>
+            </tr>
+            <tr>
+              <td className="px-4 py-3 font-medium text-muted-foreground">Mağlubiyet</td>
+              <td className="px-4 py-3 text-primary font-medium">{overallStats.totalLosses}</td>
+            </tr>
+            <tr>
+              <td className="px-4 py-3 font-medium text-muted-foreground">Galibiyet Oranı</td>
+              <td className="px-4 py-3">
+                {overallStats.totalPlayed > 0 ? (
+                  <span className={overallStats.overallWinRate >= 50 ? 'text-success font-semibold' : 'text-primary font-semibold'}>
+                    %{overallStats.overallWinRate}
+                  </span>
+                ) : '-'}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       {playerTournaments.map(({ tournament, tp, matches, wins, losses, played, winRate, remainingRights, rank }) => {
