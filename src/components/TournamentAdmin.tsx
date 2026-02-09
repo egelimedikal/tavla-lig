@@ -722,7 +722,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
                         {t.status === 'active' && (
-                          <Button variant="outline" size="sm" className="h-7 px-2 text-[11px]" onClick={() => completeTournament(t.id)}>
+                          <Button variant="outline" size="sm" className="h-7 px-2 text-[12px] leading-none" onClick={() => completeTournament(t.id)}>
                             Kaydet
                           </Button>
                         )}
