@@ -211,7 +211,7 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
                 <button
                   key={tp.id}
                   onClick={() => onPlayerClick(tp.player_id)}
-                  className={`w-full grid grid-cols-[22px_minmax(0,1fr)_28px_28px_28px] gap-0 px-1 py-2 text-xs hover:bg-secondary/30 transition-colors ${getGroupBorder(index)}`}
+                  className={`w-full grid grid-cols-[22px_minmax(0,1fr)_28px_28px_28px] gap-0 px-1 py-2 text-xs hover:bg-secondary/30 transition-colors ${getGroupBorder(index)} ${tp.is_eliminated ? 'bg-destructive/10' : ''}`}
                 >
                   <div className="flex items-center justify-center text-muted-foreground">
                     {index === 0 ? <Trophy className="w-4 h-4 text-yellow-400" /> : index === 1 ? <Trophy className="w-4 h-4 text-gray-300" /> : index === 2 ? <Trophy className="w-4 h-4 text-amber-600" /> : index + 1}
@@ -224,9 +224,8 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
                         {player?.name?.charAt(0) || '?'}
                       </div>
                     )}
-                    <span className="font-medium text-foreground truncate text-[11px]">
+                    <span className={`font-medium truncate text-[11px] ${tp.is_eliminated ? 'text-destructive/70' : 'text-foreground'}`}>
                       {player?.name || 'Bilinmeyen'}
-                      {tp.is_eliminated && <span className="ml-1 text-[9px] text-destructive font-bold">(ELENDİ)</span>}
                     </span>
                   </div>
                   <div className="text-center text-success font-medium text-[11px]">{wins}</div>
