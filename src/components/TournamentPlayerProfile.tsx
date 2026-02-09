@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Trophy } from 'lucide-react';
+import { Loader2, Trophy, ChevronDown, ChevronUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { logger } from '@/lib/logger';
 
@@ -50,6 +50,7 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
   const [tournamentPlayers, setTournamentPlayers] = useState<TournamentPlayer[]>([]);
   const [tournamentMatches, setTournamentMatches] = useState<TournamentMatch[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedTournaments, setExpandedTournaments] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -72,7 +73,48 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
     fetchData();
   }, []);
 
-  // Find tournaments this player is in
+  // Calculate rank for a player in a tournament
+  const getPlayerRank = (tournamentId: string, targetPlayerId: string): number => {
+    const tPlayers = tournamentPlayers.filter(tp => tp.tournament_id === tournamentId);
+    const tMatches = tournamentMatches.filter(tm => tm.tournament_id === tournamentId);
+
+    const sorted = [...tPlayers].sort((a, b) => {
+      if (a.is_eliminated !== b.is_eliminated) return a.is_eliminated ? 1 : -1;
+      if (a.losses !== b.losses) return a.losses - b.losses;
+      // H2H
+      const h2h = tMatches.find(m =>
+        m.winner_id && (
+          (m.player1_id === a.player_id && m.player2_id === b.player_id) ||
+          (m.player1_id === b.player_id && m.player2_id === a.player_id)
+        )
+      );
+      if (h2h?.winner_id === a.player_id) return -1;
+      if (h2h?.winner_id === b.player_id) return 1;
+      // Score diff
+      const getAvg = (pid: string) => {
+        let s = 0, c = 0;
+        tMatches.filter(m => m.winner_id && (m.player1_id === pid || m.player2_id === pid)).forEach(m => {
+          if (m.player1_id === pid) { s += m.score1 || 0; c += m.score2 || 0; }
+          else { s += m.score2 || 0; c += m.score1 || 0; }
+        });
+        return s - c;
+      };
+      return getAvg(b.player_id) - getAvg(a.player_id);
+    });
+
+    const idx = sorted.findIndex(tp => tp.player_id === targetPlayerId);
+    return idx >= 0 ? idx + 1 : 0;
+  };
+
+  const toggleTournament = (id: string) => {
+    setExpandedTournaments(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const playerTournaments = useMemo(() => {
     const tpEntries = tournamentPlayers.filter(tp => tp.player_id === playerId);
     return tpEntries.map(tp => {
@@ -88,6 +130,7 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
       const losses = tp.losses;
       const played = matches.filter(m => m.winner_id !== null).length;
       const winRate = played > 0 ? Math.round((wins / played) * 100) : 0;
+      const rank = getPlayerRank(tp.tournament_id, playerId);
 
       return {
         tournament,
@@ -98,6 +141,7 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
         played,
         winRate,
         remainingRights: Math.max(0, 4 - tp.losses),
+        rank,
       };
     }).filter(Boolean) as Array<{
       tournament: Tournament;
@@ -108,6 +152,7 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
       played: number;
       winRate: number;
       remainingRights: number;
+      rank: number;
     }>;
   }, [playerId, tournaments, tournamentPlayers, tournamentMatches]);
 
@@ -121,10 +166,6 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
 
   if (playerTournaments.length === 0) return null;
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  };
-
   return (
     <div className="space-y-4">
       <h3 className="font-semibold px-1 flex items-center gap-2">
@@ -132,101 +173,122 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
         Turnuva İstatistikleri
       </h3>
 
-      {playerTournaments.map(({ tournament, tp, matches, wins, losses, played, winRate, remainingRights }) => (
-        <div key={tournament.id} className="space-y-3">
-          <div className="flex items-center gap-2">
-            <h4 className="font-medium text-sm">{tournament.name}</h4>
-            {tp.is_eliminated ? (
-              <Badge variant="destructive" className="text-[9px]">ELENDİ</Badge>
-            ) : (
-              <Badge variant="outline" className="text-[9px] border-success text-success">Aktif</Badge>
+      {playerTournaments.map(({ tournament, tp, matches, wins, losses, played, winRate, remainingRights, rank }) => {
+        const isExpanded = expandedTournaments.has(tournament.id);
+        const totalPlayers = tournamentPlayers.filter(p => p.tournament_id === tournament.id).length;
+
+        return (
+          <div key={tournament.id} className="bg-card rounded-xl border border-border overflow-hidden">
+            {/* Collapsible Header */}
+            <button
+              onClick={() => toggleTournament(tournament.id)}
+              className="w-full flex items-center justify-between px-4 py-3 hover:bg-secondary/30 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-primary" />
+                <span className="font-medium text-sm text-foreground">{tournament.name}</span>
+                {tournament.status === 'completed' && (
+                  <Badge variant="secondary" className="text-[9px]">Tamamlandı</Badge>
+                )}
+              </div>
+              {isExpanded ? (
+                <ChevronUp className="w-4 h-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              )}
+            </button>
+
+            {isExpanded && (
+              <div className="border-t border-border">
+                {/* Stats */}
+                <table className="w-full text-sm">
+                  <tbody className="divide-y divide-border">
+                    <tr>
+                      <td className="px-4 py-2 font-medium text-muted-foreground">Sıralama</td>
+                      <td className="px-4 py-2 font-bold text-primary">{rank}/{totalPlayers}</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2 font-medium text-muted-foreground">Kalan Hak</td>
+                      <td className="px-4 py-2 font-bold text-foreground">{remainingRights}</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2 font-medium text-muted-foreground">Oynanan</td>
+                      <td className="px-4 py-2 text-foreground">{played}</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2 font-medium text-muted-foreground">Galibiyet</td>
+                      <td className="px-4 py-2 text-success font-medium">{wins}</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2 font-medium text-muted-foreground">Mağlubiyet</td>
+                      <td className="px-4 py-2 text-primary font-medium">{losses}</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2 font-medium text-muted-foreground">Galibiyet Oranı</td>
+                      <td className="px-4 py-2">
+                        {played > 0 ? (
+                          <span className={winRate >= 50 ? 'text-success font-semibold' : 'text-primary font-semibold'}>
+                            %{winRate}
+                          </span>
+                        ) : '-'}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {/* Match History */}
+                {matches.length > 0 && (
+                  <div className="border-t border-border">
+                    <table className="w-full text-sm">
+                      <thead className="bg-secondary/50">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs">Tur</th>
+                          <th className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs">Rakip</th>
+                          <th className="px-3 py-2 text-center font-semibold text-muted-foreground text-xs">Skor</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/50">
+                        {matches
+                          .sort((a, b) => b.round_number - a.round_number)
+                          .map(match => {
+                          const isPlayer1 = match.player1_id === playerId;
+                          const opponentId = isPlayer1 ? match.player2_id : match.player1_id;
+                          const opponent = opponentId ? getPlayerById(opponentId) : null;
+                          const playerWon = match.winner_id === playerId;
+
+                          return (
+                            <tr key={match.id}>
+                              <td className="px-3 py-2 text-muted-foreground text-xs">{match.round_number}</td>
+                              <td className="px-3 py-2 text-xs">
+                                {match.is_bye ? (
+                                  <span className="text-success">BYE</span>
+                                ) : (
+                                  <span className={playerWon ? 'font-bold text-foreground' : 'text-muted-foreground'}>
+                                    {opponent?.name || 'Bilinmeyen'}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-3 py-2 text-center text-xs font-medium">
+                                {match.is_bye ? (
+                                  <span className="text-success">Hükmen</span>
+                                ) : match.score1 !== null ? (
+                                  `${isPlayer1 ? match.score1 : match.score2} - ${isPlayer1 ? match.score2 : match.score1}`
+                                ) : (
+                                  '-'
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             )}
           </div>
-
-          {/* Stats */}
-          <div className="bg-card rounded-xl border border-border overflow-hidden">
-            <table className="w-full text-sm">
-              <tbody className="divide-y divide-border">
-                <tr>
-                  <td className="px-4 py-2 font-medium text-muted-foreground">Kalan Hak</td>
-                  <td className="px-4 py-2 font-bold text-foreground">{remainingRights}</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 font-medium text-muted-foreground">Oynanan</td>
-                  <td className="px-4 py-2 text-foreground">{played}</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 font-medium text-muted-foreground">Galibiyet</td>
-                  <td className="px-4 py-2 text-success font-medium">{wins}</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 font-medium text-muted-foreground">Mağlubiyet</td>
-                  <td className="px-4 py-2 text-primary font-medium">{losses}</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 font-medium text-muted-foreground">Galibiyet Oranı</td>
-                  <td className="px-4 py-2">
-                    {played > 0 ? (
-                      <span className={winRate >= 50 ? 'text-success font-semibold' : 'text-primary font-semibold'}>
-                        %{winRate}
-                      </span>
-                    ) : '-'}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Match History */}
-          {matches.length > 0 && (
-            <div className="bg-card rounded-xl border border-border overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-secondary/50">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs">Tur</th>
-                    <th className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs">Rakip</th>
-                    <th className="px-3 py-2 text-center font-semibold text-muted-foreground text-xs">Skor</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/50">
-                  {matches
-                    .sort((a, b) => b.round_number - a.round_number)
-                    .map(match => {
-                    const isPlayer1 = match.player1_id === playerId;
-                    const opponentId = isPlayer1 ? match.player2_id : match.player1_id;
-                    const opponent = opponentId ? getPlayerById(opponentId) : null;
-                    const playerWon = match.winner_id === playerId;
-
-                    return (
-                      <tr key={match.id}>
-                        <td className="px-3 py-2 text-muted-foreground text-xs">{match.round_number}</td>
-                        <td className="px-3 py-2 text-xs">
-                          {match.is_bye ? (
-                            <span className="text-success">BYE</span>
-                          ) : (
-                            <span className={playerWon ? 'font-bold text-foreground' : 'text-muted-foreground'}>
-                              {opponent?.name || 'Bilinmeyen'}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2 text-center text-xs font-medium">
-                          {match.is_bye ? (
-                            <span className="text-success">Hükmen</span>
-                          ) : match.score1 !== null ? (
-                            `${isPlayer1 ? match.score1 : match.score2} - ${isPlayer1 ? match.score2 : match.score1}`
-                          ) : (
-                            '-'
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
