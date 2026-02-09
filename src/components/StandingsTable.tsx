@@ -1,3 +1,4 @@
+import { Trophy } from 'lucide-react';
 
 
 interface Profile {
@@ -58,7 +59,7 @@ export function StandingsTable({ standings, onPlayerClick }: StandingsTableProps
               className={`w-full grid grid-cols-[22px_1fr_28px_28px_28px_32px_32px_34px_34px] gap-0 px-1 py-2 text-xs hover:bg-secondary/30 transition-colors ${getRankClass(index + 1)}`}
             >
               <div className="flex items-center justify-center text-muted-foreground">
-                {index + 1}
+                {index === 0 ? <Trophy className="w-4 h-4 text-yellow-400" /> : index + 1}
               </div>
               <div className="flex items-center gap-1 text-left min-w-0 overflow-hidden pl-1">
                 {stat.player?.avatar_url ? (
