@@ -592,49 +592,42 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
 
               {/* Add Players Dialog */}
               <Dialog open={showAddPlayers} onOpenChange={setShowAddPlayers}>
-                <DialogContent 
-                  className="max-h-[80vh] flex flex-col"
-                  onPointerDownOutside={(e) => {
-                    // Prevent dialog from closing when clicking on Select portal content
-                    const target = e.target as HTMLElement;
-                    if (target?.closest('[data-radix-select-content]') || target?.closest('[role="listbox"]') || target?.closest('[role="option"]')) {
-                      e.preventDefault();
-                    }
-                  }}
-                >
+                <DialogContent className="max-h-[80vh] flex flex-col">
                   <DialogHeader>
                     <DialogTitle>Turnuvaya Oyuncu Ekle</DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-3 py-4 overflow-y-auto flex-1">
+                  <div className="space-y-2 py-4 overflow-y-auto flex-1">
                     {players.map(p => {
                       const isSelected = selectedPlayersForTournament.has(p.id);
                       const alreadyInTournament = currentTournamentPlayers.some(tp => tp.player_id === p.id);
+                      const currentRights = selectedPlayersForTournament.get(p.id) || 4;
                       return (
-                        <div key={p.id} className={`flex items-center gap-3 p-3 rounded-lg ${alreadyInTournament ? 'bg-muted/30 opacity-50' : 'bg-muted/50'}`}>
+                        <div key={p.id} className={`flex items-center gap-2 p-2.5 rounded-lg ${alreadyInTournament ? 'bg-muted/30 opacity-50' : isSelected ? 'bg-primary/10 border border-primary/30' : 'bg-muted/50'}`}>
                           <Checkbox
                             checked={isSelected}
                             disabled={alreadyInTournament}
                             onCheckedChange={() => togglePlayerSelection(p.id)}
                           />
-                          <span className="flex-1 text-sm font-medium">{p.name}</span>
+                          <span className="flex-1 text-sm font-medium truncate">{p.name}</span>
                           {isSelected && (
-                            <div onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-                              <Select
-                                value={String(selectedPlayersForTournament.get(p.id) || 4)}
-                                onValueChange={v => setPlayerRights(p.id, parseInt(v))}
-                              >
-                                <SelectTrigger className="w-24 h-8 text-xs">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent position="popper" className="z-[9999] bg-popover">
-                                  <SelectItem value="4">4 Hak</SelectItem>
-                                  <SelectItem value="3">3 Hak</SelectItem>
-                                  <SelectItem value="2">2 Hak</SelectItem>
-                                </SelectContent>
-                              </Select>
+                            <div className="flex gap-1">
+                              {[4, 3, 2].map(r => (
+                                <button
+                                  key={r}
+                                  type="button"
+                                  onClick={() => setPlayerRights(p.id, r)}
+                                  className={`w-8 h-7 rounded text-xs font-bold transition-colors ${
+                                    currentRights === r 
+                                      ? 'bg-primary text-primary-foreground' 
+                                      : 'bg-muted hover:bg-muted-foreground/20 text-muted-foreground'
+                                  }`}
+                                >
+                                  {r}
+                                </button>
+                              ))}
                             </div>
                           )}
-                          {alreadyInTournament && <Badge variant="outline" className="text-xs">Eklendi</Badge>}
+                          {alreadyInTournament && <Badge variant="outline" className="text-[10px]">Eklendi</Badge>}
                         </div>
                       );
                     })}
