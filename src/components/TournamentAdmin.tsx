@@ -62,7 +62,6 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
   const [tournamentMatches, setTournamentMatches] = useState<TournamentMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [newTournamentName, setNewTournamentName] = useState('');
-  const [newTournamentMatchLength, setNewTournamentMatchLength] = useState(9);
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
   
   // Player selection for tournament
@@ -102,7 +101,7 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
     }
     const { data, error } = await supabase
       .from('tournaments')
-      .insert({ name: newTournamentName, association_id: associationId, match_length: newTournamentMatchLength } as any)
+      .insert({ name: newTournamentName, association_id: associationId } as any)
       .select()
       .single();
     if (error) {
@@ -112,7 +111,6 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
     if (data) {
       setTournaments(prev => [data as Tournament, ...prev]);
       setNewTournamentName('');
-      setNewTournamentMatchLength(9);
       setSelectedTournamentId(data.id);
       toast({ title: "Başarılı", description: "Turnuva oluşturuldu." });
     }
@@ -129,6 +127,21 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
     setTournamentMatches(prev => prev.filter(tm => tm.tournament_id !== id));
     if (selectedTournamentId === id) setSelectedTournamentId(null);
     toast({ title: "Başarılı", description: "Turnuva silindi." });
+  };
+
+  const updateTournamentMatchLength = async (tournamentId: string, matchLength: number) => {
+    const { error } = await supabase
+      .from('tournaments')
+      .update({ match_length: matchLength } as any)
+      .eq('id', tournamentId);
+    if (error) {
+      toast({ title: "Hata", description: error.message, variant: "destructive" });
+      return;
+    }
+    setTournaments(prev => prev.map(t =>
+      t.id === tournamentId ? { ...t, match_length: matchLength } as any : t
+    ));
+    toast({ title: "Başarılı", description: `Turnuva ${matchLength} sayılık olarak ayarlandı.` });
   };
 
   const togglePlayerSelection = (playerId: string) => {
@@ -630,38 +643,17 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
         <CardContent className="space-y-4">
           <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
             <Label>Yeni Turnuva Oluştur</Label>
-            <Input
-              placeholder="Turnuva Adı"
-              value={newTournamentName}
-              onChange={e => setNewTournamentName(e.target.value)}
-            />
-            {newTournamentName.trim() && (
-              <>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Kaç Sayılık?</Label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {[5, 7, 9, 11, 13, 15, 17, 19, 21].map(n => (
-                      <button
-                        key={n}
-                        type="button"
-                        onClick={() => setNewTournamentMatchLength(n)}
-                        className={`w-9 h-8 rounded text-xs font-bold transition-colors ${
-                          newTournamentMatchLength === n
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted hover:bg-muted-foreground/20 text-muted-foreground'
-                        }`}
-                      >
-                        {n}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <Button onClick={createTournament} className="w-full">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Turnuva Oluştur
-                </Button>
-              </>
-            )}
+            <div className="flex gap-2">
+              <Input
+                placeholder="Turnuva Adı"
+                value={newTournamentName}
+                onChange={e => setNewTournamentName(e.target.value)}
+                className="flex-1"
+              />
+              <Button onClick={createTournament} size="icon">
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
 
           {/* Tournament List */}
@@ -698,6 +690,29 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
       {/* Selected Tournament Management */}
       {selectedTournament && (
         <>
+          {/* Match Length */}
+          <Card>
+            <CardContent className="pt-4 space-y-2">
+              <Label className="text-xs text-muted-foreground">Kaç Sayılık?</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {[5, 7, 9, 11, 13, 15, 17, 19, 21].map(n => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => updateTournamentMatchLength(selectedTournament.id, n)}
+                    className={`w-9 h-8 rounded text-xs font-bold transition-colors ${
+                      ((selectedTournament as any).match_length ?? 9) === n
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted hover:bg-muted-foreground/20 text-muted-foreground'
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Players */}
           <Card>
             <CardHeader>
