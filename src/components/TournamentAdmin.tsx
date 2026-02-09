@@ -674,24 +674,26 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
-            <Label>Yeni Turnuva Oluştur</Label>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Turnuva Adı"
-                value={newTournamentName}
-                onChange={e => setNewTournamentName(e.target.value)}
-                className="flex-1"
-              />
-              <Button onClick={createTournament} size="icon">
-                <Plus className="w-4 h-4" />
-              </Button>
+          {!selectedTournamentId && (
+            <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+              <Label>Yeni Turnuva Oluştur</Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Turnuva Adı"
+                  value={newTournamentName}
+                  onChange={e => setNewTournamentName(e.target.value)}
+                  className="flex-1"
+                />
+                <Button onClick={createTournament} size="icon">
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Tournament List */}
           <div className="space-y-2">
-          {tournaments.map(t => {
+          {tournaments.filter(t => !selectedTournamentId || t.id === selectedTournamentId).map(t => {
             const isOpen = selectedTournamentId === t.id;
             const tCurrentPlayers = getTournamentPlayers(t.id);
             const tMatchesByRound = getMatchesByRound(t.id);
