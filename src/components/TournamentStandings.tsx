@@ -122,12 +122,7 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
     });
   }, [currentPlayers, currentMatches, players]);
 
-  const getLossRowColor = (losses: number, isEliminated: boolean) => {
-    if (isEliminated) return 'bg-red-500/30 border-l-4 border-l-red-500';
-    if (losses === 0) return 'bg-green-500/20 border-l-4 border-l-green-500';
-    if (losses === 1) return 'bg-yellow-400/25 border-l-4 border-l-yellow-400';
-    if (losses === 2) return 'bg-orange-500/25 border-l-4 border-l-orange-500';
-    if (losses === 3) return 'bg-pink-500/25 border-l-4 border-l-pink-500';
+  const getLossRowColor = (_losses: number, _isEliminated: boolean) => {
     return '';
   };
 
@@ -193,7 +188,7 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
             <div className="text-center">M</div>
             <div className="text-center">Bye</div>
           </div>
-          <div className="divide-y divide-border/50">
+          <div className="divide-y divide-border">
             {sortedPlayers.map((tp, index) => {
               const player = getPlayerById(tp.player_id);
               const wins = currentMatches.filter(m => m.winner_id === tp.player_id).length;
@@ -233,17 +228,7 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
           )}
         </div>
 
-        {/* Legend */}
-        <div className="mt-4 flex flex-wrap gap-4 text-xs text-muted-foreground justify-center">
-          <span><strong>G:</strong> Galibiyet</span>
-          <span><strong>M:</strong> Mağlubiyet</span>
-          <span><strong>Bye:</strong> Bye Sayısı</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-500/40 border border-green-500"></span>0 M</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-400/50 border border-yellow-400"></span>1 M</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-orange-500/50 border border-orange-500"></span>2 M</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-pink-500/50 border border-pink-500"></span>3 M</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-500/50 border border-red-500"></span>Elendi</span>
-        </div>
+        
       </div>
 
       {/* Match Results by Round */}
