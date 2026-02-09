@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { logger } from '@/lib/logger';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,6 +40,8 @@ interface League {
   id: string;
   name: string;
   association_id: string | null;
+  status: string;
+  updated_at: string;
 }
 
 interface Match {
@@ -348,6 +351,39 @@ const Admin = () => {
     toast({
       title: "Başarılı",
       description: "Lig silindi.",
+    });
+  };
+
+  const completeLeague = async (leagueId: string) => {
+    // Check if league has any matches
+    const leagueMatchCount = matches.filter(m => m.league_id === leagueId).length;
+    if (leagueMatchCount === 0) {
+      toast({
+        title: "Hata",
+        description: "Hiç maç oynanmamış bir lig tamamlanamaz.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { error } = await supabase
+      .from('leagues')
+      .update({ status: 'completed' })
+      .eq('id', leagueId);
+
+    if (error) {
+      toast({
+        title: "Hata",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLeagues(prev => prev.map(l => l.id === leagueId ? { ...l, status: 'completed', updated_at: new Date().toISOString() } : l));
+    toast({
+      title: "Başarılı",
+      description: "Lig tamamlandı.",
     });
   };
 
@@ -1233,58 +1269,76 @@ const Admin = () => {
 
                 {/* League List */}
                 <div className="space-y-2">
-                  {leagues.map(league => (
-                    <div 
-                      key={league.id} 
-                      className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
-                    >
-                      <div>
-                        <p className="font-medium">{league.name}</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="icon"
-                              onClick={() => setEditingLeague({ ...league })}
-                            >
-                              <Edit className="w-4 h-4" />
+                  {leagues.map(league => {
+                    const leagueMatchCount = matches.filter(m => m.league_id === league.id).length;
+                    return (
+                      <div 
+                        key={league.id} 
+                        className="flex items-center justify-between p-3 bg-muted/30 rounded-lg gap-3"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium truncate">{league.name}</p>
+                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                            <Badge variant={league.status === 'active' ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0">
+                              {league.status === 'active' ? 'Aktif' : `Tamamlandı - ${format(new Date(league.updated_at), 'dd.MM.yyyy')}`}
+                            </Badge>
+                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">({leagueMatchCount} maç)</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {league.status === 'active' && (
+                            <Button variant="outline" size="sm" className="h-7 px-2 text-[12px] leading-none" onClick={() => completeLeague(league.id)}>
+                              Kaydet
                             </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Lig Düzenle</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              <div>
-                                <Label>Lig Adı</Label>
-                                <Input
-                                  value={editingLeague?.name || ''}
-                                  onChange={e => setEditingLeague(prev => prev ? { ...prev, name: e.target.value } : null)}
-                                />
+                          )}
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => setEditingLeague({ ...league })}
+                              >
+                                <Edit className="w-3 h-3" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Lig Düzenle</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div>
+                                  <Label>Lig Adı</Label>
+                                  <Input
+                                    value={editingLeague?.name || ''}
+                                    onChange={e => setEditingLeague(prev => prev ? { ...prev, name: e.target.value } : null)}
+                                  />
+                                </div>
                               </div>
-                            </div>
-                            <DialogFooter>
-                              <DialogClose asChild>
-                                <Button variant="outline">İptal</Button>
-                              </DialogClose>
-                              <DialogClose asChild>
-                                <Button onClick={updateLeague}>Kaydet</Button>
-                              </DialogClose>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
-                        <Button 
-                          variant="destructive" 
-                          size="icon"
-                          onClick={() => deleteLeague(league.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                              <DialogFooter>
+                                <DialogClose asChild>
+                                  <Button variant="outline">İptal</Button>
+                                </DialogClose>
+                                <DialogClose asChild>
+                                  <Button onClick={updateLeague}>Kaydet</Button>
+                                </DialogClose>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                          {isSuperAdmin && (
+                            <Button 
+                              variant="destructive" 
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => deleteLeague(league.id)}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

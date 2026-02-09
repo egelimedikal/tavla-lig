@@ -1,7 +1,12 @@
+import { format } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 interface League {
   id: string;
   name: string;
   association_id: string | null;
+  status: string;
+  updated_at: string;
 }
 
 interface LeagueTabsProps {
@@ -19,23 +24,24 @@ export function LeagueTabs({ leagues, currentLeagueId, onLeagueChange }: LeagueT
     );
   }
 
+  if (leagues.length === 1) {
+    return null;
+  }
+
   return (
-    <div className="overflow-x-auto scrollbar-hide">
-      <div className="flex gap-2 px-4 py-3 min-w-max">
-        {leagues.map((league) => (
-          <button
-            key={league.id}
-            onClick={() => onLeagueChange(league.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-              currentLeagueId === league.id
-                ? 'bg-primary text-primary-foreground glow-primary'
-                : 'bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground'
-            }`}
-          >
-            {league.name}
-          </button>
-        ))}
-      </div>
+    <div className="px-4 py-3">
+      <Select value={currentLeagueId} onValueChange={onLeagueChange}>
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder="Lig seçin" />
+        </SelectTrigger>
+        <SelectContent>
+          {leagues.map((league) => (
+            <SelectItem key={league.id} value={league.id}>
+              {league.name} {league.status === 'completed' ? `(Tamamlandı - ${format(new Date(league.updated_at), 'dd.MM.yyyy')})` : '(Aktif)'}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
