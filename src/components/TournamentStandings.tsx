@@ -238,11 +238,11 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
           <span><strong>G:</strong> Galibiyet</span>
           <span><strong>M:</strong> Mağlubiyet</span>
           <span><strong>Bye:</strong> Bye Sayısı</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-900/25 border border-green-400"></span>0 M</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-amber-900/30 border border-amber-400"></span>1 M</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-orange-900/35 border border-orange-500"></span>2 M</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-900/35 border border-red-400"></span>3 M</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-900/50 border border-red-600"></span>Elendi</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-400/40 border border-green-400"></span>0 M</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-amber-400/40 border border-amber-400"></span>1 M</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-orange-500/40 border border-orange-500"></span>2 M</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-400/40 border border-red-400"></span>3 M</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-600/50 border border-red-600"></span>Elendi</span>
         </div>
       </div>
 
