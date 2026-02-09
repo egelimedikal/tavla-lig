@@ -643,23 +643,25 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
                 <div className="bg-card rounded-xl overflow-hidden border border-border">
                   <div className="grid grid-cols-[1fr_50px_50px_50px_50px] gap-0 px-3 py-2 bg-secondary/50 text-[10px] font-semibold text-muted-foreground">
                     <div>Oyuncu</div>
-                    <div className="text-center">Hak</div>
                     <div className="text-center">G</div>
                     <div className="text-center">M</div>
+                    <div className="text-center">Bye</div>
                     <div className="text-center">Durum</div>
                   </div>
                   <div className="divide-y divide-border/50">
                     {sortedPlayers.map((tp) => {
                       const wins = currentTournamentMatches.filter(m => m.winner_id === tp.player_id).length;
+                      const actualLosses = tp.losses - (4 - tp.initial_rights);
+                      const byeCount = currentTournamentMatches.filter(m => m.is_bye && m.player1_id === tp.player_id).length;
                       return (
                         <div
                           key={tp.id}
                           className={`grid grid-cols-[1fr_50px_50px_50px_50px] gap-0 px-3 py-2 text-xs items-center ${getLossRowColor(tp.losses, tp.is_eliminated)}`}
                         >
                           <div className="font-medium truncate">{getPlayerName(tp.player_id)}</div>
-                          <div className="text-center font-bold">{getRemainingRights(tp)}</div>
                           <div className="text-center text-success">{wins}</div>
-                          <div className="text-center text-primary">{tp.losses - (4 - tp.initial_rights)}</div>
+                          <div className="text-center text-primary">{actualLosses}</div>
+                          <div className="text-center">{byeCount}</div>
                           <div className="text-center">
                             {tp.is_eliminated ? (
                               <Badge variant="destructive" className="text-[9px] px-1">ELENDİ</Badge>

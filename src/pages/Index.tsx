@@ -248,7 +248,7 @@ const Index = () => {
         />
       )}
 
-      {isAdmin && <FloatingActionButton onClick={() => setShowMatchForm(true)} />}
+      {isAdmin && tabMode === 'league' && <FloatingActionButton onClick={() => setShowMatchForm(true)} />}
     </div>
   );
 };
