@@ -706,29 +706,29 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
               >
                 <div className={`rounded-lg border transition-colors ${isOpen ? 'border-primary/30 bg-primary/10' : 'border-border bg-muted/30'}`}>
                   <CollapsibleTrigger asChild>
-                    <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 rounded-t-lg">
-                      <div className="flex items-center gap-2 flex-1">
-                        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-0' : '-rotate-90'}`} />
-                        <div>
-                          <p className="font-medium">{t.name}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant={t.status === 'active' ? 'default' : 'secondary'}>
+                    <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 rounded-t-lg gap-3">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform shrink-0 ${isOpen ? 'rotate-0' : '-rotate-90'}`} />
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{t.name}</p>
+                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                            <Badge variant={t.status === 'active' ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0">
                               {t.status === 'active' ? 'Aktif' : 'Tamamlandı'}
                             </Badge>
-                            <span className="text-xs text-muted-foreground">Tur: {t.current_round}</span>
-                            <span className="text-xs text-muted-foreground">({tCurrentPlayers.length} oyuncu)</span>
+                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">Tur: {t.current_round}</span>
+                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">({tCurrentPlayers.length} oyuncu)</span>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
                         {t.status === 'active' && (
-                          <Button variant="outline" size="sm" className="h-8 px-3 text-xs" onClick={() => completeTournament(t.id)}>
+                          <Button variant="outline" size="sm" className="h-7 px-2 text-[11px]" onClick={() => completeTournament(t.id)}>
                             Kaydet
                           </Button>
                         )}
                         {isSuperAdmin && (
-                          <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => deleteTournament(t.id)}>
-                            <Trash2 className="w-3.5 h-3.5" />
+                          <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => deleteTournament(t.id)}>
+                            <Trash2 className="w-3 h-3" />
                           </Button>
                         )}
                       </div>
