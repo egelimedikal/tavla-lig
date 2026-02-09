@@ -737,6 +737,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                   <CollapsibleContent>
                     <div className="px-3 pb-3 space-y-4">
                       {/* Match Length */}
+                      {t.status === 'active' && (
                       <div className="space-y-2 p-3 bg-muted/30 rounded-lg">
                         <Label className="text-xs text-muted-foreground">Kaç Sayılık?</Label>
                         <div className="flex flex-wrap gap-1.5">
@@ -756,6 +757,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                           ))}
                         </div>
                       </div>
+                      )}
 
                       {/* Players */}
                       <div className="space-y-3">
@@ -764,10 +766,12 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                             <Users className="w-4 h-4" />
                             Oyuncular
                           </h4>
-                          <Button variant="outline" size="sm" onClick={() => { setSelectedTournamentId(t.id); setShowAddPlayers(true); setSelectedPlayersForTournament(new Map()); }}>
-                            <Plus className="w-3 h-3 mr-1" />
-                            Ekle
-                          </Button>
+                          {t.status === 'active' && (
+                            <Button variant="outline" size="sm" onClick={() => { setSelectedTournamentId(t.id); setShowAddPlayers(true); setSelectedPlayersForTournament(new Map()); }}>
+                              <Plus className="w-3 h-3 mr-1" />
+                              Ekle
+                            </Button>
+                          )}
                         </div>
 
                         {/* Add Players Dialog */}
@@ -857,7 +861,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                         )}
 
                         {/* Remove players */}
-                        {tCurrentPlayers.length > 0 && (
+                        {t.status === 'active' && tCurrentPlayers.length > 0 && (
                           <div className="space-y-1">
                             <Label className="text-xs text-muted-foreground">Oyuncu Çıkar</Label>
                             {tCurrentPlayers.map(tp => (
@@ -878,10 +882,12 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                           <Swords className="w-4 h-4" />
                           Eşleştirmeler & Skorlar
                         </h4>
-                        <Button size="sm" onClick={() => { setSelectedTournamentId(t.id); generateMatchesForRound(); }} disabled={generatingMatches}>
-                          {generatingMatches ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Shuffle className="w-4 h-4 mr-2" />}
-                          Eşleştirmeleri Başlat (Tur {t.current_round + 1})
-                        </Button>
+                        {t.status === 'active' && (
+                          <Button size="sm" onClick={() => { setSelectedTournamentId(t.id); generateMatchesForRound(); }} disabled={generatingMatches}>
+                            {generatingMatches ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Shuffle className="w-4 h-4 mr-2" />}
+                            Eşleştirmeleri Başlat (Tur {t.current_round + 1})
+                          </Button>
+                        )}
 
                         {Array.from(tMatchesByRound.entries())
                           .sort(([a], [b]) => b - a)
@@ -913,7 +919,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                                       </p>
                                     )}
                                   </div>
-                                  {!match.is_bye && (
+                                  {!match.is_bye && t.status === 'active' && (
                                     <Dialog
                                       open={editingMatch?.id === match.id}
                                       onOpenChange={(open) => {
