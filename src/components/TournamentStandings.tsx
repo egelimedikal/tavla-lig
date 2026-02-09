@@ -256,7 +256,9 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
               const roundMatches = currentMatches.filter(m => m.round_number === round);
               return (
                 <div key={round} className="space-y-2">
-                  <h4 className="text-sm font-medium text-muted-foreground">Tur {round}</h4>
+                  <h4 className="font-bold text-sm text-primary flex items-center gap-2">
+                    <Badge variant="default" className="text-xs">{round}. Tur</Badge>
+                  </h4>
                   <div className="bg-card rounded-xl border border-border overflow-hidden divide-y divide-border/50">
                     {roundMatches.map(match => {
                       const p1 = getPlayerById(match.player1_id);
