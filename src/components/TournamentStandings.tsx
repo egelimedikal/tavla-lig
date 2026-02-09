@@ -207,7 +207,7 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
                   className={`w-full grid grid-cols-[22px_1fr_32px_32px_32px] gap-0 px-1 py-2 text-xs hover:bg-secondary/30 transition-colors ${getGroupBorder(index)}`}
                 >
                   <div className="flex items-center justify-center text-muted-foreground">
-                    {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                    {index === 0 ? <Trophy className="w-4 h-4 text-yellow-400" /> : index === 1 ? <Trophy className="w-4 h-4 text-gray-300" /> : index === 2 ? <Trophy className="w-4 h-4 text-amber-600" /> : index + 1}
                   </div>
                   <div className="flex items-center gap-1 text-left min-w-0 overflow-hidden pl-1">
                     {player?.avatar_url ? (
