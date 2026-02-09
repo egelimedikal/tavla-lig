@@ -42,6 +42,8 @@ interface League {
   association_id: string | null;
   status: string;
   updated_at: string;
+  current_year: number | null;
+  active_season: string | null;
 }
 
 interface Match {
@@ -312,7 +314,12 @@ const Admin = () => {
 
     const { error } = await supabase
       .from('leagues')
-      .update({ name: editingLeague.name, association_id: editingLeague.association_id })
+      .update({ 
+        name: editingLeague.name, 
+        association_id: editingLeague.association_id,
+        current_year: editingLeague.current_year,
+        active_season: editingLeague.active_season,
+      })
       .eq('id', editingLeague.id);
 
     if (error) {
@@ -1278,6 +1285,13 @@ const Admin = () => {
                       >
                         <div className="min-w-0 flex-1">
                           <p className="font-medium truncate">{league.name}</p>
+                          {(league.current_year || league.active_season) && (
+                            <p className="text-[10px] text-muted-foreground">
+                              {league.current_year && `${league.current_year} Yılı`}
+                              {league.current_year && league.active_season && ' • '}
+                              {league.active_season && `${league.active_season} Sezonu`}
+                            </p>
+                          )}
                           <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                             <Badge variant={league.status === 'active' ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0">
                               {league.status === 'active' ? 'Aktif' : `Tamamlandı - ${format(new Date(league.updated_at), 'dd.MM.yyyy')}`}
@@ -1313,6 +1327,25 @@ const Admin = () => {
                                     value={editingLeague?.name || ''}
                                     onChange={e => setEditingLeague(prev => prev ? { ...prev, name: e.target.value } : null)}
                                   />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label>Mevcut Yıl</Label>
+                                    <Input
+                                      type="number"
+                                      value={editingLeague?.current_year || ''}
+                                      onChange={e => setEditingLeague(prev => prev ? { ...prev, current_year: parseInt(e.target.value) || null } : null)}
+                                      placeholder="2025"
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label>Aktif Sezon</Label>
+                                    <Input
+                                      value={editingLeague?.active_season || ''}
+                                      onChange={e => setEditingLeague(prev => prev ? { ...prev, active_season: e.target.value || null } : null)}
+                                      placeholder="Bahar, Güz, vb."
+                                    />
+                                  </div>
                                 </div>
                               </div>
                               <DialogFooter>

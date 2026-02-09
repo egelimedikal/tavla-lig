@@ -195,24 +195,30 @@ export type Database = {
       }
       leagues: {
         Row: {
+          active_season: string | null
           association_id: string | null
           created_at: string
+          current_year: number | null
           id: string
           name: string
           status: string
           updated_at: string
         }
         Insert: {
+          active_season?: string | null
           association_id?: string | null
           created_at?: string
+          current_year?: number | null
           id: string
           name: string
           status?: string
           updated_at?: string
         }
         Update: {
+          active_season?: string | null
           association_id?: string | null
           created_at?: string
+          current_year?: number | null
           id?: string
           name?: string
           status?: string
