@@ -404,9 +404,27 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
     }
   };
 
+  const getMatchLength = (tournamentId: string): number => {
+    const t = tournaments.find(t => t.id === tournamentId);
+    return (t as any)?.match_length ?? 9;
+  };
+
+  const validateTournamentScore = (score1: number | null, score2: number | null, matchLength: number): string | null => {
+    if (score1 === null || score2 === null) return "Skorları girin.";
+    if (score1 === score2) return "Beraberlik olamaz.";
+    const winnerScore = Math.max(score1, score2);
+    const loserScore = Math.min(score1, score2);
+    if (winnerScore !== matchLength) return `Kazanan skoru ${matchLength} olmalıdır.`;
+    if (loserScore >= matchLength) return `Kaybeden skoru ${matchLength}'dan küçük olmalıdır.`;
+    if (loserScore < 0) return "Skor negatif olamaz.";
+    return null;
+  };
+
   const submitMatchScore = async (match: TournamentMatch) => {
-    if (match.score1 === null || match.score2 === null || match.score1 === match.score2) {
-      toast({ title: "Hata", description: "Geçerli bir skor girin (beraberlik olmaz).", variant: "destructive" });
+    const matchLength = getMatchLength(match.tournament_id);
+    const validationError = validateTournamentScore(match.score1, match.score2, matchLength);
+    if (validationError) {
+      toast({ title: "Hata", description: validationError, variant: "destructive" });
       return;
     }
 
@@ -451,8 +469,10 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
   };
 
   const updateMatchScore = async (match: TournamentMatch) => {
-    if (match.score1 === null || match.score2 === null || match.score1 === match.score2) {
-      toast({ title: "Hata", description: "Geçerli bir skor girin.", variant: "destructive" });
+    const matchLength = getMatchLength(match.tournament_id);
+    const validationError = validateTournamentScore(match.score1, match.score2, matchLength);
+    if (validationError) {
+      toast({ title: "Hata", description: validationError, variant: "destructive" });
       return;
     }
 
@@ -851,49 +871,70 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
                               <DialogHeader>
                                 <DialogTitle>{match.score1 !== null ? 'Skoru Düzenle' : 'Skor Gir'}</DialogTitle>
                               </DialogHeader>
-                              <div className="flex items-center gap-4 py-4">
-                                <div className="flex-1 text-center">
-                                  <p className="text-sm mb-2 font-medium">{getPlayerName(editingMatch?.player1_id || null)}</p>
-                                  <Input
-                                    type="number"
-                                    min={0}
-                                    max={9}
-                                    value={editingMatch?.score1 ?? ''}
-                                    onChange={e => setEditingMatch(prev => prev ? { ...prev, score1: parseInt(e.target.value) || 0 } : null)}
-                                    className="text-center text-lg"
-                                  />
-                                </div>
-                                <span className="text-xl font-bold text-muted-foreground">-</span>
-                                <div className="flex-1 text-center">
-                                  <p className="text-sm mb-2 font-medium">{getPlayerName(editingMatch?.player2_id || null)}</p>
-                                  <Input
-                                    type="number"
-                                    min={0}
-                                    max={9}
-                                    value={editingMatch?.score2 ?? ''}
-                                    onChange={e => setEditingMatch(prev => prev ? { ...prev, score2: parseInt(e.target.value) || 0 } : null)}
-                                    className="text-center text-lg"
-                                  />
-                                </div>
-                              </div>
-                              <DialogFooter>
-                                <DialogClose asChild>
-                                  <Button variant="outline">İptal</Button>
-                                </DialogClose>
-                                <DialogClose asChild>
-                                  <Button onClick={() => {
-                                    if (editingMatch) {
-                                      if (match.score1 !== null) {
-                                        updateMatchScore(editingMatch);
-                                      } else {
-                                        submitMatchScore(editingMatch);
-                                      }
-                                    }
-                                  }}>
-                                    Kaydet
-                                  </Button>
-                                </DialogClose>
-                              </DialogFooter>
+                              {(() => {
+                                const matchLength = getMatchLength(match.tournament_id);
+                                const scoreOptions = Array.from({ length: matchLength + 1 }, (_, i) => i);
+                                return (
+                                  <>
+                                    <div className="flex items-center gap-4 py-4">
+                                      <div className="flex-1 text-center">
+                                        <p className="text-sm mb-2 font-medium">{getPlayerName(editingMatch?.player1_id || null)}</p>
+                                        <Select
+                                          value={editingMatch?.score1?.toString() ?? ''}
+                                          onValueChange={v => setEditingMatch(prev => prev ? { ...prev, score1: parseInt(v) } : null)}
+                                        >
+                                          <SelectTrigger className="text-center text-lg">
+                                            <SelectValue placeholder="-" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {scoreOptions.map(n => (
+                                              <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      <span className="text-xl font-bold text-muted-foreground">-</span>
+                                      <div className="flex-1 text-center">
+                                        <p className="text-sm mb-2 font-medium">{getPlayerName(editingMatch?.player2_id || null)}</p>
+                                        <Select
+                                          value={editingMatch?.score2?.toString() ?? ''}
+                                          onValueChange={v => setEditingMatch(prev => prev ? { ...prev, score2: parseInt(v) } : null)}
+                                        >
+                                          <SelectTrigger className="text-center text-lg">
+                                            <SelectValue placeholder="-" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {scoreOptions.map(n => (
+                                              <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    </div>
+                                    <DialogFooter>
+                                      <DialogClose asChild>
+                                        <Button variant="outline">İptal</Button>
+                                      </DialogClose>
+                                      <Button onClick={() => {
+                                        if (editingMatch) {
+                                          const err = validateTournamentScore(editingMatch.score1, editingMatch.score2, matchLength);
+                                          if (err) {
+                                            toast({ title: "Hata", description: err, variant: "destructive" });
+                                            return;
+                                          }
+                                          if (match.score1 !== null) {
+                                            updateMatchScore(editingMatch);
+                                          } else {
+                                            submitMatchScore(editingMatch);
+                                          }
+                                        }
+                                      }}>
+                                        Kaydet
+                                      </Button>
+                                    </DialogFooter>
+                                  </>
+                                );
+                              })()}
                             </DialogContent>
                           </Dialog>
                         )}
