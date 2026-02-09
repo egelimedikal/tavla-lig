@@ -35,7 +35,7 @@ export function StandingsTable({ standings, onPlayerClick }: StandingsTableProps
     <div className="px-2 animate-fade-in">
       <div className="bg-card rounded-xl overflow-hidden border border-border">
         {/* Table Header */}
-        <div className="grid grid-cols-[22px_1fr_28px_28px_28px_32px_32px_34px_34px] gap-0 px-1 py-2 bg-secondary/50 text-[10px] font-semibold text-muted-foreground">
+        <div className="grid grid-cols-[22px_1fr_28px_28px_28px_30px_30px_32px_32px] gap-0 px-1 py-2 bg-secondary/50 text-[10px] font-semibold text-muted-foreground">
           <div className="text-center">#</div>
           <div className="pl-1">Oyuncu</div>
           <div className="text-center">O</div>
@@ -53,7 +53,7 @@ export function StandingsTable({ standings, onPlayerClick }: StandingsTableProps
             <button
               key={stat.playerId}
               onClick={() => onPlayerClick(stat.playerId)}
-              className={`w-full grid grid-cols-[22px_1fr_28px_28px_28px_32px_32px_34px_34px] gap-0 px-1 py-2 text-xs hover:bg-secondary/30 transition-colors ${getRankClass(index + 1)}`}
+              className={`w-full grid grid-cols-[22px_1fr_28px_28px_28px_30px_30px_32px_32px] gap-0 px-1 py-2 text-xs hover:bg-secondary/30 transition-colors ${getRankClass(index + 1)}`}
             >
               <div className="flex items-center justify-center text-muted-foreground">
                 {index === 0 ? <Trophy className="w-4 h-4 text-yellow-400" /> : index + 1}
