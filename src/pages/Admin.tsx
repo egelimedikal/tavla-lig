@@ -14,8 +14,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Trash2, Edit, Users, Trophy, Gamepad2, Loader2, Shield, Crown, Key, RefreshCw, Building2, Upload, ImageIcon, X } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit, Users, Trophy, Gamepad2, Loader2, Shield, Crown, Key, RefreshCw, Building2, Upload, ImageIcon, X, Swords } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { TournamentAdmin } from '@/components/TournamentAdmin';
 
 interface Profile {
   id: string;
@@ -974,10 +975,9 @@ const Admin = () => {
   const showLeaguesTab = isSuperAdmin || isAdmin;
   const showPlayersTab = isSuperAdmin || isAdmin || managedAssociationIds.length > 0;
   const showMatchesTab = isSuperAdmin || isAdmin;
+  const showTournamentTab = isSuperAdmin || isAdmin || managedAssociationIds.length > 0;
   const showAdminsTab = isSuperAdmin;
-
-  // Calculate grid columns based on visible tabs
-  const visibleTabCount = [showAssociationTab, showLeaguesTab, showPlayersTab, showMatchesTab, showAdminsTab].filter(Boolean).length;
+  const visibleTabCount = [showAssociationTab, showLeaguesTab, showPlayersTab, showMatchesTab, showTournamentTab, showAdminsTab].filter(Boolean).length;
 
   // Determine default tab based on role
   const getDefaultTab = () => {
@@ -1039,6 +1039,12 @@ const Admin = () => {
               <TabsTrigger value="matches" className="flex items-center gap-1 text-xs px-2">
                 <Gamepad2 className="w-4 h-4" />
                 <span className="hidden sm:inline">Maçlar</span>
+              </TabsTrigger>
+            )}
+            {showTournamentTab && (
+              <TabsTrigger value="tournament" className="flex items-center gap-1 text-xs px-2">
+                <Swords className="w-4 h-4" />
+                <span className="hidden sm:inline">Turnuva</span>
               </TabsTrigger>
             )}
             {showAdminsTab && (
@@ -1603,6 +1609,16 @@ const Admin = () => {
               </CardContent>
             </Card>
           </TabsContent>
+          )}
+
+          {/* Tournament Tab */}
+          {showTournamentTab && (
+            <TabsContent value="tournament">
+              <TournamentAdmin 
+                players={players} 
+                associationId={associations[0]?.id || null} 
+              />
+            </TabsContent>
           )}
 
           {/* Admins Tab - Super Admin only */}

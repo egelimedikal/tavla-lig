@@ -371,6 +371,188 @@ export type Database = {
         }
         Relationships: []
       }
+      tournament_matches: {
+        Row: {
+          created_at: string
+          id: string
+          is_bye: boolean
+          match_date: string
+          player1_id: string | null
+          player2_id: string | null
+          round_number: number
+          score1: number | null
+          score2: number | null
+          tournament_id: string
+          winner_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_bye?: boolean
+          match_date?: string
+          player1_id?: string | null
+          player2_id?: string | null
+          round_number: number
+          score1?: number | null
+          score2?: number | null
+          tournament_id: string
+          winner_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_bye?: boolean
+          match_date?: string
+          player1_id?: string | null
+          player2_id?: string | null
+          round_number?: number
+          score1?: number | null
+          score2?: number | null
+          tournament_id?: string
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_matches_player1_id_fkey"
+            columns: ["player1_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_player1_id_fkey"
+            columns: ["player1_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_player2_id_fkey"
+            columns: ["player2_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_player2_id_fkey"
+            columns: ["player2_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournament_players: {
+        Row: {
+          created_at: string
+          id: string
+          initial_rights: number
+          is_eliminated: boolean
+          losses: number
+          player_id: string
+          tournament_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          initial_rights?: number
+          is_eliminated?: boolean
+          losses?: number
+          player_id: string
+          tournament_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          initial_rights?: number
+          is_eliminated?: boolean
+          losses?: number
+          player_id?: string
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_players_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_players_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_players_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournaments: {
+        Row: {
+          association_id: string | null
+          created_at: string
+          current_round: number
+          id: string
+          name: string
+          status: Database["public"]["Enums"]["tournament_status"]
+          updated_at: string
+        }
+        Insert: {
+          association_id?: string | null
+          created_at?: string
+          current_round?: number
+          id?: string
+          name: string
+          status?: Database["public"]["Enums"]["tournament_status"]
+          updated_at?: string
+        }
+        Update: {
+          association_id?: string | null
+          created_at?: string
+          current_round?: number
+          id?: string
+          name?: string
+          status?: Database["public"]["Enums"]["tournament_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournaments_association_id_fkey"
+            columns: ["association_id"]
+            isOneToOne: false
+            referencedRelation: "associations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -439,6 +621,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user" | "super_admin"
+      tournament_status: "active" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -567,6 +750,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "super_admin"],
+      tournament_status: ["active", "completed"],
     },
   },
 } as const
