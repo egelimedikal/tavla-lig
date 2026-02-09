@@ -217,9 +217,10 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
         </table>
       </div>
 
-      {playerTournaments.map(({ tournament, tp, matches, wins, losses, played, winRate, remainingRights, rank }) => {
+      {playerTournaments.map(({ tournament, tp, matches, wins, losses, played, winRate, remainingRights, rank }, index) => {
         const isExpanded = expandedTournaments.has(tournament.id);
         const totalPlayers = tournamentPlayers.filter(p => p.tournament_id === tournament.id).length;
+        const tournamentNumber = playerTournaments.length - index;
 
         return (
           <div key={tournament.id} className="bg-card rounded-xl border border-border overflow-hidden">
@@ -229,7 +230,7 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
               className="w-full flex items-center justify-between px-4 py-3 hover:bg-secondary/30 transition-colors"
             >
               <div className="flex items-center gap-2">
-                <Trophy className="w-4 h-4 text-primary" />
+                <span className="text-xs font-bold text-primary">{tournamentNumber}.</span>
                 <span className="font-medium text-sm text-foreground">{tournament.name}</span>
                 <span className="text-[10px] text-muted-foreground">
                   {new Date(tournament.created_at).toLocaleDateString('tr-TR')}
