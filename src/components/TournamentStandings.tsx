@@ -220,7 +220,7 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
                 <button
                   key={tp.id}
                   onClick={() => onPlayerClick(tp.player_id)}
-                  className={`w-full grid grid-cols-[22px_minmax(0,1fr)_32px_32px_32px] gap-0 px-1 py-2 text-xs text-black hover:bg-secondary/30 transition-colors ${getGroupBorder(index)} ${getRowBg(tp)}`}
+                  className={`w-full grid grid-cols-[22px_minmax(0,1fr)_32px_32px_32px] gap-0 px-1 py-2 text-xs hover:bg-secondary/30 transition-colors ${getGroupBorder(index)} ${getRowBg(tp)}`}
                 >
                   <div className="flex items-center justify-center text-muted-foreground">
                     {index === 0 ? <Trophy className="w-4 h-4 text-yellow-400" /> : index === 1 ? <Trophy className="w-4 h-4 text-gray-300" /> : index === 2 ? <Trophy className="w-4 h-4 text-amber-600" /> : index + 1}
