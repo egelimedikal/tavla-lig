@@ -592,7 +592,16 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
 
               {/* Add Players Dialog */}
               <Dialog open={showAddPlayers} onOpenChange={setShowAddPlayers}>
-                <DialogContent className="max-h-[80vh] flex flex-col">
+                <DialogContent 
+                  className="max-h-[80vh] flex flex-col"
+                  onPointerDownOutside={(e) => {
+                    // Prevent dialog from closing when clicking on Select portal content
+                    const target = e.target as HTMLElement;
+                    if (target?.closest('[data-radix-select-content]') || target?.closest('[role="listbox"]') || target?.closest('[role="option"]')) {
+                      e.preventDefault();
+                    }
+                  }}
+                >
                   <DialogHeader>
                     <DialogTitle>Turnuvaya Oyuncu Ekle</DialogTitle>
                   </DialogHeader>
@@ -609,19 +618,21 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
                           />
                           <span className="flex-1 text-sm font-medium">{p.name}</span>
                           {isSelected && (
-                            <Select
-                              value={String(selectedPlayersForTournament.get(p.id) || 4)}
-                              onValueChange={v => setPlayerRights(p.id, parseInt(v))}
-                            >
-                              <SelectTrigger className="w-24">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent position="popper" className="z-[9999]">
-                                <SelectItem value="4">4 Hak</SelectItem>
-                                <SelectItem value="3">3 Hak</SelectItem>
-                                <SelectItem value="2">2 Hak</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <div onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+                              <Select
+                                value={String(selectedPlayersForTournament.get(p.id) || 4)}
+                                onValueChange={v => setPlayerRights(p.id, parseInt(v))}
+                              >
+                                <SelectTrigger className="w-24 h-8 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent position="popper" className="z-[9999] bg-popover">
+                                  <SelectItem value="4">4 Hak</SelectItem>
+                                  <SelectItem value="3">3 Hak</SelectItem>
+                                  <SelectItem value="2">2 Hak</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
                           )}
                           {alreadyInTournament && <Badge variant="outline" className="text-xs">Eklendi</Badge>}
                         </div>
