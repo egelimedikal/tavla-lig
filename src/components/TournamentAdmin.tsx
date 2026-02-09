@@ -463,13 +463,13 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
   };
 
   const getGroupBorder = (index: number) => {
-    if (index === 0) return '';
+    if (index === 0) return 'border-t border-t-border/30';
     const prev = sortedPlayers[index - 1];
     const curr = sortedPlayers[index];
     if (prev.losses !== curr.losses || prev.is_eliminated !== curr.is_eliminated) {
-      return 'border-t-2 border-t-white/20';
+      return 'border-t-2 border-t-white/40';
     }
-    return '';
+    return 'border-t border-t-border/30';
   };
 
   // Sort tournament standings
