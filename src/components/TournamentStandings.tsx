@@ -137,10 +137,7 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
 
   const getGroupBorder = (index: number) => {
     if (index === 0) return 'border-t border-t-white/15';
-    const borderIdx = groupBorderIndices.indexOf(index);
-    if (borderIdx === 0) return 'border-t-2 border-t-green-500';
-    if (borderIdx === 1) return 'border-t-2 border-t-yellow-400';
-    if (borderIdx >= 2) return 'border-t-2 border-t-red-500';
+    if (groupBorderIndices.includes(index)) return 'border-t-2 border-t-white/40';
     return 'border-t border-t-white/15';
   };
 
