@@ -737,7 +737,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                   <CollapsibleContent>
                     <div className="px-3 pb-3 space-y-4">
                       {/* Match Length */}
-                      {t.status === 'active' && (
+                      {t.status === 'active' && t.current_round === 0 && (
                       <div className="space-y-2 p-3 bg-muted/30 rounded-lg">
                         <Label className="text-xs text-muted-foreground">Kaç Sayılık?</Label>
                         <div className="flex flex-wrap gap-1.5">
