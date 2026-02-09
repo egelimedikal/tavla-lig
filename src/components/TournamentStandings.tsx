@@ -123,11 +123,11 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
   }, [currentPlayers, currentMatches, players]);
 
   const getLossRowColor = (losses: number, isEliminated: boolean) => {
-    if (isEliminated) return 'bg-red-500/30 border-l-4 border-l-red-500';
-    if (losses === 0) return 'bg-green-500/20 border-l-4 border-l-green-500';
-    if (losses === 1) return 'bg-orange-400/20 border-l-4 border-l-orange-400';
-    if (losses === 2) return 'bg-sky-500/20 border-l-4 border-l-sky-500';
-    if (losses === 3) return 'bg-yellow-400/25 border-l-4 border-l-yellow-400';
+    if (isEliminated) return 'bg-red-900/40 border-l-4 border-l-red-600';
+    if (losses === 0) return 'bg-green-900/15 border-l-4 border-l-green-400';
+    if (losses === 1) return 'bg-amber-900/20 border-l-4 border-l-amber-400';
+    if (losses === 2) return 'bg-orange-900/25 border-l-4 border-l-orange-500';
+    if (losses === 3) return 'bg-red-900/25 border-l-4 border-l-red-400';
     return '';
   };
 
@@ -238,11 +238,11 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
           <span><strong>G:</strong> Galibiyet</span>
           <span><strong>M:</strong> Mağlubiyet</span>
           <span><strong>Bye:</strong> Bye Sayısı</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-500/30 border border-green-500"></span>0 M</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-orange-400/30 border border-orange-400"></span>1 M</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-sky-500/30 border border-sky-500"></span>2 M</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-400/30 border border-yellow-400"></span>3 M</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-500/30 border border-red-500"></span>Elendi</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-900/25 border border-green-400"></span>0 M</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-amber-900/30 border border-amber-400"></span>1 M</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-orange-900/35 border border-orange-500"></span>2 M</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-900/35 border border-red-400"></span>3 M</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-900/50 border border-red-600"></span>Elendi</span>
         </div>
       </div>
 
