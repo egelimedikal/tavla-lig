@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +19,7 @@ interface Tournament {
   name: string;
   status: string;
   current_round: number;
+  updated_at: string;
 }
 
 interface TournamentPlayer {
@@ -182,7 +184,7 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
             <SelectContent>
               {tournaments.map(t => (
                 <SelectItem key={t.id} value={t.id}>
-                  {t.name} {t.status === 'completed' ? '(Tamamlandı)' : '(Aktif)'}
+                  {t.name} {t.status === 'completed' ? `(Tamamlandı - ${format(new Date(t.updated_at), 'dd.MM.yyyy')})` : '(Aktif)'}
                 </SelectItem>
               ))}
             </SelectContent>
