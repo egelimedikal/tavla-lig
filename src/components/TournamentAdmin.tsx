@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ interface Tournament {
   status: string;
   current_round: number;
   created_at: string;
+  updated_at: string;
 }
 
 interface TournamentPlayer {
@@ -713,7 +715,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                           <p className="font-medium truncate">{t.name}</p>
                           <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                             <Badge variant={t.status === 'active' ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0">
-                              {t.status === 'active' ? 'Aktif' : 'Tamamlandı'}
+                              {t.status === 'active' ? 'Aktif' : `Tamamlandı - ${format(new Date(t.updated_at), 'dd.MM.yyyy')}`}
                             </Badge>
                             <span className="text-[10px] text-muted-foreground whitespace-nowrap">Tur: {t.current_round}</span>
                             <span className="text-[10px] text-muted-foreground whitespace-nowrap">({tCurrentPlayers.length} oyuncu)</span>
