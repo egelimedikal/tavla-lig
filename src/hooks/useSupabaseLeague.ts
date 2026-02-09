@@ -36,6 +36,8 @@ interface League {
   association_id: string | null;
   status: string;
   updated_at: string;
+  current_year: number | null;
+  active_season: string | null;
 }
 
 interface Association {
