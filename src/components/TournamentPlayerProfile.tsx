@@ -157,6 +157,14 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
     }>;
   }, [playerId, tournaments, tournamentPlayers, tournamentMatches]);
 
+  const overallStats = useMemo(() => {
+    const totalPlayed = playerTournaments.reduce((sum, t) => sum + t.played, 0);
+    const totalWins = playerTournaments.reduce((sum, t) => sum + t.wins, 0);
+    const totalLosses = totalPlayed - totalWins;
+    const overallWinRate = totalPlayed > 0 ? Math.round((totalWins / totalPlayed) * 100) : 0;
+    return { totalPlayed, totalWins, totalLosses, overallWinRate };
+  }, [playerTournaments]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-4">
@@ -167,12 +175,37 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
 
   if (playerTournaments.length === 0) return null;
 
+
   return (
     <div className="space-y-4">
       <h3 className="font-semibold px-1 flex items-center gap-2">
         <Trophy className="w-4 h-4 text-primary" />
         Turnuva İstatistikleri
       </h3>
+
+      {/* Overall Stats */}
+      <div className="bg-card rounded-xl border border-border p-4">
+        <div className="grid grid-cols-4 gap-3 text-center">
+          <div>
+            <p className="text-lg font-bold text-foreground">{overallStats.totalPlayed}</p>
+            <p className="text-[10px] text-muted-foreground">Oynanan</p>
+          </div>
+          <div>
+            <p className="text-lg font-bold text-success">{overallStats.totalWins}</p>
+            <p className="text-[10px] text-muted-foreground">Galibiyet</p>
+          </div>
+          <div>
+            <p className="text-lg font-bold text-primary">{overallStats.totalLosses}</p>
+            <p className="text-[10px] text-muted-foreground">Mağlubiyet</p>
+          </div>
+          <div>
+            <p className={`text-lg font-bold ${overallStats.overallWinRate >= 50 ? 'text-success' : 'text-primary'}`}>
+              %{overallStats.overallWinRate}
+            </p>
+            <p className="text-[10px] text-muted-foreground">Oran</p>
+          </div>
+        </div>
+      </div>
 
       {playerTournaments.map(({ tournament, tp, matches, wins, losses, played, winRate, remainingRights, rank }) => {
         const isExpanded = expandedTournaments.has(tournament.id);
