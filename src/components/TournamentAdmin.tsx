@@ -226,8 +226,8 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
         groups.set(tp.losses, group);
       });
 
-      // Sort groups by loss count ascending
-      const sortedGroupKeys = Array.from(groups.keys()).sort((a, b) => a - b);
+      // Sort groups by loss count descending (most losses first = least rights)
+      const sortedGroupKeys = Array.from(groups.keys()).sort((a, b) => b - a);
       
       const matchesToInsert: Array<{
         tournament_id: string;
@@ -237,10 +237,36 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
         is_bye: boolean;
       }> = [];
 
+      // Determine if total active players is odd — if so, BYE goes to highest loss group
+      const totalPlayers = tPlayers.length;
+      let byeAssigned = false;
+
+      if (totalPlayers % 2 !== 0) {
+        // Find the group with most losses and pick a random player for BYE
+        for (const key of sortedGroupKeys) {
+          const group = groups.get(key)!;
+          if (group.length > 0) {
+            const byeIndex = Math.floor(Math.random() * group.length);
+            const byePlayer = group.splice(byeIndex, 1)[0];
+            matchesToInsert.push({
+              tournament_id: selectedTournamentId,
+              round_number: nextRound,
+              player1_id: byePlayer.player_id,
+              player2_id: null,
+              is_bye: true,
+            });
+            byeAssigned = true;
+            break;
+          }
+        }
+      }
+
+      // Now pair within groups (ascending order for carry-over logic)
+      const ascGroupKeys = Array.from(groups.keys()).sort((a, b) => a - b);
       let carryOver: TournamentPlayer | null = null;
 
-      for (let i = 0; i < sortedGroupKeys.length; i++) {
-        const key = sortedGroupKeys[i];
+      for (let i = 0; i < ascGroupKeys.length; i++) {
+        const key = ascGroupKeys[i];
         const group = [...(groups.get(key) || [])];
         
         // Add carry-over from previous group
@@ -257,18 +283,11 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
 
         // If odd number, carry over to next group
         if (group.length % 2 !== 0) {
-          if (i < sortedGroupKeys.length - 1) {
+          if (i < ascGroupKeys.length - 1) {
             carryOver = group.pop()!;
           } else {
-            // Last group, give BYE
-            const byePlayer = group.pop()!;
-            matchesToInsert.push({
-              tournament_id: selectedTournamentId,
-              round_number: nextRound,
-              player1_id: byePlayer.player_id,
-              player2_id: null,
-              is_bye: true,
-            });
+            // Shouldn't happen if BYE was assigned correctly, but safety
+            carryOver = group.pop()!;
           }
         }
 
