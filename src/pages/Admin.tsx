@@ -16,7 +16,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Trash2, Edit, Users, Trophy, Gamepad2, Loader2, Shield, Crown, Key, RefreshCw, Building2, Upload, ImageIcon, X, Swords, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit, Users, Trophy, Gamepad2, Loader2, Shield, Crown, Key, RefreshCw, Building2, Upload, ImageIcon, X, Swords, ChevronDown, BarChart3 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { TournamentAdmin } from '@/components/TournamentAdmin';
 
@@ -933,6 +934,53 @@ const Admin = () => {
     return players.find(p => p.id === playerId)?.name || 'Bilinmeyen';
   };
 
+  const calculateLeagueStats = (leagueId: string) => {
+    const leagueMatchesFiltered = matches.filter(m => m.league_id === leagueId);
+    const assignedPlayerIds = leaguePlayers
+      .filter(lp => lp.league_id === leagueId)
+      .map(lp => lp.player_id);
+
+    const playerIdsFromMatches = new Set<string>();
+    leagueMatchesFiltered.forEach(match => {
+      playerIdsFromMatches.add(match.player1_id);
+      playerIdsFromMatches.add(match.player2_id);
+    });
+
+    const allPlayerIds = new Set([...assignedPlayerIds, ...playerIdsFromMatches]);
+    const statsMap = new Map<string, { playerId: string; name: string; played: number; won: number; lost: number; scored: number; conceded: number; average: number; points: number }>();
+
+    allPlayerIds.forEach(playerId => {
+      statsMap.set(playerId, {
+        playerId,
+        name: getPlayerName(playerId),
+        played: 0, won: 0, lost: 0, scored: 0, conceded: 0, average: 0, points: 0,
+      });
+    });
+
+    leagueMatchesFiltered.forEach(match => {
+      const s1 = statsMap.get(match.player1_id);
+      const s2 = statsMap.get(match.player2_id);
+      if (s1) {
+        s1.played++; s1.scored += match.score1; s1.conceded += match.score2;
+        if (match.winner_id === match.player1_id) { s1.won++; s1.points += 2; } else { s1.lost++; s1.points += 1; }
+        s1.average = s1.scored - s1.conceded;
+      }
+      if (s2) {
+        s2.played++; s2.scored += match.score2; s2.conceded += match.score1;
+        if (match.winner_id === match.player2_id) { s2.won++; s2.points += 2; } else { s2.lost++; s2.points += 1; }
+        s2.average = s2.scored - s2.conceded;
+      }
+    });
+
+    return Array.from(statsMap.values()).sort((a, b) => {
+      if (a.played === 0 && b.played === 0) return a.name.localeCompare(b.name, 'tr');
+      if (b.points !== a.points) return b.points - a.points;
+      if (b.average !== a.average) return b.average - a.average;
+      if (a.played !== b.played) return a.played - b.played;
+      return a.name.localeCompare(b.name, 'tr');
+    });
+  };
+
   const getUserName = (userId: string) => {
     return players.find(p => p.user_id === userId)?.name || 'Bilinmeyen';
   };
@@ -1360,6 +1408,90 @@ const Admin = () => {
                                   </Button>
                                 </div>
                               </div>
+
+                              {/* Puan Durumu */}
+                              {(() => {
+                                const stats = calculateLeagueStats(league.id);
+                                const leagueMatchList = matches
+                                  .filter(m => m.league_id === league.id)
+                                  .sort((a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime());
+                                return (
+                                  <>
+                                    {stats.length > 0 && (
+                                      <div className="space-y-2">
+                                        <div className="flex items-center gap-1.5">
+                                          <BarChart3 className="w-3.5 h-3.5 text-muted-foreground" />
+                                          <Label className="text-xs text-muted-foreground">Puan Durumu</Label>
+                                        </div>
+                                        <div className="rounded-lg border border-border overflow-hidden">
+                                          <Table>
+                                            <TableHeader>
+                                              <TableRow className="text-[10px]">
+                                                <TableHead className="h-7 px-1.5 w-6 text-center">#</TableHead>
+                                                <TableHead className="h-7 px-1.5">Oyuncu</TableHead>
+                                                <TableHead className="h-7 px-1.5 w-7 text-center">O</TableHead>
+                                                <TableHead className="h-7 px-1.5 w-7 text-center">G</TableHead>
+                                                <TableHead className="h-7 px-1.5 w-7 text-center">M</TableHead>
+                                                <TableHead className="h-7 px-1.5 w-8 text-center">Av</TableHead>
+                                                <TableHead className="h-7 px-1.5 w-7 text-center">P</TableHead>
+                                              </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                              {stats.map((s, i) => (
+                                                <TableRow key={s.playerId} className="text-[11px]">
+                                                  <TableCell className="py-1 px-1.5 text-center text-muted-foreground">
+                                                    {i === 0 ? <Trophy className="w-3 h-3 text-yellow-400 mx-auto" /> : i + 1}
+                                                  </TableCell>
+                                                  <TableCell className="py-1 px-1.5 font-medium truncate max-w-[120px]">{s.name}</TableCell>
+                                                  <TableCell className="py-1 px-1.5 text-center text-muted-foreground">{s.played}</TableCell>
+                                                  <TableCell className="py-1 px-1.5 text-center text-success">{s.won}</TableCell>
+                                                  <TableCell className="py-1 px-1.5 text-center text-primary">{s.lost}</TableCell>
+                                                  <TableCell className={`py-1 px-1.5 text-center font-medium ${s.average > 0 ? 'text-success' : s.average < 0 ? 'text-primary' : 'text-muted-foreground'}`}>
+                                                    {s.average > 0 ? `+${s.average}` : s.average}
+                                                  </TableCell>
+                                                  <TableCell className="py-1 px-1.5 text-center font-bold">{s.points}</TableCell>
+                                                </TableRow>
+                                              ))}
+                                            </TableBody>
+                                          </Table>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {leagueMatchList.length > 0 && (
+                                      <div className="space-y-2">
+                                        <div className="flex items-center gap-1.5">
+                                          <Gamepad2 className="w-3.5 h-3.5 text-muted-foreground" />
+                                          <Label className="text-xs text-muted-foreground">Maç Sonuçları ({leagueMatchList.length})</Label>
+                                        </div>
+                                        <div className="space-y-1 max-h-[300px] overflow-y-auto">
+                                          {leagueMatchList.map(match => {
+                                            const isP1Winner = match.winner_id === match.player1_id;
+                                            return (
+                                              <div key={match.id} className="flex items-center justify-between px-2 py-1.5 bg-muted/30 rounded text-[11px]">
+                                                <span className="text-[10px] text-muted-foreground w-16 shrink-0">
+                                                  {format(new Date(match.match_date), 'dd.MM.yy')}
+                                                </span>
+                                                <div className="flex items-center gap-1 flex-1 justify-center min-w-0">
+                                                  <span className={`truncate text-right max-w-[80px] ${isP1Winner ? 'font-bold' : ''}`}>
+                                                    {getPlayerName(match.player1_id)}
+                                                  </span>
+                                                  <span className="font-mono font-bold px-1 shrink-0">
+                                                    {match.score1} - {match.score2}
+                                                  </span>
+                                                  <span className={`truncate text-left max-w-[80px] ${!isP1Winner ? 'font-bold' : ''}`}>
+                                                    {getPlayerName(match.player2_id)}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </>
+                                );
+                              })()}
                             </div>
                           </CollapsibleContent>
                         </div>
