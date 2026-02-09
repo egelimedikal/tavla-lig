@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { X, Check, Minus, Plus } from 'lucide-react';
+import { X, Check } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface Profile {
   id: string;
@@ -9,32 +16,48 @@ interface Profile {
   avatar_url: string | null;
 }
 
+interface Match {
+  player1_id: string;
+  player2_id: string;
+}
+
 interface MatchEntryFormProps {
   players: Profile[];
+  leagueMatches: Match[];
   currentPlayerId?: string;
   onSubmit: (player1Id: string, player2Id: string, score1: number, score2: number) => void;
   onClose: () => void;
 }
 
-export function MatchEntryForm({ players, currentPlayerId, onSubmit, onClose }: MatchEntryFormProps) {
+function getPlayedOpponents(playerId: string, matches: Match[]): Set<string> {
+  const opponents = new Set<string>();
+  for (const m of matches) {
+    if (m.player1_id === playerId) opponents.add(m.player2_id);
+    if (m.player2_id === playerId) opponents.add(m.player1_id);
+  }
+  return opponents;
+}
+
+export function MatchEntryForm({ players, leagueMatches, currentPlayerId, onSubmit, onClose }: MatchEntryFormProps) {
   const [player1Id, setPlayer1Id] = useState(currentPlayerId || '');
   const [player2Id, setPlayer2Id] = useState('');
-  const [score1, setScore1] = useState(0);
-  const [score2, setScore2] = useState(0);
+  const [score1, setScore1] = useState<number | null>(null);
+  const [score2, setScore2] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const availablePlayers = players.filter(p => p.id !== player1Id);
+  const playedOpponents = player1Id ? getPlayedOpponents(player1Id, leagueMatches) : new Set<string>();
+  const availablePlayers = players.filter(p => p.id !== player1Id && !playedOpponents.has(p.id));
 
-  const handleScoreChange = (player: 1 | 2, delta: number) => {
-    if (player === 1) {
-      setScore1(prev => Math.max(0, Math.min(9, prev + delta)));
-    } else {
-      setScore2(prev => Math.max(0, Math.min(9, prev + delta)));
-    }
+  // Reset player2 if they become unavailable
+  const handlePlayer1Change = (id: string) => {
+    setPlayer1Id(id);
+    setPlayer2Id('');
+    setScore1(null);
+    setScore2(null);
   };
 
   const handleSubmit = async () => {
-    if (player1Id && player2Id && score1 !== score2 && Math.max(score1, score2) === 9) {
+    if (player1Id && player2Id && score1 !== null && score2 !== null && score1 !== score2 && Math.max(score1, score2) === 9) {
       setSubmitting(true);
       await onSubmit(player1Id, player2Id, score1, score2);
       setSubmitting(false);
@@ -42,10 +65,14 @@ export function MatchEntryForm({ players, currentPlayerId, onSubmit, onClose }: 
     }
   };
 
-  const maxScore = Math.max(score1, score2);
-  const isValid = player1Id && player2Id && score1 !== score2 && maxScore === 9;
+  const s1 = score1 ?? -1;
+  const s2 = score2 ?? -1;
+  const maxScore = Math.max(s1, s2);
+  const isValid = player1Id && player2Id && score1 !== null && score2 !== null && s1 !== s2 && maxScore === 9;
   const player1 = players.find(p => p.id === player1Id);
   const player2 = players.find(p => p.id === player2Id);
+
+  const scoreOptions = Array.from({ length: 10 }, (_, i) => i);
 
   return (
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm animate-fade-in">
@@ -71,12 +98,11 @@ export function MatchEntryForm({ players, currentPlayerId, onSubmit, onClose }: 
             <>
               {/* Player Selection */}
               <div className="space-y-4">
-                {/* Player 1 */}
                 <div className="space-y-2">
                   <label className="text-sm text-muted-foreground">Oyuncu 1</label>
                   <select
                     value={player1Id}
-                    onChange={(e) => setPlayer1Id(e.target.value)}
+                    onChange={(e) => handlePlayer1Change(e.target.value)}
                     className="w-full p-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="">Oyuncu seçin</option>
@@ -86,12 +112,10 @@ export function MatchEntryForm({ players, currentPlayerId, onSubmit, onClose }: 
                   </select>
                 </div>
 
-                {/* VS Divider */}
                 <div className="flex items-center justify-center">
                   <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">VS</span>
                 </div>
 
-                {/* Player 2 */}
                 <div className="space-y-2">
                   <label className="text-sm text-muted-foreground">Oyuncu 2 (Rakip)</label>
                   <select
@@ -105,70 +129,67 @@ export function MatchEntryForm({ players, currentPlayerId, onSubmit, onClose }: 
                       <option key={player.id} value={player.id}>{player.name}</option>
                     ))}
                   </select>
+                  {player1Id && availablePlayers.length === 0 && (
+                    <p className="text-xs text-warning text-center">Bu oyuncunun tüm rakiplerle maçı girilmiş.</p>
+                  )}
                 </div>
               </div>
 
-              {/* Score Entry */}
+              {/* Score Entry with Select dropdowns */}
               {player1Id && player2Id && (
                 <div className="space-y-4 animate-fade-in">
                   <label className="text-sm text-muted-foreground text-center block">Skor (0-9)</label>
                   
                   <div className="flex items-center justify-center gap-6">
-                    {/* Player 1 Score */}
                     <div className="flex flex-col items-center gap-2">
                       <span className="text-sm text-muted-foreground truncate max-w-[100px]">
                         {player1?.name.split(' ')[0]}
                       </span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleScoreChange(1, -1)}
-                          className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <span className={`text-4xl font-bold w-12 text-center ${score1 > score2 ? 'text-success' : 'text-foreground'}`}>
-                          {score1}
-                        </span>
-                        <button
-                          onClick={() => handleScoreChange(1, 1)}
-                          className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
+                      <Select
+                        value={score1 !== null ? String(score1) : undefined}
+                        onValueChange={(v) => setScore1(Number(v))}
+                      >
+                        <SelectTrigger className={`w-20 h-14 text-2xl font-bold justify-center ${score1 !== null && score2 !== null && s1 > s2 ? 'text-success' : ''}`}>
+                          <SelectValue placeholder="-" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {scoreOptions.map(n => (
+                            <SelectItem key={n} value={String(n)} className="text-lg font-bold justify-center">
+                              {n}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
-                    <span className="text-2xl text-muted-foreground">-</span>
+                    <span className="text-2xl text-muted-foreground mt-6">-</span>
 
-                    {/* Player 2 Score */}
                     <div className="flex flex-col items-center gap-2">
                       <span className="text-sm text-muted-foreground truncate max-w-[100px]">
                         {player2?.name.split(' ')[0]}
                       </span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleScoreChange(2, -1)}
-                          className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <span className={`text-4xl font-bold w-12 text-center ${score2 > score1 ? 'text-success' : 'text-foreground'}`}>
-                          {score2}
-                        </span>
-                        <button
-                          onClick={() => handleScoreChange(2, 1)}
-                          className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
+                      <Select
+                        value={score2 !== null ? String(score2) : undefined}
+                        onValueChange={(v) => setScore2(Number(v))}
+                      >
+                        <SelectTrigger className={`w-20 h-14 text-2xl font-bold justify-center ${score1 !== null && score2 !== null && s2 > s1 ? 'text-success' : ''}`}>
+                          <SelectValue placeholder="-" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {scoreOptions.map(n => (
+                            <SelectItem key={n} value={String(n)} className="text-lg font-bold justify-center">
+                              {n}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
-                  {score1 === score2 && score1 > 0 && (
+                  {score1 !== null && score2 !== null && s1 === s2 && s1 > 0 && (
                     <p className="text-xs text-warning text-center">Beraberlik olamaz, skorları değiştirin</p>
                   )}
-                  {score1 !== score2 && maxScore !== 9 && maxScore > 0 && (
+                  {score1 !== null && score2 !== null && s1 !== s2 && maxScore !== 9 && maxScore > 0 && (
                     <p className="text-xs text-warning text-center">Kazanan oyuncunun skoru 9 olmalıdır</p>
                   )}
                 </div>
@@ -194,7 +215,6 @@ export function MatchEntryForm({ players, currentPlayerId, onSubmit, onClose }: 
                 )}
               </button>
 
-              {/* Info */}
               <p className="text-xs text-center text-muted-foreground pb-4">
                 Kazanan: 2 Puan • Kaybeden: 1 Puan
               </p>

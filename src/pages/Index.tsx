@@ -242,6 +242,7 @@ const Index = () => {
           players={players.filter(p => 
             leaguePlayers.some(lp => lp.league_id === currentLeagueId && lp.player_id === p.id)
           )}
+          leagueMatches={allMatches.filter(m => m.league_id === currentLeagueId)}
           currentPlayerId={currentUserProfile?.id}
           onSubmit={handleMatchSubmit}
           onClose={() => setShowMatchForm(false)}
