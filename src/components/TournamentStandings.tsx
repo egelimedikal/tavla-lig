@@ -196,7 +196,7 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
             <Trophy className="w-5 h-5 text-primary" />
             <h2 className="text-lg font-bold text-foreground">{selectedTournament.name}</h2>
           </div>
-          <p className="text-sm text-muted-foreground">Tur: {selectedTournament.current_round} • Puan Tablosu</p>
+          <p className="text-sm text-muted-foreground">Puan Tablosu</p>
         </div>
       )}
 
