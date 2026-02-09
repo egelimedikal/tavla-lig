@@ -462,8 +462,13 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
     return Math.max(0, 4 - tp.losses);
   };
 
-  const getLossRowColor = (_losses: number, _isEliminated: boolean) => {
-    return '';
+  const getLossRowColor = (losses: number, isEliminated: boolean) => {
+    if (isEliminated) return 'border-b-2 border-b-red-500';
+    if (losses === 0) return 'border-b-2 border-b-green-500';
+    if (losses === 1) return 'border-b-2 border-b-yellow-400';
+    if (losses === 2) return 'border-b-2 border-b-orange-500';
+    if (losses === 3) return 'border-b-2 border-b-pink-500';
+    return 'border-b border-b-border';
   };
 
   // Sort tournament standings

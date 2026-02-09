@@ -122,8 +122,13 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
     });
   }, [currentPlayers, currentMatches, players]);
 
-  const getLossRowColor = (_losses: number, _isEliminated: boolean) => {
-    return '';
+  const getLossRowColor = (losses: number, isEliminated: boolean) => {
+    if (isEliminated) return 'border-b-2 border-b-red-500';
+    if (losses === 0) return 'border-b-2 border-b-green-500';
+    if (losses === 1) return 'border-b-2 border-b-yellow-400';
+    if (losses === 2) return 'border-b-2 border-b-orange-500';
+    if (losses === 3) return 'border-b-2 border-b-pink-500';
+    return 'border-b border-b-border';
   };
 
   if (loading) {
@@ -188,7 +193,7 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
             <div className="text-center">M</div>
             <div className="text-center">Bye</div>
           </div>
-          <div className="divide-y divide-border">
+          <div>
             {sortedPlayers.map((tp, index) => {
               const player = getPlayerById(tp.player_id);
               const wins = currentMatches.filter(m => m.winner_id === tp.player_id).length;
