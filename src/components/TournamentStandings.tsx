@@ -190,7 +190,7 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
             <div className="pl-1">Oyuncu</div>
             <div className="text-center">G</div>
             <div className="text-center">M</div>
-            <div className="text-center">Hak</div>
+            <div className="text-center">Bye</div>
             <div className="text-center">Durum</div>
           </div>
           <div className="divide-y divide-border/50">
@@ -198,7 +198,7 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
               const player = getPlayerById(tp.player_id);
               const wins = currentMatches.filter(m => m.winner_id === tp.player_id).length;
               const actualLosses = tp.losses - (4 - tp.initial_rights);
-              const remainingRights = Math.max(0, 4 - tp.losses);
+              const byeCount = currentMatches.filter(m => m.is_bye && m.player1_id === tp.player_id).length;
 
               return (
                 <button
@@ -221,7 +221,7 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
                   </div>
                   <div className="text-center text-success font-medium text-[11px]">{wins}</div>
                   <div className="text-center text-primary font-medium text-[11px]">{actualLosses}</div>
-                  <div className="text-center font-bold text-[11px]">{remainingRights}</div>
+                  <div className="text-center font-medium text-[11px]">{byeCount}</div>
                   <div className="flex items-center justify-center">
                     {tp.is_eliminated ? (
                       <Badge variant="destructive" className="text-[8px] px-1 py-0">ELENDİ</Badge>
@@ -244,7 +244,7 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
         <div className="mt-4 flex flex-wrap gap-4 text-xs text-muted-foreground justify-center">
           <span><strong>G:</strong> Galibiyet</span>
           <span><strong>M:</strong> Mağlubiyet</span>
-          <span><strong>Hak:</strong> Kalan Hak</span>
+          <span><strong>Bye:</strong> Bye Sayısı</span>
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-500/20 border border-green-500"></span>0-1 M</span>
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-blue-500/20 border border-blue-500"></span>2 M</span>
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-500/20 border border-yellow-500"></span>3 M</span>
