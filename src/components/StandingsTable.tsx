@@ -1,4 +1,4 @@
-import { Trophy, Medal } from 'lucide-react';
+
 
 interface Profile {
   id: string;
@@ -26,13 +26,6 @@ interface StandingsTableProps {
 }
 
 export function StandingsTable({ standings, onPlayerClick }: StandingsTableProps) {
-  const getRankIcon = (rank: number) => {
-    if (rank === 1) return <Trophy className="w-4 h-4 text-gold" />;
-    if (rank === 2) return <Medal className="w-4 h-4 text-silver" />;
-    if (rank === 3) return <Medal className="w-4 h-4 text-bronze" />;
-    return <span className="text-muted-foreground">{rank}</span>;
-  };
-
   const getRankClass = (rank: number) => {
     if (rank === 1) return 'bg-gold/10 border-l-2 border-l-gold';
     if (rank === 2) return 'bg-silver/5 border-l-2 border-l-silver';
@@ -64,8 +57,8 @@ export function StandingsTable({ standings, onPlayerClick }: StandingsTableProps
               onClick={() => onPlayerClick(stat.playerId)}
               className={`w-full grid grid-cols-[22px_1fr_28px_28px_28px_32px_32px_34px_34px] gap-0 px-1 py-2 text-xs hover:bg-secondary/30 transition-colors ${getRankClass(index + 1)}`}
             >
-              <div className="flex items-center justify-center">
-                {getRankIcon(index + 1)}
+              <div className="flex items-center justify-center text-muted-foreground">
+                {index + 1}
               </div>
               <div className="flex items-center gap-1 text-left min-w-0 overflow-hidden pl-1">
                 {stat.player?.avatar_url ? (
