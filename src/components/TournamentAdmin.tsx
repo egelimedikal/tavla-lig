@@ -62,6 +62,7 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
   const [tournamentMatches, setTournamentMatches] = useState<TournamentMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [newTournamentName, setNewTournamentName] = useState('');
+  const [newTournamentMatchLength, setNewTournamentMatchLength] = useState(9);
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
   
   // Player selection for tournament
@@ -101,7 +102,7 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
     }
     const { data, error } = await supabase
       .from('tournaments')
-      .insert({ name: newTournamentName, association_id: associationId })
+      .insert({ name: newTournamentName, association_id: associationId, match_length: newTournamentMatchLength } as any)
       .select()
       .single();
     if (error) {
@@ -111,6 +112,7 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
     if (data) {
       setTournaments(prev => [data as Tournament, ...prev]);
       setNewTournamentName('');
+      setNewTournamentMatchLength(9);
       setSelectedTournamentId(data.id);
       toast({ title: "Başarılı", description: "Turnuva oluşturuldu." });
     }
@@ -618,6 +620,25 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
               <Button onClick={createTournament} size="icon">
                 <Plus className="w-4 h-4" />
               </Button>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Kaç Sayılık?</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {[5, 7, 9, 11, 13, 15, 17, 19, 21].map(n => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setNewTournamentMatchLength(n)}
+                    className={`w-9 h-8 rounded text-xs font-bold transition-colors ${
+                      newTournamentMatchLength === n
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted hover:bg-muted-foreground/20 text-muted-foreground'
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

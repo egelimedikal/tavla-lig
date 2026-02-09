@@ -521,6 +521,7 @@ export type Database = {
           created_at: string
           current_round: number
           id: string
+          match_length: number
           name: string
           status: Database["public"]["Enums"]["tournament_status"]
           updated_at: string
@@ -530,6 +531,7 @@ export type Database = {
           created_at?: string
           current_round?: number
           id?: string
+          match_length?: number
           name: string
           status?: Database["public"]["Enums"]["tournament_status"]
           updated_at?: string
@@ -539,6 +541,7 @@ export type Database = {
           created_at?: string
           current_round?: number
           id?: string
+          match_length?: number
           name?: string
           status?: Database["public"]["Enums"]["tournament_status"]
           updated_at?: string
