@@ -1425,37 +1425,33 @@ const Admin = () => {
                                           <BarChart3 className="w-3.5 h-3.5 text-muted-foreground" />
                                           <Label className="text-xs text-muted-foreground">Puan Durumu</Label>
                                         </div>
-                                        <div className="rounded-lg border border-border overflow-hidden">
-                                          <Table>
-                                            <TableHeader>
-                                              <TableRow className="text-[10px]">
-                                                <TableHead className="h-7 px-1.5 w-6 text-center">#</TableHead>
-                                                <TableHead className="h-7 px-1.5">Oyuncu</TableHead>
-                                                <TableHead className="h-7 px-1.5 w-7 text-center">O</TableHead>
-                                                <TableHead className="h-7 px-1.5 w-7 text-center">G</TableHead>
-                                                <TableHead className="h-7 px-1.5 w-7 text-center">M</TableHead>
-                                                <TableHead className="h-7 px-1.5 w-8 text-center">Av</TableHead>
-                                                <TableHead className="h-7 px-1.5 w-7 text-center">P</TableHead>
-                                              </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                              {stats.map((s, i) => (
-                                                <TableRow key={s.playerId} className="text-[11px]">
-                                                  <TableCell className="py-1 px-1.5 text-center text-muted-foreground">
-                                                    {i === 0 ? <Trophy className="w-3 h-3 text-yellow-400 mx-auto" /> : i + 1}
-                                                  </TableCell>
-                                                  <TableCell className="py-1 px-1.5 font-medium truncate max-w-[120px]">{s.name}</TableCell>
-                                                  <TableCell className="py-1 px-1.5 text-center text-muted-foreground">{s.played}</TableCell>
-                                                  <TableCell className="py-1 px-1.5 text-center text-success">{s.won}</TableCell>
-                                                  <TableCell className="py-1 px-1.5 text-center text-primary">{s.lost}</TableCell>
-                                                  <TableCell className={`py-1 px-1.5 text-center font-medium ${s.average > 0 ? 'text-success' : s.average < 0 ? 'text-primary' : 'text-muted-foreground'}`}>
-                                                    {s.average > 0 ? `+${s.average}` : s.average}
-                                                  </TableCell>
-                                                  <TableCell className="py-1 px-1.5 text-center font-bold">{s.points}</TableCell>
-                                                </TableRow>
-                                              ))}
-                                            </TableBody>
-                                          </Table>
+                                        <div className="bg-card rounded-xl overflow-hidden border border-border">
+                                          <div className="grid grid-cols-[30px_1fr_40px_40px_40px_40px_40px] gap-0 px-3 py-2 bg-secondary/50 text-[10px] font-semibold text-muted-foreground">
+                                            <div className="text-center">#</div>
+                                            <div>Oyuncu</div>
+                                            <div className="text-center">O</div>
+                                            <div className="text-center">G</div>
+                                            <div className="text-center">M</div>
+                                            <div className="text-center">Av</div>
+                                            <div className="text-center">P</div>
+                                          </div>
+                                          <div className="divide-y divide-white/15">
+                                            {stats.map((s, i) => (
+                                              <div key={s.playerId} className="grid grid-cols-[30px_1fr_40px_40px_40px_40px_40px] gap-0 px-3 py-2 text-xs items-center">
+                                                <div className="text-center text-muted-foreground font-medium">
+                                                  {i === 0 && s.played > 0 ? <Trophy className="w-3 h-3 text-yellow-400 mx-auto" /> : i + 1}
+                                                </div>
+                                                <div className="font-medium truncate">{s.name}</div>
+                                                <div className="text-center text-muted-foreground">{s.played}</div>
+                                                <div className="text-center text-success">{s.won}</div>
+                                                <div className="text-center text-primary">{s.lost}</div>
+                                                <div className={`text-center font-medium ${s.average > 0 ? 'text-success' : s.average < 0 ? 'text-primary' : 'text-muted-foreground'}`}>
+                                                  {s.average > 0 ? `+${s.average}` : s.average}
+                                                </div>
+                                                <div className="text-center font-bold">{s.points}</div>
+                                              </div>
+                                            ))}
+                                          </div>
                                         </div>
                                       </div>
                                     )}
