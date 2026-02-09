@@ -92,10 +92,14 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
     [tournamentMatches, selectedTournamentId]
   );
 
+  const getActualLosses = (tp: TournamentPlayer) => tp.losses - (4 - tp.initial_rights);
+
   const sortedPlayers = useMemo(() => {
     return [...currentPlayers].sort((a, b) => {
       if (a.is_eliminated !== b.is_eliminated) return a.is_eliminated ? 1 : -1;
-      if (a.losses !== b.losses) return a.losses - b.losses;
+      const aLosses = getActualLosses(a);
+      const bLosses = getActualLosses(b);
+      if (aLosses !== bLosses) return aLosses - bLosses;
       // H2H
       const h2h = currentMatches.find(m =>
         m.winner_id && (
@@ -122,11 +126,11 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
     });
   }, [currentPlayers, currentMatches, players]);
 
-  const getLossRowColor = (losses: number, isEliminated: boolean) => {
+  const getLossRowColor = (actualLosses: number, isEliminated: boolean) => {
     if (isEliminated) return 'bg-red-500/20 border-l-2 border-l-red-500';
-    if (losses <= 1) return 'bg-green-500/10 border-l-2 border-l-green-500';
-    if (losses === 2) return 'bg-blue-500/10 border-l-2 border-l-blue-500';
-    if (losses === 3) return 'bg-yellow-500/10 border-l-2 border-l-yellow-500';
+    if (actualLosses <= 1) return 'bg-green-500/10 border-l-2 border-l-green-500';
+    if (actualLosses === 2) return 'bg-blue-500/10 border-l-2 border-l-blue-500';
+    if (actualLosses === 3) return 'bg-yellow-500/10 border-l-2 border-l-yellow-500';
     return '';
   };
 
@@ -203,7 +207,7 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
                 <button
                   key={tp.id}
                   onClick={() => onPlayerClick(tp.player_id)}
-                  className={`w-full grid grid-cols-[22px_1fr_32px_32px_32px] gap-0 px-1 py-2 text-xs hover:bg-secondary/30 transition-colors ${getLossRowColor(tp.losses, tp.is_eliminated)}`}
+                  className={`w-full grid grid-cols-[22px_1fr_32px_32px_32px] gap-0 px-1 py-2 text-xs hover:bg-secondary/30 transition-colors ${getLossRowColor(actualLosses, tp.is_eliminated)}`}
                 >
                   <div className="flex items-center justify-center text-muted-foreground">{index + 1}</div>
                   <div className="flex items-center gap-1 text-left min-w-0 overflow-hidden pl-1">
