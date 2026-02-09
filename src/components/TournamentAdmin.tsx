@@ -462,11 +462,11 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
     return Math.max(0, 4 - tp.losses);
   };
 
-  const getLossRowColor = (actualLosses: number, isEliminated: boolean) => {
+  const getLossRowColor = (losses: number, isEliminated: boolean) => {
     if (isEliminated) return 'bg-red-500/20 border-l-2 border-l-red-500';
-    if (actualLosses <= 1) return 'bg-green-500/10 border-l-2 border-l-green-500';
-    if (actualLosses === 2) return 'bg-blue-500/10 border-l-2 border-l-blue-500';
-    if (actualLosses === 3) return 'bg-yellow-500/10 border-l-2 border-l-yellow-500';
+    if (losses <= 1) return 'bg-green-500/10 border-l-2 border-l-green-500';
+    if (losses === 2) return 'bg-blue-500/10 border-l-2 border-l-blue-500';
+    if (losses === 3) return 'bg-yellow-500/10 border-l-2 border-l-yellow-500';
     return '';
   };
 
@@ -474,10 +474,8 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
   const sortedPlayers = [...currentTournamentPlayers].sort((a, b) => {
     // Eliminated at the bottom
     if (a.is_eliminated !== b.is_eliminated) return a.is_eliminated ? 1 : -1;
-    // Fewer actual losses first
-    const aLosses = a.losses - (4 - a.initial_rights);
-    const bLosses = b.losses - (4 - b.initial_rights);
-    if (aLosses !== bLosses) return aLosses - bLosses;
+    // Fewer losses first
+    if (a.losses !== b.losses) return a.losses - b.losses;
     // Head to head
     const h2h = currentTournamentMatches.find(m =>
       m.winner_id && (
@@ -657,12 +655,11 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
                   <div className="divide-y divide-border/50">
                     {sortedPlayers.map((tp, index) => {
                       const wins = currentTournamentMatches.filter(m => m.winner_id === tp.player_id).length;
-                      const actualLosses = tp.losses - (4 - tp.initial_rights);
                       const byeCount = currentTournamentMatches.filter(m => m.is_bye && m.player1_id === tp.player_id).length;
                       return (
                         <div
                           key={tp.id}
-                          className={`grid grid-cols-[30px_1fr_40px_40px_40px] gap-0 px-3 py-2 text-xs items-center ${getLossRowColor(actualLosses, tp.is_eliminated)}`}
+                          className={`grid grid-cols-[30px_1fr_40px_40px_40px] gap-0 px-3 py-2 text-xs items-center ${getLossRowColor(tp.losses, tp.is_eliminated)}`}
                         >
                           <div className="text-center text-muted-foreground font-medium">{index + 1}</div>
                           <div className="font-medium truncate">
@@ -670,7 +667,7 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
                             {tp.is_eliminated && <span className="ml-1 text-[9px] text-destructive font-bold">(ELENDİ)</span>}
                           </div>
                           <div className="text-center text-success">{wins}</div>
-                          <div className="text-center text-primary">{actualLosses}</div>
+                          <div className="text-center text-primary">{tp.losses}</div>
                           <div className="text-center">{byeCount}</div>
                         </div>
                       );

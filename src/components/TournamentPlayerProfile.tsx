@@ -85,7 +85,7 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
       );
       
       const wins = matches.filter(m => m.winner_id === playerId).length;
-      const losses = tp.losses - (4 - tp.initial_rights);
+      const losses = tp.losses;
       const played = matches.filter(m => m.winner_id !== null).length;
       const winRate = played > 0 ? Math.round((wins / played) * 100) : 0;
 
