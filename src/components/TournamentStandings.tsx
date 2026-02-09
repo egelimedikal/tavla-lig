@@ -136,8 +136,6 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
   }, [sortedPlayers]);
 
   const getGroupBorder = (index: number) => {
-    if (index === 0) return 'border-t border-t-white/15';
-    if (groupBorderIndices.includes(index)) return 'border-t-2 border-t-white/40';
     return 'border-t border-t-white/15';
   };
 
