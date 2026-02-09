@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Trash2, Edit, Loader2, Swords, Trophy, Users, Shuffle } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Plus, Trash2, Edit, Loader2, Swords, Trophy, Users, Shuffle, ChevronDown } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
 interface Profile {
@@ -594,69 +595,65 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
     return players.find(p => p.id === playerId)?.name || 'Bilinmeyen';
   };
 
-  const selectedTournament = tournaments.find(t => t.id === selectedTournamentId);
-  const currentTournamentPlayers = tournamentPlayers.filter(tp => tp.tournament_id === selectedTournamentId);
-  const currentTournamentMatches = tournamentMatches.filter(tm => tm.tournament_id === selectedTournamentId);
+  const getSelectedTournament = (id: string) => tournaments.find(t => t.id === id);
+  const getTournamentPlayers = (id: string) => tournamentPlayers.filter(tp => tp.tournament_id === id);
+  const getTournamentMatches = (id: string) => tournamentMatches.filter(tm => tm.tournament_id === id);
 
-  // Group matches by round
-  const matchesByRound = new Map<number, TournamentMatch[]>();
-  currentTournamentMatches.forEach(m => {
-    const round = matchesByRound.get(m.round_number) || [];
-    round.push(m);
-    matchesByRound.set(m.round_number, round);
-  });
+  const getMatchesByRound = (id: string) => {
+    const matches = getTournamentMatches(id);
+    const byRound = new Map<number, TournamentMatch[]>();
+    matches.forEach(m => {
+      const round = byRound.get(m.round_number) || [];
+      round.push(m);
+      byRound.set(m.round_number, round);
+    });
+    return byRound;
+  };
+
+  const getSortedPlayers = (tournamentId: string) => {
+    const tPlayers = getTournamentPlayers(tournamentId);
+    const tMatches = getTournamentMatches(tournamentId);
+    return [...tPlayers].sort((a, b) => {
+      if (a.is_eliminated !== b.is_eliminated) return a.is_eliminated ? 1 : -1;
+      if (a.losses !== b.losses) return a.losses - b.losses;
+      const h2h = tMatches.find(m =>
+        m.winner_id && (
+          (m.player1_id === a.player_id && m.player2_id === b.player_id) ||
+          (m.player1_id === b.player_id && m.player2_id === a.player_id)
+        )
+      );
+      if (h2h?.winner_id === a.player_id) return -1;
+      if (h2h?.winner_id === b.player_id) return 1;
+      const getAverage = (playerId: string) => {
+        const pMatches = tMatches.filter(m =>
+          m.winner_id && (m.player1_id === playerId || m.player2_id === playerId)
+        );
+        let scored = 0, conceded = 0;
+        pMatches.forEach(m => {
+          if (m.player1_id === playerId) { scored += m.score1 || 0; conceded += m.score2 || 0; }
+          else { scored += m.score2 || 0; conceded += m.score1 || 0; }
+        });
+        return scored - conceded;
+      };
+      const avgDiff = getAverage(b.player_id) - getAverage(a.player_id);
+      if (avgDiff !== 0) return avgDiff;
+      return (getPlayerName(a.player_id)).localeCompare(getPlayerName(b.player_id), 'tr');
+    });
+  };
 
   const getRemainingRights = (tp: TournamentPlayer) => {
     return Math.max(0, 4 - tp.losses);
   };
 
-  const getGroupBorder = (index: number) => {
+  const getGroupBorderForTournament = (sortedList: TournamentPlayer[], index: number) => {
     if (index === 0) return 'border-t border-t-white/15';
-    const prev = sortedPlayers[index - 1];
-    const curr = sortedPlayers[index];
+    const prev = sortedList[index - 1];
+    const curr = sortedList[index];
     if (prev.losses !== curr.losses || prev.is_eliminated !== curr.is_eliminated) {
       return 'border-t-2 border-t-white/40';
     }
     return 'border-t border-t-white/15';
   };
-
-  // Sort tournament standings
-  const sortedPlayers = [...currentTournamentPlayers].sort((a, b) => {
-    // Eliminated at the bottom
-    if (a.is_eliminated !== b.is_eliminated) return a.is_eliminated ? 1 : -1;
-    // Fewer losses first
-    if (a.losses !== b.losses) return a.losses - b.losses;
-    // Head to head
-    const h2h = currentTournamentMatches.find(m =>
-      m.winner_id && (
-        (m.player1_id === a.player_id && m.player2_id === b.player_id) ||
-        (m.player1_id === b.player_id && m.player2_id === a.player_id)
-      )
-    );
-    if (h2h?.winner_id === a.player_id) return -1;
-    if (h2h?.winner_id === b.player_id) return 1;
-    // General average
-    const getAverage = (playerId: string) => {
-      const pMatches = currentTournamentMatches.filter(m =>
-        m.winner_id && (m.player1_id === playerId || m.player2_id === playerId)
-      );
-      let scored = 0, conceded = 0;
-      pMatches.forEach(m => {
-        if (m.player1_id === playerId) {
-          scored += m.score1 || 0;
-          conceded += m.score2 || 0;
-        } else {
-          scored += m.score2 || 0;
-          conceded += m.score1 || 0;
-        }
-      });
-      return scored - conceded;
-    };
-    const avgDiff = getAverage(b.player_id) - getAverage(a.player_id);
-    if (avgDiff !== 0) return avgDiff;
-    // Alphabetical
-    return (getPlayerName(a.player_id)).localeCompare(getPlayerName(b.player_id), 'tr');
-  });
 
   if (loading) {
     return (
@@ -694,333 +691,334 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
 
           {/* Tournament List */}
           <div className="space-y-2">
-          {tournaments.map(t => (
-              <div
+          {tournaments.map(t => {
+            const isOpen = selectedTournamentId === t.id;
+            const tCurrentPlayers = getTournamentPlayers(t.id);
+            const tMatchesByRound = getMatchesByRound(t.id);
+            const tSortedPlayers = getSortedPlayers(t.id);
+            return (
+              <Collapsible
                 key={t.id}
-                className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
-                  selectedTournamentId === t.id ? 'bg-primary/20 border border-primary/30' : 'bg-muted/30 hover:bg-muted/50'
-                }`}
-                onClick={() => setSelectedTournamentId(t.id)}
+                open={isOpen}
+                onOpenChange={(open) => setSelectedTournamentId(open ? t.id : null)}
               >
-                <div>
-                  <p className="font-medium">{t.name}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant={t.status === 'active' ? 'default' : 'secondary'}>
-                      {t.status === 'active' ? 'Aktif' : 'Tamamlandı'}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">Tur: {t.current_round}</span>
-                  </div>
+                <div className={`rounded-lg border transition-colors ${isOpen ? 'border-primary/30 bg-primary/10' : 'border-border bg-muted/30'}`}>
+                  <CollapsibleTrigger asChild>
+                    <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 rounded-t-lg">
+                      <div className="flex items-center gap-2 flex-1">
+                        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-0' : '-rotate-90'}`} />
+                        <div>
+                          <p className="font-medium">{t.name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant={t.status === 'active' ? 'default' : 'secondary'}>
+                              {t.status === 'active' ? 'Aktif' : 'Tamamlandı'}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">Tur: {t.current_round}</span>
+                            <span className="text-xs text-muted-foreground">({tCurrentPlayers.length} oyuncu)</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                        {t.status === 'active' && (
+                          <Button variant="outline" size="sm" onClick={() => completeTournament(t.id)}>
+                            Kaydet
+                          </Button>
+                        )}
+                        {isSuperAdmin && (
+                          <Button variant="destructive" size="icon" onClick={() => deleteTournament(t.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="px-3 pb-3 space-y-4">
+                      {/* Match Length */}
+                      <div className="space-y-2 p-3 bg-muted/30 rounded-lg">
+                        <Label className="text-xs text-muted-foreground">Kaç Sayılık?</Label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {[5, 7, 9, 11, 13, 15, 17, 19, 21].map(n => (
+                            <button
+                              key={n}
+                              type="button"
+                              onClick={() => updateTournamentMatchLength(t.id, n)}
+                              className={`w-9 h-8 rounded text-xs font-bold transition-colors ${
+                                ((t as any).match_length ?? 9) === n
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted hover:bg-muted-foreground/20 text-muted-foreground'
+                              }`}
+                            >
+                              {n}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Players */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-semibold flex items-center gap-2">
+                            <Users className="w-4 h-4" />
+                            Oyuncular
+                          </h4>
+                          <Button variant="outline" size="sm" onClick={() => { setSelectedTournamentId(t.id); setShowAddPlayers(true); setSelectedPlayersForTournament(new Map()); }}>
+                            <Plus className="w-3 h-3 mr-1" />
+                            Ekle
+                          </Button>
+                        </div>
+
+                        {/* Add Players Dialog */}
+                        <Dialog open={showAddPlayers && selectedTournamentId === t.id} onOpenChange={setShowAddPlayers}>
+                          <DialogContent className="max-h-[80vh] flex flex-col">
+                            <DialogHeader>
+                              <DialogTitle>Turnuvaya Oyuncu Ekle</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-2 py-4 overflow-y-auto flex-1">
+                              {players.map(p => {
+                                const isSelected = selectedPlayersForTournament.has(p.id);
+                                const alreadyInTournament = tCurrentPlayers.some(tp => tp.player_id === p.id);
+                                const currentRights = selectedPlayersForTournament.get(p.id) || 4;
+                                return (
+                                  <div key={p.id} className={`flex items-center gap-2 p-2.5 rounded-lg ${alreadyInTournament ? 'bg-muted/30 opacity-50' : isSelected ? 'bg-primary/10 border border-primary/30' : 'bg-muted/50'}`}>
+                                    <Checkbox
+                                      checked={isSelected}
+                                      disabled={alreadyInTournament}
+                                      onCheckedChange={() => togglePlayerSelection(p.id)}
+                                    />
+                                    <span className="flex-1 text-sm font-medium truncate">{p.name}</span>
+                                    {isSelected && (
+                                      <div className="flex gap-1">
+                                        {[4, 3, 2].map(r => (
+                                          <button
+                                            key={r}
+                                            type="button"
+                                            onClick={() => setPlayerRights(p.id, r)}
+                                            className={`w-8 h-7 rounded text-xs font-bold transition-colors ${
+                                              currentRights === r
+                                                ? 'bg-primary text-primary-foreground'
+                                                : 'bg-muted hover:bg-muted-foreground/20 text-muted-foreground'
+                                            }`}
+                                          >
+                                            {r}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {alreadyInTournament && <Badge variant="outline" className="text-[10px]">Eklendi</Badge>}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <DialogFooter>
+                              <Button variant="outline" onClick={() => setShowAddPlayers(false)}>İptal</Button>
+                              <Button onClick={addPlayersToTournament} disabled={selectedPlayersForTournament.size === 0}>
+                                <Plus className="w-4 h-4 mr-2" />
+                                Ekle ({selectedPlayersForTournament.size})
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+
+                        {/* Standings Table */}
+                        {tSortedPlayers.length > 0 && (
+                          <div className="bg-card rounded-xl overflow-hidden border border-border">
+                            <div className="grid grid-cols-[30px_1fr_40px_40px_40px] gap-0 px-3 py-2 bg-secondary/50 text-[10px] font-semibold text-muted-foreground">
+                              <div className="text-center">#</div>
+                              <div>Oyuncu</div>
+                              <div className="text-center">G</div>
+                              <div className="text-center">M</div>
+                              <div className="text-center">Bye</div>
+                            </div>
+                            <div className="divide-y divide-border/50">
+                              {tSortedPlayers.map((tp, index) => {
+                                const tMatches = getTournamentMatches(t.id);
+                                const wins = tMatches.filter(m => m.winner_id === tp.player_id).length;
+                                const byeCount = tMatches.filter(m => m.is_bye && m.player1_id === tp.player_id).length;
+                                return (
+                                  <div
+                                    key={tp.id}
+                                    className={`grid grid-cols-[30px_1fr_40px_40px_40px] gap-0 px-3 py-2 text-xs items-center ${getGroupBorderForTournament(tSortedPlayers, index)} ${tp.is_eliminated ? 'bg-destructive/10' : ''}`}
+                                  >
+                                    <div className="text-center text-muted-foreground font-medium">{index + 1}</div>
+                                    <div className={`font-medium truncate ${tp.is_eliminated ? 'text-destructive/70' : ''}`}>
+                                      {getPlayerName(tp.player_id)}
+                                    </div>
+                                    <div className="text-center text-success">{wins}</div>
+                                    <div className="text-center text-primary">{tp.losses}</div>
+                                    <div className="text-center">{byeCount}</div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Remove players */}
+                        {tCurrentPlayers.length > 0 && (
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Oyuncu Çıkar</Label>
+                            {tCurrentPlayers.map(tp => (
+                              <div key={tp.id} className="flex items-center justify-between p-2 bg-muted/30 rounded">
+                                <span className="text-sm">{getPlayerName(tp.player_id)} ({tp.initial_rights} hak)</span>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removePlayerFromTournament(tp.id)}>
+                                  <Trash2 className="w-3 h-3 text-destructive" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Matches / Rounds */}
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-semibold flex items-center gap-2">
+                          <Swords className="w-4 h-4" />
+                          Eşleştirmeler & Skorlar
+                        </h4>
+                        <Button size="sm" onClick={() => { setSelectedTournamentId(t.id); generateMatchesForRound(); }} disabled={generatingMatches}>
+                          {generatingMatches ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Shuffle className="w-4 h-4 mr-2" />}
+                          Eşleştirmeleri Başlat (Tur {t.current_round + 1})
+                        </Button>
+
+                        {Array.from(tMatchesByRound.entries())
+                          .sort(([a], [b]) => b - a)
+                          .map(([round, roundMatches]) => (
+                          <div key={round} className="space-y-2">
+                            <h4 className="font-bold text-sm text-primary flex items-center gap-2">
+                              <Badge variant="default" className="text-xs">{round}. Tur</Badge>
+                            </h4>
+                            <div className="space-y-2">
+                              {roundMatches.map(match => (
+                                <div key={match.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                                  <div className="flex-1">
+                                    {match.is_bye ? (
+                                      <p className="text-sm">
+                                        <span className="font-medium">{getPlayerName(match.player1_id)}</span>
+                                        <span className="text-success ml-2">BYE (Hükmen Galip)</span>
+                                      </p>
+                                    ) : (
+                                      <p className="text-sm">
+                                        <span className={match.winner_id === match.player1_id ? 'font-bold text-success' : ''}>
+                                          {getPlayerName(match.player1_id)}
+                                        </span>
+                                        <span className="mx-2 text-muted-foreground">
+                                          {match.score1 !== null ? `${match.score1} - ${match.score2}` : 'vs'}
+                                        </span>
+                                        <span className={match.winner_id === match.player2_id ? 'font-bold text-success' : ''}>
+                                          {getPlayerName(match.player2_id)}
+                                        </span>
+                                      </p>
+                                    )}
+                                  </div>
+                                  {!match.is_bye && (
+                                    <Dialog
+                                      open={editingMatch?.id === match.id}
+                                      onOpenChange={(open) => {
+                                        if (open) setEditingMatch({ ...match });
+                                        else setEditingMatch(null);
+                                      }}
+                                    >
+                                      <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm">
+                                          {match.score1 !== null ? <Edit className="w-3 h-3" /> : 'Skor Gir'}
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent>
+                                        <DialogHeader>
+                                          <DialogTitle>{match.score1 !== null ? 'Skoru Düzenle' : 'Skor Gir'}</DialogTitle>
+                                        </DialogHeader>
+                                        {(() => {
+                                          const matchLength = getMatchLength(match.tournament_id);
+                                          const scoreOptions = Array.from({ length: matchLength + 1 }, (_, i) => i);
+                                          return (
+                                            <>
+                                              <div className="flex items-center gap-4 py-4">
+                                                <div className="flex-1 text-center">
+                                                  <p className="text-sm mb-2 font-medium">{getPlayerName(editingMatch?.player1_id || null)}</p>
+                                                  <Select
+                                                    value={editingMatch?.score1?.toString() ?? ''}
+                                                    onValueChange={v => setEditingMatch(prev => prev ? { ...prev, score1: parseInt(v) } : null)}
+                                                  >
+                                                    <SelectTrigger className="text-center text-lg">
+                                                      <SelectValue placeholder="-" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                      {scoreOptions.map(n => (
+                                                        <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
+                                                      ))}
+                                                    </SelectContent>
+                                                  </Select>
+                                                </div>
+                                                <span className="text-xl font-bold text-muted-foreground">-</span>
+                                                <div className="flex-1 text-center">
+                                                  <p className="text-sm mb-2 font-medium">{getPlayerName(editingMatch?.player2_id || null)}</p>
+                                                  <Select
+                                                    value={editingMatch?.score2?.toString() ?? ''}
+                                                    onValueChange={v => setEditingMatch(prev => prev ? { ...prev, score2: parseInt(v) } : null)}
+                                                  >
+                                                    <SelectTrigger className="text-center text-lg">
+                                                      <SelectValue placeholder="-" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                      {scoreOptions.map(n => (
+                                                        <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
+                                                      ))}
+                                                    </SelectContent>
+                                                  </Select>
+                                                </div>
+                                              </div>
+                                              <DialogFooter>
+                                                <DialogClose asChild>
+                                                  <Button variant="outline">İptal</Button>
+                                                </DialogClose>
+                                                <Button onClick={() => {
+                                                  if (editingMatch) {
+                                                    const err = validateTournamentScore(editingMatch.score1, editingMatch.score2, matchLength);
+                                                    if (err) {
+                                                      toast({ title: "Hata", description: err, variant: "destructive" });
+                                                      return;
+                                                    }
+                                                    if (match.score1 !== null) {
+                                                      updateMatchScore(editingMatch);
+                                                    } else {
+                                                      submitMatchScore(editingMatch);
+                                                    }
+                                                  }
+                                                }}>
+                                                  Kaydet
+                                                </Button>
+                                              </DialogFooter>
+                                            </>
+                                          );
+                                        })()}
+                                      </DialogContent>
+                                    </Dialog>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+
+                        {tMatchesByRound.size === 0 && (
+                          <p className="text-sm text-muted-foreground text-center py-4">
+                            Henüz eşleştirme yapılmamış. Yukarıdaki butona tıklayarak ilk turu başlatın.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </CollapsibleContent>
                 </div>
-                <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                  {t.status === 'active' && (
-                    <Button variant="outline" size="sm" onClick={() => completeTournament(t.id)}>
-                      Kaydet
-                    </Button>
-                  )}
-                  {isSuperAdmin && (
-                    <Button variant="destructive" size="icon" onClick={() => deleteTournament(t.id)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
+              </Collapsible>
+            );
+          })}
             {tournaments.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">Henüz turnuva yok</p>
             )}
           </div>
         </CardContent>
       </Card>
-
-      {/* Selected Tournament Management */}
-      {selectedTournament && (
-        <>
-          {/* Match Length */}
-          <Card>
-            <CardContent className="pt-4 space-y-2">
-              <Label className="text-xs text-muted-foreground">Kaç Sayılık?</Label>
-              <div className="flex flex-wrap gap-1.5">
-                {[5, 7, 9, 11, 13, 15, 17, 19, 21].map(n => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => updateTournamentMatchLength(selectedTournament.id, n)}
-                    className={`w-9 h-8 rounded text-xs font-bold transition-colors ${
-                      ((selectedTournament as any).match_length ?? 9) === n
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted hover:bg-muted-foreground/20 text-muted-foreground'
-                    }`}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Players */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                {selectedTournament.name} - Oyuncular
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button variant="outline" onClick={() => { setShowAddPlayers(true); setSelectedPlayersForTournament(new Map()); }}>
-                <Plus className="w-4 h-4 mr-2" />
-                Oyuncu Ekle
-              </Button>
-
-              {/* Add Players Dialog */}
-              <Dialog open={showAddPlayers} onOpenChange={setShowAddPlayers}>
-                <DialogContent className="max-h-[80vh] flex flex-col">
-                  <DialogHeader>
-                    <DialogTitle>Turnuvaya Oyuncu Ekle</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-2 py-4 overflow-y-auto flex-1">
-                    {players.map(p => {
-                      const isSelected = selectedPlayersForTournament.has(p.id);
-                      const alreadyInTournament = currentTournamentPlayers.some(tp => tp.player_id === p.id);
-                      const currentRights = selectedPlayersForTournament.get(p.id) || 4;
-                      return (
-                        <div key={p.id} className={`flex items-center gap-2 p-2.5 rounded-lg ${alreadyInTournament ? 'bg-muted/30 opacity-50' : isSelected ? 'bg-primary/10 border border-primary/30' : 'bg-muted/50'}`}>
-                          <Checkbox
-                            checked={isSelected}
-                            disabled={alreadyInTournament}
-                            onCheckedChange={() => togglePlayerSelection(p.id)}
-                          />
-                          <span className="flex-1 text-sm font-medium truncate">{p.name}</span>
-                          {isSelected && (
-                            <div className="flex gap-1">
-                              {[4, 3, 2].map(r => (
-                                <button
-                                  key={r}
-                                  type="button"
-                                  onClick={() => setPlayerRights(p.id, r)}
-                                  className={`w-8 h-7 rounded text-xs font-bold transition-colors ${
-                                    currentRights === r 
-                                      ? 'bg-primary text-primary-foreground' 
-                                      : 'bg-muted hover:bg-muted-foreground/20 text-muted-foreground'
-                                  }`}
-                                >
-                                  {r}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                          {alreadyInTournament && <Badge variant="outline" className="text-[10px]">Eklendi</Badge>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setShowAddPlayers(false)}>İptal</Button>
-                    <Button onClick={addPlayersToTournament} disabled={selectedPlayersForTournament.size === 0}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Ekle ({selectedPlayersForTournament.size})
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-
-              {/* Standings Table */}
-              {sortedPlayers.length > 0 && (
-                <div className="bg-card rounded-xl overflow-hidden border border-border">
-                  <div className="grid grid-cols-[30px_1fr_40px_40px_40px] gap-0 px-3 py-2 bg-secondary/50 text-[10px] font-semibold text-muted-foreground">
-                    <div className="text-center">#</div>
-                    <div>Oyuncu</div>
-                    <div className="text-center">G</div>
-                    <div className="text-center">M</div>
-                    <div className="text-center">Bye</div>
-                  </div>
-                  <div className="divide-y divide-border/50">
-                    {sortedPlayers.map((tp, index) => {
-                      const wins = currentTournamentMatches.filter(m => m.winner_id === tp.player_id).length;
-                      const byeCount = currentTournamentMatches.filter(m => m.is_bye && m.player1_id === tp.player_id).length;
-                      return (
-                        <div
-                          key={tp.id}
-                          className={`grid grid-cols-[30px_1fr_40px_40px_40px] gap-0 px-3 py-2 text-xs items-center ${getGroupBorder(index)} ${tp.is_eliminated ? 'bg-destructive/10' : ''}`}
-                        >
-                          <div className="text-center text-muted-foreground font-medium">{index + 1}</div>
-                          <div className={`font-medium truncate ${tp.is_eliminated ? 'text-destructive/70' : ''}`}>
-                            {getPlayerName(tp.player_id)}
-                          </div>
-                          <div className="text-center text-success">{wins}</div>
-                          <div className="text-center text-primary">{tp.losses}</div>
-                          <div className="text-center">{byeCount}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Remove players */}
-              {currentTournamentPlayers.length > 0 && (
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Oyuncu Çıkar</Label>
-                  {currentTournamentPlayers.map(tp => (
-                    <div key={tp.id} className="flex items-center justify-between p-2 bg-muted/30 rounded">
-                      <span className="text-sm">{getPlayerName(tp.player_id)} ({tp.initial_rights} hak)</span>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removePlayerFromTournament(tp.id)}>
-                        <Trash2 className="w-3 h-3 text-destructive" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Matches / Rounds */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Swords className="w-4 h-4" />
-                Eşleştirmeler & Skorlar
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button onClick={generateMatchesForRound} disabled={generatingMatches}>
-                {generatingMatches ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Shuffle className="w-4 h-4 mr-2" />}
-                Eşleştirmeleri Başlat (Tur {selectedTournament.current_round + 1})
-              </Button>
-
-              {/* Rounds */}
-              {Array.from(matchesByRound.entries())
-                .sort(([a], [b]) => b - a)
-                .map(([round, roundMatches]) => (
-                <div key={round} className="space-y-2">
-                  <h4 className="font-bold text-sm text-primary flex items-center gap-2">
-                    <Badge variant="default" className="text-xs">{round}. Tur</Badge>
-                  </h4>
-                  <div className="space-y-2">
-                    {roundMatches.map(match => (
-                      <div key={match.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                        <div className="flex-1">
-                          {match.is_bye ? (
-                            <p className="text-sm">
-                              <span className="font-medium">{getPlayerName(match.player1_id)}</span>
-                              <span className="text-success ml-2">BYE (Hükmen Galip)</span>
-                            </p>
-                          ) : (
-                            <p className="text-sm">
-                              <span className={match.winner_id === match.player1_id ? 'font-bold text-success' : ''}>
-                                {getPlayerName(match.player1_id)}
-                              </span>
-                              <span className="mx-2 text-muted-foreground">
-                                {match.score1 !== null ? `${match.score1} - ${match.score2}` : 'vs'}
-                              </span>
-                              <span className={match.winner_id === match.player2_id ? 'font-bold text-success' : ''}>
-                                {getPlayerName(match.player2_id)}
-                              </span>
-                            </p>
-                          )}
-                        </div>
-                        {!match.is_bye && (
-                          <Dialog
-                            open={editingMatch?.id === match.id}
-                            onOpenChange={(open) => {
-                              if (open) setEditingMatch({ ...match });
-                              else setEditingMatch(null);
-                            }}
-                          >
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                              >
-                                {match.score1 !== null ? <Edit className="w-3 h-3" /> : 'Skor Gir'}
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>{match.score1 !== null ? 'Skoru Düzenle' : 'Skor Gir'}</DialogTitle>
-                              </DialogHeader>
-                              {(() => {
-                                const matchLength = getMatchLength(match.tournament_id);
-                                const scoreOptions = Array.from({ length: matchLength + 1 }, (_, i) => i);
-                                return (
-                                  <>
-                                    <div className="flex items-center gap-4 py-4">
-                                      <div className="flex-1 text-center">
-                                        <p className="text-sm mb-2 font-medium">{getPlayerName(editingMatch?.player1_id || null)}</p>
-                                        <Select
-                                          value={editingMatch?.score1?.toString() ?? ''}
-                                          onValueChange={v => setEditingMatch(prev => prev ? { ...prev, score1: parseInt(v) } : null)}
-                                        >
-                                          <SelectTrigger className="text-center text-lg">
-                                            <SelectValue placeholder="-" />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            {scoreOptions.map(n => (
-                                              <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
-                                            ))}
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
-                                      <span className="text-xl font-bold text-muted-foreground">-</span>
-                                      <div className="flex-1 text-center">
-                                        <p className="text-sm mb-2 font-medium">{getPlayerName(editingMatch?.player2_id || null)}</p>
-                                        <Select
-                                          value={editingMatch?.score2?.toString() ?? ''}
-                                          onValueChange={v => setEditingMatch(prev => prev ? { ...prev, score2: parseInt(v) } : null)}
-                                        >
-                                          <SelectTrigger className="text-center text-lg">
-                                            <SelectValue placeholder="-" />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            {scoreOptions.map(n => (
-                                              <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
-                                            ))}
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
-                                    </div>
-                                    <DialogFooter>
-                                      <DialogClose asChild>
-                                        <Button variant="outline">İptal</Button>
-                                      </DialogClose>
-                                      <Button onClick={() => {
-                                        if (editingMatch) {
-                                          const err = validateTournamentScore(editingMatch.score1, editingMatch.score2, matchLength);
-                                          if (err) {
-                                            toast({ title: "Hata", description: err, variant: "destructive" });
-                                            return;
-                                          }
-                                          if (match.score1 !== null) {
-                                            updateMatchScore(editingMatch);
-                                          } else {
-                                            submitMatchScore(editingMatch);
-                                          }
-                                        }
-                                      }}>
-                                        Kaydet
-                                      </Button>
-                                    </DialogFooter>
-                                  </>
-                                );
-                              })()}
-                            </DialogContent>
-                          </Dialog>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-
-              {matchesByRound.size === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Henüz eşleştirme yapılmamış. Yukarıdaki butona tıklayarak ilk turu başlatın.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </>
-      )}
     </div>
   );
 }
