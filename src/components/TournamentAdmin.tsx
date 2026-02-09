@@ -462,13 +462,14 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
     return Math.max(0, 4 - tp.losses);
   };
 
-  const getLossRowColor = (losses: number, isEliminated: boolean) => {
-    if (isEliminated) return 'border-b-2 border-b-red-500';
-    if (losses === 0) return 'border-b-2 border-b-green-500';
-    if (losses === 1) return 'border-b-2 border-b-yellow-400';
-    if (losses === 2) return 'border-b-2 border-b-orange-500';
-    if (losses === 3) return 'border-b-2 border-b-pink-500';
-    return 'border-b border-b-border';
+  const getGroupBorder = (index: number) => {
+    if (index === 0) return '';
+    const prev = sortedPlayers[index - 1];
+    const curr = sortedPlayers[index];
+    if (prev.losses !== curr.losses || prev.is_eliminated !== curr.is_eliminated) {
+      return 'border-t-2 border-t-white/20';
+    }
+    return '';
   };
 
   // Sort tournament standings
@@ -660,7 +661,7 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
                       return (
                         <div
                           key={tp.id}
-                          className={`grid grid-cols-[30px_1fr_40px_40px_40px] gap-0 px-3 py-2 text-xs items-center ${getLossRowColor(tp.losses, tp.is_eliminated)}`}
+                          className={`grid grid-cols-[30px_1fr_40px_40px_40px] gap-0 px-3 py-2 text-xs items-center ${getGroupBorder(index)}`}
                         >
                           <div className="text-center text-muted-foreground font-medium">{index + 1}</div>
                           <div className="font-medium truncate">
