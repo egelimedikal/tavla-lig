@@ -38,6 +38,7 @@ interface Tournament {
   name: string;
   status: string;
   current_round: number;
+  created_at: string;
 }
 
 interface TournamentPlayerProfileProps {
@@ -187,6 +188,9 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
               <div className="flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-primary" />
                 <span className="font-medium text-sm text-foreground">{tournament.name}</span>
+                <span className="text-[10px] text-muted-foreground">
+                  {new Date(tournament.created_at).toLocaleDateString('tr-TR')}
+                </span>
                 {tournament.status === 'completed' && (
                   <Badge variant="secondary" className="text-[9px]">Tamamlandı</Badge>
                 )}
