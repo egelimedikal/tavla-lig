@@ -185,13 +185,12 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
       {/* Standings Table */}
       <div className="px-2">
         <div className="bg-card rounded-xl overflow-hidden border border-border">
-          <div className="grid grid-cols-[22px_1fr_32px_32px_32px_50px] gap-0 px-1 py-2 bg-secondary/50 text-[10px] font-semibold text-muted-foreground">
+          <div className="grid grid-cols-[22px_1fr_32px_32px_32px] gap-0 px-1 py-2 bg-secondary/50 text-[10px] font-semibold text-muted-foreground">
             <div className="text-center">#</div>
             <div className="pl-1">Oyuncu</div>
             <div className="text-center">G</div>
             <div className="text-center">M</div>
             <div className="text-center">Bye</div>
-            <div className="text-center">Durum</div>
           </div>
           <div className="divide-y divide-border/50">
             {sortedPlayers.map((tp, index) => {
@@ -204,7 +203,7 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
                 <button
                   key={tp.id}
                   onClick={() => onPlayerClick(tp.player_id)}
-                  className={`w-full grid grid-cols-[22px_1fr_32px_32px_32px_50px] gap-0 px-1 py-2 text-xs hover:bg-secondary/30 transition-colors ${getLossRowColor(tp.losses, tp.is_eliminated)}`}
+                  className={`w-full grid grid-cols-[22px_1fr_32px_32px_32px] gap-0 px-1 py-2 text-xs hover:bg-secondary/30 transition-colors ${getLossRowColor(tp.losses, tp.is_eliminated)}`}
                 >
                   <div className="flex items-center justify-center text-muted-foreground">{index + 1}</div>
                   <div className="flex items-center gap-1 text-left min-w-0 overflow-hidden pl-1">
@@ -217,18 +216,12 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
                     )}
                     <span className="font-medium text-foreground truncate text-[11px]">
                       {player?.name || 'Bilinmeyen'}
+                      {tp.is_eliminated && <span className="ml-1 text-[9px] text-destructive font-bold">(ELENDİ)</span>}
                     </span>
                   </div>
                   <div className="text-center text-success font-medium text-[11px]">{wins}</div>
                   <div className="text-center text-primary font-medium text-[11px]">{actualLosses}</div>
                   <div className="text-center font-medium text-[11px]">{byeCount}</div>
-                  <div className="flex items-center justify-center">
-                    {tp.is_eliminated ? (
-                      <Badge variant="destructive" className="text-[8px] px-1 py-0">ELENDİ</Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-[8px] px-1 py-0 border-success text-success">Aktif</Badge>
-                    )}
-                  </div>
                 </button>
               );
             })}
