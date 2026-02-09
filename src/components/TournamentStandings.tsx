@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Trophy } from 'lucide-react';
 import { logger } from '@/lib/logger';
@@ -46,11 +47,18 @@ interface TournamentStandingsProps {
 }
 
 export function TournamentStandings({ players, onPlayerClick }: TournamentStandingsProps) {
+  const { user } = useAuth();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [tournamentPlayers, setTournamentPlayers] = useState<TournamentPlayer[]>([]);
   const [tournamentMatches, setTournamentMatches] = useState<TournamentMatch[]>([]);
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Find current user's profile ID
+  const currentUserProfileId = useMemo(() => {
+    if (!user) return null;
+    return players.find(p => p.user_id === user.id)?.id || null;
+  }, [user, players]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -264,13 +272,20 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
       </div>
 
       {/* Match Results by Round */}
-      {currentMatches.length > 0 && (
+      {currentMatches.length > 0 && currentUserProfileId && (
         <div className="px-4 mt-6 space-y-4">
-          <h3 className="font-semibold">Maç Sonuçları</h3>
-          {Array.from(new Set(currentMatches.map(m => m.round_number)))
+          <h3 className="font-semibold">Maç Sonuçlarım</h3>
+          {(() => {
+            const myMatches = currentMatches.filter(m =>
+              m.player1_id === currentUserProfileId || m.player2_id === currentUserProfileId
+            );
+            if (myMatches.length === 0) return (
+              <p className="text-sm text-muted-foreground text-center py-4">Henüz maçınız yok</p>
+            );
+            return Array.from(new Set(myMatches.map(m => m.round_number)))
             .sort((a, b) => b - a)
             .map(round => {
-              const roundMatches = currentMatches.filter(m => m.round_number === round);
+              const roundMatches = myMatches.filter(m => m.round_number === round);
               return (
                 <div key={round} className="space-y-2">
                   <h4 className="font-bold text-sm text-primary flex items-center gap-2">
@@ -306,7 +321,8 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
                   </div>
                 </div>
               );
-            })}
+            });
+          })()}
         </div>
       )}
     </div>
