@@ -48,7 +48,7 @@ export function StandingsTable({ standings, onPlayerClick }: StandingsTableProps
         </div>
 
         {/* Table Body */}
-        <div className="divide-y divide-white">
+        <div className="divide-y divide-white/15">
           {standings.map((stat, index) => (
             <button
               key={stat.playerId}

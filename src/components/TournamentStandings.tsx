@@ -201,7 +201,7 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
             <div className="text-center">M</div>
             <div className="text-center">Bye</div>
           </div>
-          <div className="divide-y divide-white">
+          <div className="divide-y divide-white/15">
             {sortedPlayers.map((tp, index) => {
               const player = getPlayerById(tp.player_id);
               const wins = currentMatches.filter(m => m.winner_id === tp.player_id).length;
