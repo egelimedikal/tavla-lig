@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Plus, Trash2, Edit, Loader2, Swords, Trophy, Users, Shuffle, ChevronDown, Save } from 'lucide-react';
+import { Plus, Trash2, Edit, Loader2, Swords, Trophy, Users, Shuffle, ChevronDown } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
 interface Profile {
@@ -722,8 +722,8 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
                         {t.status === 'active' && (
-                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => completeTournament(t.id)} title="Kaydet">
-                            <Save className="w-3 h-3" />
+                          <Button variant="outline" size="sm" className="h-7 px-2 text-[11px]" onClick={() => completeTournament(t.id)}>
+                            Kaydet
                           </Button>
                         )}
                         {isSuperAdmin && (
