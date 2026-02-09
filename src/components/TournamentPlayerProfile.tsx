@@ -188,6 +188,10 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
         <table className="w-full text-sm">
           <tbody className="divide-y divide-border">
             <tr>
+              <td className="px-4 py-3 font-medium text-muted-foreground">Katıldığı Turnuva</td>
+              <td className="px-4 py-3 text-foreground">{playerTournaments.length}</td>
+            </tr>
+            <tr>
               <td className="px-4 py-3 font-medium text-muted-foreground">Oynanan Maç</td>
               <td className="px-4 py-3 text-foreground">{overallStats.totalPlayed}</td>
             </tr>
