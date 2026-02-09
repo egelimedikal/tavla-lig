@@ -874,12 +874,17 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
                           )}
                         </div>
                         {!match.is_bye && (
-                          <Dialog>
+                          <Dialog
+                            open={editingMatch?.id === match.id}
+                            onOpenChange={(open) => {
+                              if (open) setEditingMatch({ ...match });
+                              else setEditingMatch(null);
+                            }}
+                          >
                             <DialogTrigger asChild>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setEditingMatch({ ...match })}
                               >
                                 {match.score1 !== null ? <Edit className="w-3 h-3" /> : 'Skor Gir'}
                               </Button>
