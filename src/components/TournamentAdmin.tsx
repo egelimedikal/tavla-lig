@@ -630,36 +630,38 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
         <CardContent className="space-y-4">
           <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
             <Label>Yeni Turnuva Oluştur</Label>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Turnuva Adı"
-                value={newTournamentName}
-                onChange={e => setNewTournamentName(e.target.value)}
-                className="flex-1"
-              />
-              <Button onClick={createTournament} size="icon">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Kaç Sayılık?</Label>
-              <div className="flex flex-wrap gap-1.5">
-                {[5, 7, 9, 11, 13, 15, 17, 19, 21].map(n => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setNewTournamentMatchLength(n)}
-                    className={`w-9 h-8 rounded text-xs font-bold transition-colors ${
-                      newTournamentMatchLength === n
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted hover:bg-muted-foreground/20 text-muted-foreground'
-                    }`}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <Input
+              placeholder="Turnuva Adı"
+              value={newTournamentName}
+              onChange={e => setNewTournamentName(e.target.value)}
+            />
+            {newTournamentName.trim() && (
+              <>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Kaç Sayılık?</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[5, 7, 9, 11, 13, 15, 17, 19, 21].map(n => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setNewTournamentMatchLength(n)}
+                        className={`w-9 h-8 rounded text-xs font-bold transition-colors ${
+                          newTournamentMatchLength === n
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted hover:bg-muted-foreground/20 text-muted-foreground'
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <Button onClick={createTournament} className="w-full">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Turnuva Oluştur
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Tournament List */}
