@@ -592,11 +592,11 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
 
               {/* Add Players Dialog */}
               <Dialog open={showAddPlayers} onOpenChange={setShowAddPlayers}>
-                <DialogContent className="max-h-[80vh] overflow-y-auto">
+                <DialogContent className="max-h-[80vh] flex flex-col">
                   <DialogHeader>
                     <DialogTitle>Turnuvaya Oyuncu Ekle</DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-3 py-4">
+                  <div className="space-y-3 py-4 overflow-y-auto flex-1">
                     {players.map(p => {
                       const isSelected = selectedPlayersForTournament.has(p.id);
                       const alreadyInTournament = currentTournamentPlayers.some(tp => tp.player_id === p.id);
@@ -616,7 +616,7 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
                               <SelectTrigger className="w-24">
                                 <SelectValue />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent position="popper" className="z-[9999]">
                                 <SelectItem value="4">4 Hak</SelectItem>
                                 <SelectItem value="3">3 Hak</SelectItem>
                                 <SelectItem value="2">2 Hak</SelectItem>
