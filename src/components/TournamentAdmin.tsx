@@ -849,7 +849,9 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
                 .sort(([a], [b]) => b - a)
                 .map(([round, roundMatches]) => (
                 <div key={round} className="space-y-2">
-                  <h4 className="font-semibold text-sm">Tur {round}</h4>
+                  <h4 className="font-bold text-sm text-primary flex items-center gap-2">
+                    <Badge variant="default" className="text-xs">{round}. Tur</Badge>
+                  </h4>
                   <div className="space-y-2">
                     {roundMatches.map(match => (
                       <div key={match.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
