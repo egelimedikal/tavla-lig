@@ -12,10 +12,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Trash2, Edit, Users, Trophy, Gamepad2, Loader2, Shield, Crown, Key, RefreshCw, Building2, Upload, ImageIcon, X, Swords } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit, Users, Trophy, Gamepad2, Loader2, Shield, Crown, Key, RefreshCw, Building2, Upload, ImageIcon, X, Swords, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { TournamentAdmin } from '@/components/TournamentAdmin';
 
@@ -101,6 +102,7 @@ const Admin = () => {
   // Form states (removed association-related states for single-association model)
   const [newLeagueName, setNewLeagueName] = useState('');
   const [editingLeague, setEditingLeague] = useState<League | null>(null);
+  const [selectedLeagueForEdit, setSelectedLeagueForEdit] = useState<string | null>(null);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [selectedLeagueForPlayer, setSelectedLeagueForPlayer] = useState('');
   const [selectedPlayer, setSelectedPlayer] = useState('');
@@ -1259,6 +1261,7 @@ const Admin = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Add League */}
+                {!selectedLeagueForEdit && (
                 <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
                   <Label>Yeni Lig Ekle</Label>
                   <div className="flex gap-2">
@@ -1273,103 +1276,119 @@ const Admin = () => {
                     </Button>
                   </div>
                 </div>
+                )}
 
                 {/* League List */}
                 <div className="space-y-2">
-                  {leagues.map(league => {
+                  {leagues.filter(l => !selectedLeagueForEdit || l.id === selectedLeagueForEdit).map(league => {
                     const leagueMatchCount = matches.filter(m => m.league_id === league.id).length;
+                    const leaguePlayerCount = leaguePlayers.filter(lp => lp.league_id === league.id).length;
+                    const isOpen = selectedLeagueForEdit === league.id;
                     return (
-                      <div 
-                        key={league.id} 
-                        className="flex items-center justify-between p-3 bg-muted/30 rounded-lg gap-3"
+                      <Collapsible
+                        key={league.id}
+                        open={isOpen}
+                        onOpenChange={(open) => {
+                          setSelectedLeagueForEdit(open ? league.id : null);
+                          setEditingLeague(open ? { ...league } : null);
+                        }}
                       >
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium truncate">{league.name}</p>
-                          {(league.current_year || league.active_season) && (
-                            <p className="text-[10px] text-muted-foreground">
-                              {league.current_year && `${league.current_year} Yılı`}
-                              {league.current_year && league.active_season && ' • '}
-                              {league.active_season && `${league.active_season} Sezonu`}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                            <Badge variant={league.status === 'active' ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0">
-                              {league.status === 'active' ? 'Aktif' : `Tamamlandı - ${format(new Date(league.updated_at), 'dd.MM.yyyy')}`}
-                            </Badge>
-                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">({leagueMatchCount} maç)</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          {league.status === 'active' && (
-                            <Button variant="outline" size="sm" className="h-7 px-2 text-[12px] leading-none" onClick={() => completeLeague(league.id)}>
-                              Kaydet
-                            </Button>
-                          )}
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={() => setEditingLeague({ ...league })}
-                              >
-                                <Edit className="w-3 h-3" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Lig Düzenle</DialogTitle>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <div>
-                                  <Label>Lig Adı</Label>
-                                  <Input
-                                    value={editingLeague?.name || ''}
-                                    onChange={e => setEditingLeague(prev => prev ? { ...prev, name: e.target.value } : null)}
-                                  />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div className="space-y-2">
-                                    <Label>Mevcut Yıl</Label>
-                                    <Input
-                                      type="number"
-                                      value={editingLeague?.current_year || ''}
-                                      onChange={e => setEditingLeague(prev => prev ? { ...prev, current_year: parseInt(e.target.value) || null } : null)}
-                                      placeholder="2025"
-                                    />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label>Aktif Sezon</Label>
-                                    <Input
-                                      value={editingLeague?.active_season || ''}
-                                      onChange={e => setEditingLeague(prev => prev ? { ...prev, active_season: e.target.value || null } : null)}
-                                      placeholder="Bahar, Güz, vb."
-                                    />
+                        <div className={`rounded-lg border transition-colors ${isOpen ? 'border-primary/30 bg-primary/10' : 'border-border bg-muted/30'}`}>
+                          <CollapsibleTrigger asChild>
+                            <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 rounded-t-lg gap-3">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform shrink-0 ${isOpen ? 'rotate-0' : '-rotate-90'}`} />
+                                <div className="min-w-0">
+                                  <p className="font-medium truncate">{league.name}</p>
+                                  {(league.current_year || league.active_season) && (
+                                    <p className="text-[10px] text-muted-foreground">
+                                      {league.current_year && `${league.current_year} Yılı`}
+                                      {league.current_year && league.active_season && ' • '}
+                                      {league.active_season && `${league.active_season} Sezonu`}
+                                    </p>
+                                  )}
+                                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                    <Badge variant={league.status === 'active' ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0">
+                                      {league.status === 'active' ? 'Aktif' : `Tamamlandı - ${format(new Date(league.updated_at), 'dd.MM.yyyy')}`}
+                                    </Badge>
+                                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">({leagueMatchCount} maç)</span>
+                                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">({leaguePlayerCount} oyuncu)</span>
                                   </div>
                                 </div>
                               </div>
-                              <DialogFooter>
-                                <DialogClose asChild>
-                                  <Button variant="outline">İptal</Button>
-                                </DialogClose>
-                                <DialogClose asChild>
-                                  <Button onClick={updateLeague}>Kaydet</Button>
-                                </DialogClose>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
-                          {isSuperAdmin && (
-                            <Button 
-                              variant="destructive" 
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => deleteLeague(league.id)}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          )}
+                              <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
+                                {league.status === 'active' && (
+                                  <Button variant="outline" size="sm" className="h-7 px-2 text-[12px] leading-none" onClick={() => completeLeague(league.id)}>
+                                    Kaydet
+                                  </Button>
+                                )}
+                                {isSuperAdmin && (
+                                  <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => deleteLeague(league.id)}>
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <div className="px-3 pb-3 space-y-4">
+                              {/* Edit League Details */}
+                              <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
+                                <Label className="text-xs text-muted-foreground">Lig Bilgileri</Label>
+                                <div className="space-y-3">
+                                  <div>
+                                    <Label className="text-xs">Lig Adı</Label>
+                                    <Input
+                                      value={editingLeague?.name || league.name}
+                                      onChange={e => setEditingLeague(prev => prev ? { ...prev, name: e.target.value } : { ...league, name: e.target.value })}
+                                      className="h-8 text-sm"
+                                    />
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <Label className="text-xs">Mevcut Yıl</Label>
+                                      <Input
+                                        type="number"
+                                        value={editingLeague?.current_year ?? league.current_year ?? ''}
+                                        onChange={e => setEditingLeague(prev => {
+                                          const base = prev || { ...league };
+                                          return { ...base, current_year: parseInt(e.target.value) || null };
+                                        })}
+                                        placeholder="2025"
+                                        className="h-8 text-sm"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label className="text-xs">Aktif Sezon</Label>
+                                      <Input
+                                        value={editingLeague?.active_season ?? league.active_season ?? ''}
+                                        onChange={e => setEditingLeague(prev => {
+                                          const base = prev || { ...league };
+                                          return { ...base, active_season: e.target.value || null };
+                                        })}
+                                        placeholder="Bahar, Güz, vb."
+                                        className="h-8 text-sm"
+                                      />
+                                    </div>
+                                  </div>
+                                  <Button 
+                                    size="sm" 
+                                    className="w-full h-8 text-xs"
+                                    onClick={() => {
+                                      if (!editingLeague) {
+                                        setEditingLeague({ ...league });
+                                      }
+                                      updateLeague();
+                                    }}
+                                  >
+                                    Güncelle
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </CollapsibleContent>
                         </div>
-                      </div>
+                      </Collapsible>
                     );
                   })}
                 </div>
@@ -1748,8 +1767,7 @@ const Admin = () => {
                     <p className="text-xs text-muted-foreground">
                       Mevcut şifre: <span className="font-mono font-bold">{defaultPassword}</span>
                     </p>
-                  </div>
-
+                </div>
 
                   {/* Add Association Admin */}
                   <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
