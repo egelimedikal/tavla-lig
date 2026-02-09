@@ -1355,7 +1355,8 @@ const Admin = () => {
                           </CollapsibleTrigger>
                           <CollapsibleContent>
                             <div className="px-3 pb-3 space-y-4">
-                              {/* Edit League Details */}
+                              {/* Edit League Details - only for active leagues */}
+                              {league.status === 'active' && (
                               <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
                                 <Label className="text-xs text-muted-foreground">Lig Bilgileri</Label>
                                 <div className="space-y-3">
@@ -1408,6 +1409,7 @@ const Admin = () => {
                                   </Button>
                                 </div>
                               </div>
+                              )}
 
                               {/* Puan Durumu */}
                               {(() => {
@@ -1473,13 +1475,13 @@ const Admin = () => {
                                                   {format(new Date(match.match_date), 'dd.MM.yy')}
                                                 </span>
                                                 <div className="flex items-center gap-1 flex-1 justify-center min-w-0">
-                                                  <span className={`truncate text-right max-w-[80px] ${isP1Winner ? 'font-bold' : ''}`}>
+                                                <span className={`truncate text-right max-w-[80px] ${isP1Winner ? 'font-bold text-green-400' : ''}`}>
                                                     {getPlayerName(match.player1_id)}
                                                   </span>
                                                   <span className="font-mono font-bold px-1 shrink-0">
                                                     {match.score1} - {match.score2}
                                                   </span>
-                                                  <span className={`truncate text-left max-w-[80px] ${!isP1Winner ? 'font-bold' : ''}`}>
+                                                  <span className={`truncate text-left max-w-[80px] ${!isP1Winner ? 'font-bold text-green-400' : ''}`}>
                                                     {getPlayerName(match.player2_id)}
                                                   </span>
                                                 </div>
