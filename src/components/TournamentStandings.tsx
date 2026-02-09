@@ -135,6 +135,15 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
     return indices;
   }, [sortedPlayers]);
 
+  const getRowBg = (tp: TournamentPlayer) => {
+    if (tp.is_eliminated) return 'bg-slate-200 text-slate-500';
+    if (tp.losses === 0) return 'bg-emerald-100';
+    if (tp.losses === 1) return 'bg-green-50';
+    if (tp.losses === 2) return 'bg-amber-100';
+    if (tp.losses === 3) return 'bg-orange-200';
+    return '';
+  };
+
   const getGroupBorder = (index: number) => {
     return 'border-t border-t-white/15';
   };
@@ -211,7 +220,7 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
                 <button
                   key={tp.id}
                   onClick={() => onPlayerClick(tp.player_id)}
-                  className={`w-full grid grid-cols-[22px_minmax(0,1fr)_32px_32px_32px] gap-0 px-1 py-2 text-xs hover:bg-secondary/30 transition-colors ${getGroupBorder(index)}`}
+                  className={`w-full grid grid-cols-[22px_minmax(0,1fr)_32px_32px_32px] gap-0 px-1 py-2 text-xs hover:bg-secondary/30 transition-colors ${getGroupBorder(index)} ${getRowBg(tp)}`}
                 >
                   <div className="flex items-center justify-center text-muted-foreground">
                     {index === 0 ? <Trophy className="w-4 h-4 text-yellow-400" /> : index === 1 ? <Trophy className="w-4 h-4 text-gray-300" /> : index === 2 ? <Trophy className="w-4 h-4 text-amber-600" /> : index + 1}
