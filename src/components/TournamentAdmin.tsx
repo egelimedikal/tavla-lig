@@ -53,9 +53,10 @@ interface TournamentMatch {
 interface TournamentAdminProps {
   players: Profile[];
   associationId: string | null;
+  isSuperAdmin?: boolean;
 }
 
-export function TournamentAdmin({ players, associationId }: TournamentAdminProps) {
+export function TournamentAdmin({ players, associationId, isSuperAdmin = false }: TournamentAdminProps) {
   const { toast } = useToast();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [tournamentPlayers, setTournamentPlayers] = useState<TournamentPlayer[]>([]);
@@ -117,6 +118,10 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
   };
 
   const deleteTournament = async (id: string) => {
+    if (!isSuperAdmin) {
+      toast({ title: "Hata", description: "Sadece Süper Admin turnuva silebilir.", variant: "destructive" });
+      return;
+    }
     const { error } = await supabase.from('tournaments').delete().eq('id', id);
     if (error) {
       toast({ title: "Hata", description: error.message, variant: "destructive" });
@@ -127,6 +132,19 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
     setTournamentMatches(prev => prev.filter(tm => tm.tournament_id !== id));
     if (selectedTournamentId === id) setSelectedTournamentId(null);
     toast({ title: "Başarılı", description: "Turnuva silindi." });
+  };
+
+  const completeTournament = async (id: string) => {
+    const { error } = await supabase
+      .from('tournaments')
+      .update({ status: 'completed' })
+      .eq('id', id);
+    if (error) {
+      toast({ title: "Hata", description: error.message, variant: "destructive" });
+      return;
+    }
+    setTournaments(prev => prev.map(t => t.id === id ? { ...t, status: 'completed' } : t));
+    toast({ title: "Başarılı", description: "Turnuva kaydedildi." });
   };
 
   const updateTournamentMatchLength = async (tournamentId: string, matchLength: number) => {
@@ -658,7 +676,7 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
 
           {/* Tournament List */}
           <div className="space-y-2">
-            {tournaments.map(t => (
+          {tournaments.map(t => (
               <div
                 key={t.id}
                 className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
@@ -675,9 +693,18 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
                     <span className="text-xs text-muted-foreground">Tur: {t.current_round}</span>
                   </div>
                 </div>
-                <Button variant="destructive" size="icon" onClick={(e) => { e.stopPropagation(); deleteTournament(t.id); }}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                  {t.status === 'active' && (
+                    <Button variant="outline" size="sm" onClick={() => completeTournament(t.id)}>
+                      Kaydet
+                    </Button>
+                  )}
+                  {isSuperAdmin && (
+                    <Button variant="destructive" size="icon" onClick={() => deleteTournament(t.id)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
             {tournaments.length === 0 && (

@@ -1616,7 +1616,8 @@ const Admin = () => {
             <TabsContent value="tournament">
               <TournamentAdmin 
                 players={players} 
-                associationId={associations[0]?.id || null} 
+                associationId={associations[0]?.id || null}
+                isSuperAdmin={isSuperAdmin}
               />
             </TabsContent>
           )}
