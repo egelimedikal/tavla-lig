@@ -237,17 +237,52 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
         is_bye: boolean;
       }> = [];
 
+      // Count previous byes per player for fairness
+      const previousMatches = tournamentMatches.filter(m => m.tournament_id === selectedTournamentId);
+      const byeCountMap = new Map<string, number>();
+      previousMatches.forEach(m => {
+        if (m.is_bye && m.player1_id) {
+          byeCountMap.set(m.player1_id, (byeCountMap.get(m.player1_id) || 0) + 1);
+        }
+      });
+
+      // Build set of previous matchups to avoid rematches
+      const previousMatchups = new Set<string>();
+      previousMatches.forEach(m => {
+        if (!m.is_bye && m.player1_id && m.player2_id) {
+          const key = [m.player1_id, m.player2_id].sort().join('-');
+          previousMatchups.add(key);
+        }
+      });
+
+      // Fisher-Yates shuffle helper using crypto-grade randomness
+      const cryptoShuffle = <T,>(arr: T[]): T[] => {
+        const result = [...arr];
+        const randomValues = new Uint32Array(result.length);
+        crypto.getRandomValues(randomValues);
+        for (let i = result.length - 1; i > 0; i--) {
+          const j = randomValues[i] % (i + 1);
+          [result[i], result[j]] = [result[j], result[i]];
+        }
+        return result;
+      };
+
       // Determine if total active players is odd — if so, BYE goes to highest loss group
       const totalPlayers = tPlayers.length;
       let byeAssigned = false;
 
       if (totalPlayers % 2 !== 0) {
-        // Find the group with most losses and pick a random player for BYE
+        // Find the group with most losses and pick the player with fewest previous byes
         for (const key of sortedGroupKeys) {
           const group = groups.get(key)!;
           if (group.length > 0) {
-            const byeIndex = Math.floor(Math.random() * group.length);
-            const byePlayer = group.splice(byeIndex, 1)[0];
+            // Sort by bye count ascending, then shuffle ties randomly
+            const minByeCount = Math.min(...group.map(p => byeCountMap.get(p.player_id) || 0));
+            const candidates = group.filter(p => (byeCountMap.get(p.player_id) || 0) === minByeCount);
+            const shuffledCandidates = cryptoShuffle(candidates);
+            const byePlayer = shuffledCandidates[0];
+            const idx = group.indexOf(byePlayer);
+            group.splice(idx, 1);
             matchesToInsert.push({
               tournament_id: selectedTournamentId,
               round_number: nextRound,
@@ -275,29 +310,52 @@ export function TournamentAdmin({ players, associationId }: TournamentAdminProps
           carryOver = null;
         }
 
-        // Shuffle the group randomly
-        for (let j = group.length - 1; j > 0; j--) {
-          const k = Math.floor(Math.random() * (j + 1));
-          [group[j], group[k]] = [group[k], group[j]];
+        // Shuffle the group with crypto-grade randomness
+        const shuffled = cryptoShuffle(group);
+
+        // Try to avoid rematches by swapping pairs
+        const finalGroup = [...shuffled];
+        for (let j = 0; j < finalGroup.length - 1; j += 2) {
+          const matchKey = [finalGroup[j].player_id, finalGroup[j + 1].player_id].sort().join('-');
+          if (previousMatchups.has(matchKey)) {
+            // Try to find a swap partner further in the list
+            let swapped = false;
+            for (let s = j + 2; s < finalGroup.length; s++) {
+              const altKey1 = [finalGroup[j].player_id, finalGroup[s].player_id].sort().join('-');
+              // Check the displaced partner too
+              const partnerIdx = s % 2 === 0 ? s + 1 : s - 1;
+              if (partnerIdx < finalGroup.length && partnerIdx >= 0) {
+                const altKey2 = [finalGroup[j + 1].player_id, finalGroup[partnerIdx === s ? j + 1 : partnerIdx].player_id].sort().join('-');
+                if (!previousMatchups.has(altKey1)) {
+                  [finalGroup[j + 1], finalGroup[s]] = [finalGroup[s], finalGroup[j + 1]];
+                  swapped = true;
+                  break;
+                }
+              } else if (!previousMatchups.has(altKey1)) {
+                [finalGroup[j + 1], finalGroup[s]] = [finalGroup[s], finalGroup[j + 1]];
+                swapped = true;
+                break;
+              }
+            }
+          }
         }
 
         // If odd number, carry over to next group
-        if (group.length % 2 !== 0) {
+        if (finalGroup.length % 2 !== 0) {
           if (i < ascGroupKeys.length - 1) {
-            carryOver = group.pop()!;
+            carryOver = finalGroup.pop()!;
           } else {
-            // Shouldn't happen if BYE was assigned correctly, but safety
-            carryOver = group.pop()!;
+            carryOver = finalGroup.pop()!;
           }
         }
 
         // Pair up remaining
-        for (let j = 0; j < group.length; j += 2) {
+        for (let j = 0; j < finalGroup.length; j += 2) {
           matchesToInsert.push({
             tournament_id: selectedTournamentId,
             round_number: nextRound,
-            player1_id: group[j].player_id,
-            player2_id: group[j + 1].player_id,
+            player1_id: finalGroup[j].player_id,
+            player2_id: finalGroup[j + 1].player_id,
             is_bye: false,
           });
         }
