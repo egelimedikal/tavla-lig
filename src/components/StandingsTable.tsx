@@ -27,10 +27,7 @@ interface StandingsTableProps {
 }
 
 export function StandingsTable({ standings, onPlayerClick }: StandingsTableProps) {
-  const getRankClass = (rank: number) => {
-    if (rank === 1) return 'bg-gold/10 border-l-2 border-l-gold';
-    if (rank === 2) return 'bg-silver/5 border-l-2 border-l-silver';
-    if (rank === 3) return 'bg-bronze/5 border-l-2 border-l-bronze';
+  const getRankClass = (_rank: number) => {
     return '';
   };
 
