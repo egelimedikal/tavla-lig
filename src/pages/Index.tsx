@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 
@@ -50,6 +50,31 @@ const Index = () => {
   const [showMatchForm, setShowMatchForm] = useState(false);
   const [tabMode, setTabMode] = useState<TabMode>('league');
   const { toast } = useToast();
+  const [selectedSeasonKey, setSelectedSeasonKey] = useState<string | null>(null);
+
+  const activeLeagues = useMemo(() => 
+    associationLeagues.filter((l: any) => l.status === 'active'),
+    [associationLeagues]
+  );
+
+  const seasonGroups = useMemo(() => {
+    const completed = associationLeagues.filter((l: any) => l.status === 'completed');
+    const groups = new Map<string, any[]>();
+    completed.forEach((league: any) => {
+      const parts: string[] = [];
+      if (league.current_year) parts.push(String(league.current_year));
+      if (league.active_season) parts.push(league.active_season);
+      const key = parts.length > 0 ? parts.join(' ') : 'Diğer';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(league);
+    });
+    return groups;
+  }, [associationLeagues]);
+
+  const visibleLeagues = useMemo(() => 
+    selectedSeasonKey ? (seasonGroups.get(selectedSeasonKey) || []) : activeLeagues,
+    [selectedSeasonKey, seasonGroups, activeLeagues]
+  );
 
   // Check if user needs to change password
   useEffect(() => {
@@ -63,6 +88,18 @@ const Index = () => {
       navigate('/auth');
     }
   }, [user, authLoading, navigate]);
+
+  // Auto-select league when visible leagues change
+  useEffect(() => {
+    if (visibleLeagues.length > 0 && !visibleLeagues.find((l: any) => l.id === currentLeagueId)) {
+      setCurrentLeagueId(visibleLeagues[0].id);
+    }
+  }, [visibleLeagues, currentLeagueId, setCurrentLeagueId]);
+
+  // Reset season when association changes
+  useEffect(() => {
+    setSelectedSeasonKey(null);
+  }, [currentAssociationId]);
 
   const handlePlayerClick = (playerId: string) => {
     setSelectedPlayerId(playerId);
@@ -148,8 +185,8 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-24">
       <Header onProfileClick={handleProfileClick} />
       
-      {/* Mode Toggle */}
-      <div className="flex gap-2 px-4 pt-3">
+      {/* Mode Toggle + League Buttons */}
+      <div className="flex flex-wrap items-center gap-2 px-4 pt-3">
         <button
           onClick={() => setTabMode('league')}
           className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -172,6 +209,35 @@ const Index = () => {
           <Trophy className="w-4 h-4" />
           Turnuva
         </button>
+
+        {tabMode === 'league' && (
+          <>
+            {visibleLeagues.length > 0 && (
+              <>
+                <div className="w-px h-6 bg-border" />
+                {visibleLeagues.map((league: any) => (
+                  <button
+                    key={league.id}
+                    onClick={() => setCurrentLeagueId(league.id)}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      currentLeagueId === league.id
+                        ? 'bg-accent text-accent-foreground'
+                        : 'text-muted-foreground hover:bg-secondary/80'
+                    }`}
+                  >
+                    {league.name}
+                  </button>
+                ))}
+              </>
+            )}
+            <LeagueTabs 
+              seasonGroups={seasonGroups}
+              selectedSeasonKey={selectedSeasonKey}
+              onSeasonChange={setSelectedSeasonKey}
+              hasActiveLeagues={activeLeagues.length > 0}
+            />
+          </>
+        )}
       </div>
 
       {tabMode === 'league' ? (
@@ -206,19 +272,7 @@ const Index = () => {
                   </div>
                 </div>
               )}
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-lg font-bold text-foreground truncate">{currentLeague?.name || 'Lig'}</h2>
-                  <p className="text-sm text-muted-foreground">Puan Durumu</p>
-                </div>
-                <div className="flex-shrink-0 pt-0.5">
-                  <LeagueTabs 
-                    leagues={associationLeagues}
-                    currentLeagueId={currentLeagueId} 
-                    onLeagueChange={setCurrentLeagueId} 
-                  />
-                </div>
-              </div>
+              <p className="text-sm text-muted-foreground">Puan Durumu</p>
             </div>
             
             {standings.length > 0 ? (
