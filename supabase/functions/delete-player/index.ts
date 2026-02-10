@@ -174,6 +174,26 @@ serve(async (req) => {
       console.error('Matches delete error:', matchesError);
     }
 
+    // Delete tournament_matches where this player participated
+    const { error: tmError } = await supabaseAdmin
+      .from('tournament_matches')
+      .delete()
+      .or(`player1_id.eq.${playerId},player2_id.eq.${playerId}`);
+
+    if (tmError) {
+      console.error('Tournament matches delete error:', tmError);
+    }
+
+    // Delete tournament_players entries
+    const { error: tpError } = await supabaseAdmin
+      .from('tournament_players')
+      .delete()
+      .eq('player_id', playerId);
+
+    if (tpError) {
+      console.error('Tournament players delete error:', tpError);
+    }
+
     // If super_admin, keep profile and auth account but remove from leagues/matches only
     if (isSuperAdmin) {
       console.log('Super admin player - keeping auth account and profile, only removed league/match data:', playerId);
