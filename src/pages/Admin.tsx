@@ -1067,7 +1067,10 @@ const Admin = () => {
           <TabsContent value="association">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Dernek Bilgileri</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-primary" />
+                  Dernek Bilgileri
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
@@ -1195,7 +1198,10 @@ const Admin = () => {
           <TabsContent value="leagues">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Lig Yönetimi</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Swords className="w-5 h-5 text-primary" />
+                  Lig Yönetimi
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Add League */}
@@ -1446,7 +1452,10 @@ const Admin = () => {
           <TabsContent value="players">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Oyuncu Yönetimi</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" />
+                  Oyuncu Yönetimi
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
               {/* Add New Player */}
@@ -1668,7 +1677,10 @@ const Admin = () => {
           <TabsContent value="matches">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Maç Düzenleme</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Gamepad2 className="w-5 h-5 text-primary" />
+                  Maç Düzenleme
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 {matches.filter(m => {
