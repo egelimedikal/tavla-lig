@@ -17,7 +17,7 @@ interface LeagueTabsProps {
 }
 
 export function LeagueTabs({ leagues, currentLeagueId, onLeagueChange }: LeagueTabsProps) {
-  const activeLeagues = leagues.filter(l => l.status === 'active');
+  const activeLeague = leagues.find(l => l.status === 'active');
   const completedLeagues = leagues
     .filter(l => l.status === 'completed')
     .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
@@ -30,9 +30,7 @@ export function LeagueTabs({ leagues, currentLeagueId, onLeagueChange }: LeagueT
     );
   }
 
-  // Only show if there are other leagues to switch to
-  const otherLeagues = activeLeagues.filter(l => l.id !== currentLeagueId);
-  if (otherLeagues.length === 0 && completedLeagues.length === 0) {
+  if (completedLeagues.length === 0) {
     return null;
   }
 
@@ -46,11 +44,11 @@ export function LeagueTabs({ leagues, currentLeagueId, onLeagueChange }: LeagueT
         <span className="text-muted-foreground">Geçmiş</span>
       </SelectTrigger>
       <SelectContent>
-        {activeLeagues.map((league) => (
-          <SelectItem key={league.id} value={league.id} className="text-xs font-semibold">
-            {league.name} (Aktif)
+        {activeLeague && (
+          <SelectItem key={activeLeague.id} value={activeLeague.id} className="text-xs font-semibold">
+            {activeLeague.name} (Aktif)
           </SelectItem>
-        ))}
+        )}
         {completedLeagues.map((league) => (
           <SelectItem key={league.id} value={league.id} className="text-xs">
             {league.name} ({format(new Date(league.updated_at), 'dd.MM.yyyy')})
