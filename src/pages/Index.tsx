@@ -176,12 +176,6 @@ const Index = () => {
 
       {tabMode === 'league' ? (
         <>
-          <LeagueTabs 
-            leagues={associationLeagues}
-            currentLeagueId={currentLeagueId} 
-            onLeagueChange={setCurrentLeagueId} 
-          />
-
           <div className="mt-4">
             <div className="px-4 mb-4">
               {currentAssociation && (
@@ -212,8 +206,17 @@ const Index = () => {
                   </div>
                 </div>
               )}
-              <h2 className="text-lg font-bold text-foreground">{currentLeague?.name || 'Lig'}</h2>
-              <p className="text-sm text-muted-foreground">Puan Durumu</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-foreground">{currentLeague?.name || 'Lig'}</h2>
+                  <p className="text-sm text-muted-foreground">Puan Durumu</p>
+                </div>
+                <LeagueTabs 
+                  leagues={associationLeagues}
+                  currentLeagueId={currentLeagueId} 
+                  onLeagueChange={setCurrentLeagueId} 
+                />
+              </div>
             </div>
             
             {standings.length > 0 ? (

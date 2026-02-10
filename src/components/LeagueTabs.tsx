@@ -1,5 +1,6 @@
 import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { History } from 'lucide-react';
 
 interface League {
   id: string;
@@ -16,6 +17,10 @@ interface LeagueTabsProps {
 }
 
 export function LeagueTabs({ leagues, currentLeagueId, onLeagueChange }: LeagueTabsProps) {
+  const completedLeagues = leagues
+    .filter(l => l.status === 'completed')
+    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+
   if (leagues.length === 0) {
     return (
       <div className="px-4 py-3 text-center text-muted-foreground text-sm">
@@ -24,20 +29,24 @@ export function LeagueTabs({ leagues, currentLeagueId, onLeagueChange }: LeagueT
     );
   }
 
-  if (leagues.length === 1) {
+  if (completedLeagues.length === 0) {
     return null;
   }
 
   return (
-    <div className="px-4 py-3">
-      <Select value={currentLeagueId} onValueChange={onLeagueChange}>
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder="Lig seçin" />
+    <div className="px-4 py-2 flex justify-end">
+      <Select
+        value={completedLeagues.some(l => l.id === currentLeagueId) ? currentLeagueId : ''}
+        onValueChange={onLeagueChange}
+      >
+        <SelectTrigger className="w-auto gap-1.5 h-8 text-xs px-3 bg-secondary/50 border-border/50">
+          <History className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-muted-foreground">Geçmiş Sezonlar</span>
         </SelectTrigger>
         <SelectContent>
-          {leagues.map((league) => (
-            <SelectItem key={league.id} value={league.id}>
-              {league.name} {league.status === 'completed' ? `(Tamamlandı - ${format(new Date(league.updated_at), 'dd.MM.yyyy')})` : '(Aktif)'}
+          {completedLeagues.map((league) => (
+            <SelectItem key={league.id} value={league.id} className="text-xs">
+              {league.name} ({format(new Date(league.updated_at), 'dd.MM.yyyy')})
             </SelectItem>
           ))}
         </SelectContent>
