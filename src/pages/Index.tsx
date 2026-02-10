@@ -245,17 +245,17 @@ const Index = () => {
                       )}
                     </div>
                   </div>
-                  <div className="flex-shrink-0">
-                    <LeagueTabs 
-                      seasonGroups={seasonGroups}
-                      selectedSeasonKey={selectedSeasonKey}
-                      onSeasonChange={setSelectedSeasonKey}
-                      hasActiveLeagues={activeLeagues.length > 0}
-                    />
-                  </div>
                 </div>
               )}
-              <p className="text-sm text-muted-foreground">Puan Durumu</p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">Puan Durumu</p>
+                <LeagueTabs 
+                  seasonGroups={seasonGroups}
+                  selectedSeasonKey={selectedSeasonKey}
+                  onSeasonChange={setSelectedSeasonKey}
+                  hasActiveLeagues={activeLeagues.length > 0}
+                />
+              </div>
             </div>
             
             {standings.length > 0 ? (
