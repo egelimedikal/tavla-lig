@@ -956,7 +956,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                                         </div>
                                       )}
                                     </div>
-                                  {!match.is_bye && t.status === 'active' && (
+                                  {!match.is_bye && t.status === 'active' && match.round_number === t.current_round && (
                                     <Dialog
                                       open={editingMatch?.id === match.id}
                                       onOpenChange={(open) => {
