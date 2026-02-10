@@ -84,7 +84,7 @@ const Admin = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdminRole();
   const { isSuperAdmin, loading: superAdminLoading } = useSuperAdminRole();
-  const { managedAssociationIds } = useAssociationAdminRole();
+  const { managedAssociationIds, loading: assocAdminLoading } = useAssociationAdminRole();
   const { toast } = useToast();
   
   const [associations, setAssociations] = useState<Association[]>([]);
@@ -136,8 +136,10 @@ const Admin = () => {
     }
   }, [user, authLoading, navigate]);
 
+  const isAnyAdmin = isAdmin || managedAssociationIds.length > 0;
+
   useEffect(() => {
-    if (!adminLoading && !isAdmin && user) {
+    if (!adminLoading && !assocAdminLoading && !isAnyAdmin && user) {
       toast({
         title: "Erişim Reddedildi",
         description: "Bu sayfaya erişim yetkiniz yok.",
@@ -145,13 +147,13 @@ const Admin = () => {
       });
       navigate('/');
     }
-  }, [isAdmin, adminLoading, user, navigate, toast]);
+  }, [isAnyAdmin, adminLoading, assocAdminLoading, user, navigate, toast]);
 
   useEffect(() => {
-    if (isAdmin && !superAdminLoading) {
+    if (isAnyAdmin && !superAdminLoading) {
       fetchData();
     }
-  }, [isAdmin, isSuperAdmin, superAdminLoading]);
+  }, [isAnyAdmin, isSuperAdmin, superAdminLoading]);
 
   const fetchData = async () => {
     setLoading(true);
