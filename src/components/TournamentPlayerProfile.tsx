@@ -286,9 +286,9 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
                     <table className="w-full text-sm">
                       <thead className="bg-secondary/50">
                          <tr>
-290:                           <th className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs">Tur</th>
-291:                           <th className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs">Oyuncular</th>
-292:                           <th className="px-3 py-2 text-center font-semibold text-muted-foreground text-xs">Skor</th>
+                          <th className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs">Zaman</th>
+                          <th className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs">Oyuncular</th>
+                          <th className="px-3 py-2 text-center font-semibold text-muted-foreground text-xs">Skor</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/50">
@@ -305,7 +305,9 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
 
                           return (
                             <tr key={match.id}>
-                              <td className="px-3 py-2 text-muted-foreground text-xs">{match.round_number}</td>
+                              <td className="px-3 py-2 text-muted-foreground text-xs whitespace-nowrap">
+                                {new Date(match.match_date).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                              </td>
                               <td className="px-3 py-2 text-xs">
                                 {match.is_bye ? (
                                   <span className="text-success">BYE</span>
