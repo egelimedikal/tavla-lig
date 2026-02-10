@@ -200,6 +200,7 @@ export type Database = {
           created_at: string
           current_year: number | null
           id: string
+          match_length: number
           name: string
           status: string
           updated_at: string
@@ -210,6 +211,7 @@ export type Database = {
           created_at?: string
           current_year?: number | null
           id: string
+          match_length?: number
           name: string
           status?: string
           updated_at?: string
@@ -220,6 +222,7 @@ export type Database = {
           created_at?: string
           current_year?: number | null
           id?: string
+          match_length?: number
           name?: string
           status?: string
           updated_at?: string

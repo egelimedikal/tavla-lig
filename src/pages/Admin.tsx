@@ -46,6 +46,7 @@ interface League {
   updated_at: string;
   current_year: number | null;
   active_season: string | null;
+  match_length: number;
 }
 
 interface Match {
@@ -102,6 +103,7 @@ const Admin = () => {
   
   // Form states (removed association-related states for single-association model)
   const [newLeagueName, setNewLeagueName] = useState('');
+  const [newLeagueMatchLength, setNewLeagueMatchLength] = useState(9);
   const [editingLeague, setEditingLeague] = useState<League | null>(null);
   const [selectedLeagueForEdit, setSelectedLeagueForEdit] = useState<string | null>(null);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
@@ -287,7 +289,7 @@ const Admin = () => {
 
     const { data, error } = await supabase
       .from('leagues')
-      .insert({ id: crypto.randomUUID(), name: newLeagueName, association_id: associationId })
+      .insert({ id: crypto.randomUUID(), name: newLeagueName, association_id: associationId, match_length: newLeagueMatchLength })
       .select()
       .single();
 
@@ -303,6 +305,7 @@ const Admin = () => {
     if (data) {
       setLeagues(prev => [...prev, data]);
       setNewLeagueName('');
+      setNewLeagueMatchLength(9);
       toast({
         title: "Başarılı",
         description: "Lig eklendi.",
@@ -1298,6 +1301,25 @@ const Admin = () => {
                       <Plus className="w-4 h-4" />
                     </Button>
                   </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Kaç Sayılık?</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[5, 7, 9, 11, 13].map(n => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setNewLeagueMatchLength(n)}
+                          className={`w-9 h-8 rounded text-xs font-bold transition-colors ${
+                            newLeagueMatchLength === n
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted hover:bg-muted-foreground/20 text-muted-foreground'
+                          }`}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
                 )}
 
@@ -1336,6 +1358,7 @@ const Admin = () => {
                                     </Badge>
                                     <span className="text-[10px] text-muted-foreground whitespace-nowrap">({leagueMatchCount} maç)</span>
                                     <span className="text-[10px] text-muted-foreground whitespace-nowrap">({leaguePlayerCount} oyuncu)</span>
+                                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">{league.match_length} sayılık</span>
                                   </div>
                                 </div>
                               </div>
