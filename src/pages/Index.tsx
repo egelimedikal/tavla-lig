@@ -229,16 +229,16 @@ const Index = () => {
                     )}
                     <div>
                       <h1 className="text-xl font-bold text-foreground">{currentAssociation.name}</h1>
-                      {(currentAssociation.current_year || currentAssociation.active_season) && (
+                      {((currentLeague as any)?.current_year || (currentLeague as any)?.active_season) && (
                         <div className="flex items-center gap-2 text-sm">
-                          {currentAssociation.current_year && (
+                          {(currentLeague as any)?.current_year && (
                             <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-md font-medium">
-                              {currentAssociation.current_year}
+                              {(currentLeague as any).current_year}
                             </span>
                           )}
-                          {currentAssociation.active_season && (
+                          {(currentLeague as any)?.active_season && (
                             <span className="text-muted-foreground">
-                              {currentAssociation.active_season}
+                              {(currentLeague as any).active_season}
                             </span>
                           )}
                         </div>
