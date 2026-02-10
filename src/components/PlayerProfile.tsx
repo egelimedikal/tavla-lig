@@ -511,18 +511,32 @@ export function PlayerProfile({
                   'Henüz sıralama yok'
                 )}
               </p>
-              {(selectedLeague?.league as any)?.current_year || (selectedLeague?.league as any)?.active_season ? (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {(selectedLeague?.league as any)?.current_year && <span className="text-primary font-medium">{(selectedLeague.league as any).current_year}</span>}
-                  {(selectedLeague?.league as any)?.current_year && (selectedLeague?.league as any)?.active_season && ' - '}
-                  {(selectedLeague?.league as any)?.active_season && <span>{(selectedLeague.league as any).active_season} Sezonu</span>}
-                </p>
+              {(selectedLeague?.league?.current_year || selectedLeague?.league?.active_season) ? (
+                <div className="flex items-center gap-2 text-xs mt-1">
+                  {selectedLeague.league.current_year && (
+                    <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-md font-medium">
+                      {selectedLeague.league.current_year}
+                    </span>
+                  )}
+                  {selectedLeague.league.active_season && (
+                    <span className="text-muted-foreground">
+                      {selectedLeague.league.active_season} Sezonu
+                    </span>
+                  )}
+                </div>
               ) : currentSeason && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {currentSeason.year && <span className="text-primary font-medium">{currentSeason.year}</span>}
-                  {currentSeason.year && currentSeason.season && ' - '}
-                  {currentSeason.season && <span>{currentSeason.season} Sezonu</span>}
-                </p>
+                <div className="flex items-center gap-2 text-xs mt-1">
+                  {currentSeason.year && (
+                    <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-md font-medium">
+                      {currentSeason.year}
+                    </span>
+                  )}
+                  {currentSeason.season && (
+                    <span className="text-muted-foreground">
+                      {currentSeason.season} Sezonu
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           </div>
