@@ -197,9 +197,9 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
                   value={selectedTournamentId || ''}
                   onValueChange={setSelectedTournamentId}
                 >
-                  <SelectTrigger className="w-auto gap-1.5 h-8 text-xs px-3 bg-secondary/50 border-border/50">
-                    <History className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="text-muted-foreground">Geçmiş Turnuvalar</span>
+                  <SelectTrigger className="w-auto gap-1 h-7 text-[11px] px-2 bg-secondary/50 border-border/50">
+                    <History className="w-3 h-3 text-muted-foreground" />
+                    <span className="text-muted-foreground">Geçmiş</span>
                   </SelectTrigger>
                   <SelectContent>
                     {(() => {
