@@ -1,0 +1,1 @@
+ALTER TABLE public.leagues ADD COLUMN match_length integer NOT NULL DEFAULT 9;

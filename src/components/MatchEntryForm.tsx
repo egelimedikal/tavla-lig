@@ -25,6 +25,7 @@ interface MatchEntryFormProps {
   players: Profile[];
   leagueMatches: Match[];
   currentPlayerId?: string;
+  matchLength?: number;
   onSubmit: (player1Id: string, player2Id: string, score1: number, score2: number) => void;
   onClose: () => void;
 }
@@ -38,7 +39,7 @@ function getPlayedOpponents(playerId: string, matches: Match[]): Set<string> {
   return opponents;
 }
 
-export function MatchEntryForm({ players, leagueMatches, currentPlayerId, onSubmit, onClose }: MatchEntryFormProps) {
+export function MatchEntryForm({ players, leagueMatches, currentPlayerId, matchLength = 9, onSubmit, onClose }: MatchEntryFormProps) {
   const [player1Id, setPlayer1Id] = useState(currentPlayerId || '');
   const [player2Id, setPlayer2Id] = useState('');
   const [score1, setScore1] = useState<number | null>(null);
@@ -57,7 +58,7 @@ export function MatchEntryForm({ players, leagueMatches, currentPlayerId, onSubm
   };
 
   const handleSubmit = async () => {
-    if (player1Id && player2Id && score1 !== null && score2 !== null && score1 !== score2 && Math.max(score1, score2) === 9) {
+    if (player1Id && player2Id && score1 !== null && score2 !== null && score1 !== score2 && Math.max(score1, score2) === matchLength) {
       setSubmitting(true);
       await onSubmit(player1Id, player2Id, score1, score2);
       setSubmitting(false);
@@ -68,11 +69,11 @@ export function MatchEntryForm({ players, leagueMatches, currentPlayerId, onSubm
   const s1 = score1 ?? -1;
   const s2 = score2 ?? -1;
   const maxScore = Math.max(s1, s2);
-  const isValid = player1Id && player2Id && score1 !== null && score2 !== null && s1 !== s2 && maxScore === 9;
+  const isValid = player1Id && player2Id && score1 !== null && score2 !== null && s1 !== s2 && maxScore === matchLength;
   const player1 = players.find(p => p.id === player1Id);
   const player2 = players.find(p => p.id === player2Id);
 
-  const scoreOptions = Array.from({ length: 10 }, (_, i) => i);
+  const scoreOptions = Array.from({ length: matchLength + 1 }, (_, i) => i);
 
   return (
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm animate-fade-in">
@@ -138,7 +139,7 @@ export function MatchEntryForm({ players, leagueMatches, currentPlayerId, onSubm
               {/* Score Entry with Select dropdowns */}
               {player1Id && player2Id && (
                 <div className="space-y-4 animate-fade-in">
-                  <label className="text-sm text-muted-foreground text-center block">Skor (0-9)</label>
+                  <label className="text-sm text-muted-foreground text-center block">Skor (0-{matchLength})</label>
                   
                   <div className="flex items-center justify-center gap-6">
                     <div className="flex flex-col items-center gap-2">
@@ -189,8 +190,8 @@ export function MatchEntryForm({ players, leagueMatches, currentPlayerId, onSubm
                   {score1 !== null && score2 !== null && s1 === s2 && s1 > 0 && (
                     <p className="text-xs text-warning text-center">Beraberlik olamaz, skorları değiştirin</p>
                   )}
-                  {score1 !== null && score2 !== null && s1 !== s2 && maxScore !== 9 && maxScore > 0 && (
-                    <p className="text-xs text-warning text-center">Kazanan oyuncunun skoru 9 olmalıdır</p>
+                  {score1 !== null && score2 !== null && s1 !== s2 && maxScore !== matchLength && maxScore > 0 && (
+                    <p className="text-xs text-warning text-center">Kazanan oyuncunun skoru {matchLength} olmalıdır</p>
                   )}
                 </div>
               )}

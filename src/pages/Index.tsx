@@ -244,6 +244,7 @@ const Index = () => {
           )}
           leagueMatches={allMatches.filter(m => m.league_id === currentLeagueId)}
           currentPlayerId={currentUserProfile?.id}
+          matchLength={(currentLeague as any)?.match_length ?? 9}
           onSubmit={handleMatchSubmit}
           onClose={() => setShowMatchForm(false)}
         />
