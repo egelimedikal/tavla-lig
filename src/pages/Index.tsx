@@ -200,12 +200,6 @@ const Index = () => {
             {league.name}
           </button>
         ))}
-        <LeagueTabs 
-          seasonGroups={seasonGroups}
-          selectedSeasonKey={selectedSeasonKey}
-          onSeasonChange={setSelectedSeasonKey}
-          hasActiveLeagues={activeLeagues.length > 0}
-        />
         <button
           onClick={() => setTabMode('tournament')}
           className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -224,30 +218,40 @@ const Index = () => {
           <div className="mt-4">
             <div className="px-4 mb-4">
               {currentAssociation && (
-                <div className="flex items-center gap-3 mb-2">
-                  {currentAssociation.logo_url && (
-                    <img 
-                      src={currentAssociation.logo_url} 
-                      alt={currentAssociation.name} 
-                      className="w-12 h-12 object-contain rounded-lg"
-                    />
-                  )}
-                  <div>
-                    <h1 className="text-xl font-bold text-foreground">{currentAssociation.name}</h1>
-                    {(currentAssociation.current_year || currentAssociation.active_season) && (
-                      <div className="flex items-center gap-2 text-sm">
-                        {currentAssociation.current_year && (
-                          <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-md font-medium">
-                            {currentAssociation.current_year}
-                          </span>
-                        )}
-                        {currentAssociation.active_season && (
-                          <span className="text-muted-foreground">
-                            {currentAssociation.active_season}
-                          </span>
-                        )}
-                      </div>
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {currentAssociation.logo_url && (
+                      <img 
+                        src={currentAssociation.logo_url} 
+                        alt={currentAssociation.name} 
+                        className="w-12 h-12 object-contain rounded-lg flex-shrink-0"
+                      />
                     )}
+                    <div className="min-w-0">
+                      <h1 className="text-xl font-bold text-foreground truncate">{currentAssociation.name}</h1>
+                      {(currentAssociation.current_year || currentAssociation.active_season) && (
+                        <div className="flex items-center gap-2 text-sm">
+                          {currentAssociation.current_year && (
+                            <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-md font-medium">
+                              {currentAssociation.current_year}
+                            </span>
+                          )}
+                          {currentAssociation.active_season && (
+                            <span className="text-muted-foreground">
+                              {currentAssociation.active_season}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <LeagueTabs 
+                      seasonGroups={seasonGroups}
+                      selectedSeasonKey={selectedSeasonKey}
+                      onSeasonChange={setSelectedSeasonKey}
+                      hasActiveLeagues={activeLeagues.length > 0}
+                    />
                   </div>
                 </div>
               )}
