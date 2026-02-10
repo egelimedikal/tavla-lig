@@ -1844,14 +1844,6 @@ const Admin = () => {
                             ))}
                         </SelectContent>
                       </Select>
-                      <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as 'admin' | 'user')}>
-                        <SelectTrigger className="w-28">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
                       <Button onClick={addAdminRole} size="icon">
                         <Plus className="w-4 h-4" />
                       </Button>
