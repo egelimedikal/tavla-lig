@@ -68,7 +68,15 @@ const Index = () => {
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(league);
     });
-    return groups;
+    // Sort keys: newest first (by most recent updated_at in each group)
+    const sorted = new Map(
+      [...groups.entries()].sort((a, b) => {
+        const latestA = Math.max(...a[1].map((l: any) => new Date(l.updated_at).getTime()));
+        const latestB = Math.max(...b[1].map((l: any) => new Date(l.updated_at).getTime()));
+        return latestB - latestA;
+      })
+    );
+    return sorted;
   }, [associationLeagues]);
 
   const visibleLeagues = useMemo(() => 
