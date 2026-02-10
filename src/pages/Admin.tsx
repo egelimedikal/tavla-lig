@@ -1032,7 +1032,7 @@ const Admin = () => {
             )}
             {showLeaguesTab && (
               <TabsTrigger value="leagues" className="flex items-center gap-1 text-xs px-2">
-                <Trophy className="w-4 h-4" />
+                <Swords className="w-4 h-4" />
                 <span className="hidden sm:inline">Ligler</span>
               </TabsTrigger>
             )}
@@ -1050,7 +1050,7 @@ const Admin = () => {
             )}
             {showTournamentTab && (
               <TabsTrigger value="tournament" className="flex items-center gap-1 text-xs px-2">
-                <Swords className="w-4 h-4" />
+                <Trophy className="w-4 h-4" />
                 <span className="hidden sm:inline">Turnuva</span>
               </TabsTrigger>
             )}
