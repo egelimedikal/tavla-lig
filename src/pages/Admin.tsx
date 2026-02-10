@@ -1783,7 +1783,7 @@ const Admin = () => {
               <CardContent className="space-y-2">
                 {matches.filter(m => {
                   const league = leagues.find(l => l.id === m.league_id);
-                  return !league || league.status !== 'completed';
+                  return league && league.status === 'active';
                 }).slice(0, 50).map(match => (
                   <div 
                     key={match.id}
