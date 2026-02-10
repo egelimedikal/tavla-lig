@@ -509,11 +509,17 @@ export function PlayerProfile({
                   'Henüz sıralama yok'
                 )}
               </p>
-              {currentSeason && (
+              {(selectedLeague?.league as any)?.current_year || (selectedLeague?.league as any)?.active_season ? (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {(selectedLeague?.league as any)?.current_year && <span className="text-primary font-medium">{(selectedLeague.league as any).current_year}</span>}
+                  {(selectedLeague?.league as any)?.current_year && (selectedLeague?.league as any)?.active_season && ' - '}
+                  {(selectedLeague?.league as any)?.active_season && <span>{(selectedLeague.league as any).active_season} Sezonu</span>}
+                </p>
+              ) : currentSeason && (
                 <p className="text-xs text-muted-foreground mt-1">
                   {currentSeason.year && <span className="text-primary font-medium">{currentSeason.year}</span>}
                   {currentSeason.year && currentSeason.season && ' - '}
-                  {currentSeason.season}
+                  {currentSeason.season && <span>{currentSeason.season} Sezonu</span>}
                 </p>
               )}
             </div>
