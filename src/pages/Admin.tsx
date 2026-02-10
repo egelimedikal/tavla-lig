@@ -1426,7 +1426,7 @@ const Admin = () => {
                                           <Label className="text-xs text-muted-foreground">Puan Durumu</Label>
                                         </div>
                                         <div className="bg-card rounded-xl overflow-hidden border border-border">
-                                          <div className="grid grid-cols-[30px_1fr_40px_40px_40px_40px_40px] gap-0 px-3 py-2 bg-secondary/50 text-[10px] font-semibold text-muted-foreground">
+                                          <div className="grid grid-cols-[24px_1fr_28px_28px_28px_32px_28px] gap-0 px-3 py-2 bg-secondary/50 text-[10px] font-semibold text-muted-foreground">
                                             <div className="text-center">#</div>
                                             <div>Oyuncu</div>
                                             <div className="text-center">O</div>
@@ -1437,7 +1437,7 @@ const Admin = () => {
                                           </div>
                                           <div className="divide-y divide-white/15">
                                             {stats.map((s, i) => (
-                                              <div key={s.playerId} className="grid grid-cols-[30px_1fr_40px_40px_40px_40px_40px] gap-0 px-3 py-2 text-xs items-center">
+                                              <div key={s.playerId} className="grid grid-cols-[24px_1fr_28px_28px_28px_32px_28px] gap-0 px-3 py-2 text-xs items-center">
                                                 <div className="text-center text-muted-foreground font-medium">
                                                   {i === 0 && s.played > 0 ? <Trophy className="w-3 h-3 text-yellow-400 mx-auto" /> : i + 1}
                                                 </div>
