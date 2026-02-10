@@ -1494,7 +1494,7 @@ const Admin = () => {
                 <div className="space-y-3">
                   <Label className="text-base font-medium">Kayıtlı Oyuncular ({players.length})</Label>
                   <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                    {players.map(player => (
+                    {[...players].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr')).map(player => (
                       <div 
                         key={player.id} 
                         className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
