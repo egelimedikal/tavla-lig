@@ -1622,6 +1622,7 @@ const Admin = () => {
                         <SelectContent>
                           {players
                             .filter(player => !leaguePlayers.some(lp => lp.league_id === selectedLeagueForPlayer && lp.player_id === player.id))
+                            .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr'))
                             .map(player => (
                             <SelectItem key={player.id} value={player.id}>
                               {player.name}
