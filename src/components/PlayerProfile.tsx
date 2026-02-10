@@ -219,18 +219,7 @@ export function PlayerProfile({
     return Array.from(leagueMap.values()).filter(ls => ls.league.status === 'active');
   }, [allMatches, player.id, leagues, associations, leaguePlayers, getPlayerById]);
 
-  // Get current active season from associations
-  const currentSeason = useMemo(() => {
-    const activeAssociations = associations.filter(a => a.current_year || a.active_season);
-    if (activeAssociations.length > 0) {
-      const a = activeAssociations[0];
-      return {
-        year: a.current_year,
-        season: a.active_season,
-      };
-    }
-    return null;
-  }, [associations]);
+  // currentSeason removed - season info now comes directly from the selected league
 
   // Total stats across all leagues
   const totalStats = useMemo(() => {
@@ -511,7 +500,7 @@ export function PlayerProfile({
                   'Henüz sıralama yok'
                 )}
               </p>
-              {(selectedLeague?.league?.current_year || selectedLeague?.league?.active_season) ? (
+              {(selectedLeague?.league?.current_year || selectedLeague?.league?.active_season) && (
                 <div className="flex items-center gap-2 text-xs mt-1">
                   {selectedLeague.league.current_year && (
                     <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-md font-medium">
@@ -521,19 +510,6 @@ export function PlayerProfile({
                   {selectedLeague.league.active_season && (
                     <span className="text-muted-foreground">
                       {selectedLeague.league.active_season} Sezonu
-                    </span>
-                  )}
-                </div>
-              ) : currentSeason && (
-                <div className="flex items-center gap-2 text-xs mt-1">
-                  {currentSeason.year && (
-                    <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-md font-medium">
-                      {currentSeason.year}
-                    </span>
-                  )}
-                  {currentSeason.season && (
-                    <span className="text-muted-foreground">
-                      {currentSeason.season} Sezonu
                     </span>
                   )}
                 </div>
