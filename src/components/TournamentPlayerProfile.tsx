@@ -285,10 +285,10 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
                   <div className="border-t border-border">
                     <table className="w-full text-sm">
                       <thead className="bg-secondary/50">
-                        <tr>
-                          <th className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs">Tur</th>
-                          <th className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs">Rakip</th>
-                          <th className="px-3 py-2 text-center font-semibold text-muted-foreground text-xs">Skor</th>
+                         <tr>
+290:                           <th className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs">Tur</th>
+291:                           <th className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs">Oyuncular</th>
+292:                           <th className="px-3 py-2 text-center font-semibold text-muted-foreground text-xs">Skor</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/50">
@@ -299,6 +299,9 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
                           const opponentId = isPlayer1 ? match.player2_id : match.player1_id;
                           const opponent = opponentId ? getPlayerById(opponentId) : null;
                           const playerWon = match.winner_id === playerId;
+                          const opponentWon = match.winner_id !== null && match.winner_id !== playerId;
+                          const playerName = getPlayerById(playerId)?.name?.toUpperCase() || 'OYUNCU';
+                          const opponentName = opponent?.name?.toUpperCase() || 'BİLİNMEYEN';
 
                           return (
                             <tr key={match.id}>
@@ -307,9 +310,15 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
                                 {match.is_bye ? (
                                   <span className="text-success">BYE</span>
                                 ) : (
-                                  <span className={playerWon ? 'font-bold text-foreground' : 'text-muted-foreground'}>
-                                    {opponent?.name || 'Bilinmeyen'}
-                                  </span>
+                                  <>
+                                    <span className={playerWon ? 'font-bold text-foreground' : 'text-muted-foreground'}>
+                                      {playerName}
+                                    </span>
+                                    <span className="text-muted-foreground"> - </span>
+                                    <span className={opponentWon ? 'font-bold text-foreground' : 'text-muted-foreground'}>
+                                      {opponentName}
+                                    </span>
+                                  </>
                                 )}
                               </td>
                               <td className="px-3 py-2 text-center text-xs font-medium">
