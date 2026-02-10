@@ -1945,7 +1945,7 @@ const Admin = () => {
                         </SelectTrigger>
                         <SelectContent>
                           {players
-                            .filter(player => player.user_id !== null)
+                            .filter(player => player.user_id !== null && !associationAdmins.some(aa => aa.user_id === player.user_id))
                             .map(player => (
                               <SelectItem key={player.user_id!} value={player.user_id!}>
                                 {player.name}
