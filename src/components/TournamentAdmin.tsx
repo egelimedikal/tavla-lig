@@ -671,7 +671,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Trophy className="w-4 h-4" />
+            <Trophy className="w-5 h-5 text-primary" />
             Turnuva Yönetimi
           </CardTitle>
         </CardHeader>
