@@ -525,7 +525,7 @@ export function PlayerProfile({
           <Swords className="w-4 h-4 text-primary" />
           Lig İstatistikleri
         </h3>
-        <div className="bg-secondary/30 rounded-xl border border-border overflow-hidden">
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
           <table className="w-full text-sm">
             <tbody className="divide-y divide-border">
               <tr>

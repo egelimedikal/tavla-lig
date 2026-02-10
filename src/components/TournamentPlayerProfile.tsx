@@ -184,7 +184,7 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
       </h3>
 
       {/* Overall Stats */}
-      <div className="bg-secondary/30 rounded-xl border border-border overflow-hidden">
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
         <table className="w-full text-sm">
           <tbody className="divide-y divide-border">
             <tr>
