@@ -908,17 +908,24 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                                         <span className="text-success ml-2">BYE (Hükmen Galip)</span>
                                       </p>
                                     ) : (
-                                      <p className="text-sm">
-                                        <span className={match.winner_id === match.player1_id ? 'font-bold text-success' : ''}>
-                                          {getPlayerName(match.player1_id)}
-                                        </span>
-                                        <span className="mx-2 text-muted-foreground">
-                                          {match.score1 !== null ? `${match.score1} - ${match.score2}` : 'vs'}
-                                        </span>
-                                        <span className={match.winner_id === match.player2_id ? 'font-bold text-success' : ''}>
-                                          {getPlayerName(match.player2_id)}
-                                        </span>
-                                      </p>
+                                      <div className="flex items-center gap-2">
+                                        <p className="text-sm">
+                                          <span className={match.winner_id === match.player1_id ? 'font-bold text-success' : ''}>
+                                            {getPlayerName(match.player1_id)}
+                                          </span>
+                                          <span className="mx-2 text-muted-foreground">
+                                            {match.score1 !== null ? `${match.score1} - ${match.score2}` : 'vs'}
+                                          </span>
+                                          <span className={match.winner_id === match.player2_id ? 'font-bold text-success' : ''}>
+                                            {getPlayerName(match.player2_id)}
+                                          </span>
+                                        </p>
+                                        {match.score1 !== null && (
+                                          <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                            {format(new Date(match.match_date), 'dd.MM.yy')}
+                                          </span>
+                                        )}
+                                      </div>
                                     )}
                                   </div>
                                   {!match.is_bye && t.status === 'active' && (
