@@ -183,39 +183,41 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
     <div className="animate-fade-in">
       {selectedTournament && (
         <div className="px-4 mb-4">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <Trophy className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-bold text-foreground">{selectedTournament.name}</h2>
+                <Trophy className="w-5 h-5 text-primary flex-shrink-0" />
+                <h2 className="text-lg font-bold text-foreground truncate">{selectedTournament.name}</h2>
               </div>
               <p className="text-sm text-muted-foreground">Puan Tablosu</p>
             </div>
             {completedTournaments.length > 0 && (
-              <Select
-                value={selectedTournamentId || ''}
-                onValueChange={setSelectedTournamentId}
-              >
-                <SelectTrigger className="w-auto gap-1.5 h-8 text-xs px-3 bg-secondary/50 border-border/50">
-                  <History className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span className="text-muted-foreground">Geçmiş Turnuvalar</span>
-                </SelectTrigger>
-                <SelectContent>
-                  {(() => {
-                    const activeTournament = tournaments.find(t => t.status === 'active');
-                    return activeTournament ? (
-                      <SelectItem key={activeTournament.id} value={activeTournament.id} className="text-xs font-semibold">
-                        {activeTournament.name} (Aktif)
+              <div className="flex-shrink-0 pt-0.5">
+                <Select
+                  value={selectedTournamentId || ''}
+                  onValueChange={setSelectedTournamentId}
+                >
+                  <SelectTrigger className="w-auto gap-1.5 h-8 text-xs px-3 bg-secondary/50 border-border/50">
+                    <History className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Geçmiş Turnuvalar</span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(() => {
+                      const activeTournament = tournaments.find(t => t.status === 'active');
+                      return activeTournament ? (
+                        <SelectItem key={activeTournament.id} value={activeTournament.id} className="text-xs font-semibold">
+                          {activeTournament.name} (Aktif)
+                        </SelectItem>
+                      ) : null;
+                    })()}
+                    {completedTournaments.map(t => (
+                      <SelectItem key={t.id} value={t.id} className="text-xs">
+                        {t.name} ({format(new Date(t.updated_at), 'dd.MM.yyyy')})
                       </SelectItem>
-                    ) : null;
-                  })()}
-                  {completedTournaments.map(t => (
-                    <SelectItem key={t.id} value={t.id} className="text-xs">
-                      {t.name} ({format(new Date(t.updated_at), 'dd.MM.yyyy')})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           </div>
         </div>
