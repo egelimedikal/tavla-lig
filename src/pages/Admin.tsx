@@ -1086,7 +1086,6 @@ const Admin = () => {
                     )}
                     <div>
                       <p className="font-semibold text-lg">{associations[0].name}</p>
-                      <p className="text-sm text-muted-foreground">{associations[0].description || ''}</p>
                     </div>
                   </div>
                   
