@@ -39,6 +39,7 @@ interface League {
   id: string;
   name: string;
   association_id: string | null;
+  status?: string;
 }
 
 interface Association {
@@ -212,7 +213,8 @@ export function PlayerProfile({
       stat.matches.sort((a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime());
     });
     
-    return Array.from(leagueMap.values());
+    // Only return active leagues
+    return Array.from(leagueMap.values()).filter(ls => ls.league.status === 'active');
   }, [allMatches, player.id, leagues, associations, leaguePlayers, getPlayerById]);
 
   // Get current active season from associations
