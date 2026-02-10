@@ -1754,7 +1754,10 @@ const Admin = () => {
                 <CardTitle className="text-base">Maç Düzenleme</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {matches.slice(0, 50).map(match => (
+                {matches.filter(m => {
+                  const league = leagues.find(l => l.id === m.league_id);
+                  return !league || league.status !== 'completed';
+                }).slice(0, 50).map(match => (
                   <div 
                     key={match.id}
                     className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
