@@ -1351,7 +1351,11 @@ const Admin = () => {
 
                 {/* League List */}
                 <div className="space-y-2">
-                  {leagues.filter(l => !selectedLeagueForEdit || l.id === selectedLeagueForEdit).map(league => {
+                  {[...leagues].sort((a, b) => {
+                    if (a.status === 'active' && b.status !== 'active') return -1;
+                    if (a.status !== 'active' && b.status === 'active') return 1;
+                    return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+                  }).filter(l => !selectedLeagueForEdit || l.id === selectedLeagueForEdit).map(league => {
                     const leagueMatchCount = matches.filter(m => m.league_id === league.id).length;
                     const leaguePlayerCount = leaguePlayers.filter(lp => lp.league_id === league.id).length;
                     const isOpen = selectedLeagueForEdit === league.id;
