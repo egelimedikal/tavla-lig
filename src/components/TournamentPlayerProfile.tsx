@@ -118,7 +118,7 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
 
   const playerTournaments = useMemo(() => {
     const tpEntries = tournamentPlayers.filter(tp => tp.player_id === playerId);
-    return tpEntries.map(tp => {
+    const results = tpEntries.map(tp => {
       const tournament = tournaments.find(t => t.id === tp.tournament_id);
       if (!tournament) return null;
       
@@ -155,6 +155,14 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
       remainingRights: number;
       rank: number;
     }>;
+
+    // Sort: active tournaments first, then by created_at descending
+    return results.sort((a, b) => {
+      const aActive = a.tournament.status === 'active' ? 0 : 1;
+      const bActive = b.tournament.status === 'active' ? 0 : 1;
+      if (aActive !== bActive) return aActive - bActive;
+      return new Date(b.tournament.created_at).getTime() - new Date(a.tournament.created_at).getTime();
+    });
   }, [playerId, tournaments, tournamentPlayers, tournamentMatches]);
 
   const overallStats = useMemo(() => {
@@ -220,7 +228,7 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
       {playerTournaments.map(({ tournament, tp, matches, wins, losses, played, winRate, remainingRights, rank }, index) => {
         const isExpanded = expandedTournaments.has(tournament.id);
         const totalPlayers = tournamentPlayers.filter(p => p.tournament_id === tournament.id).length;
-        const tournamentNumber = playerTournaments.length - index;
+        const tournamentNumber = index + 1;
 
         return (
           <div key={tournament.id} className="bg-card rounded-xl border border-border overflow-hidden">
