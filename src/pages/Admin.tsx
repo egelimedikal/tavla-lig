@@ -359,6 +359,8 @@ const Admin = () => {
     }
 
     setLeagues(prev => prev.filter(l => l.id !== leagueId));
+    setLeaguePlayers(prev => prev.filter(lp => lp.league_id !== leagueId));
+    setMatches(prev => prev.filter(m => m.league_id !== leagueId));
     toast({
       title: "Başarılı",
       description: "Lig silindi.",
@@ -1709,8 +1711,8 @@ const Admin = () => {
                   </div>
                 )}
 
-                {/* Player-League Assignments - Only show leagues user can manage */}
-                {manageableLeagues.map(league => {
+                {/* Active League Player Assignments */}
+                {manageableLeagues.filter(l => l.status === 'active').map(league => {
                   const playersInLeague = leaguePlayers.filter(lp => lp.league_id === league.id);
                   if (playersInLeague.length === 0) return null;
                   
@@ -1738,6 +1740,54 @@ const Admin = () => {
                         ))}
                       </div>
                     </div>
+                  );
+                })}
+
+                {/* Completed League Player Lists - Collapsible */}
+                {manageableLeagues.filter(l => l.status === 'completed').map(league => {
+                  const playersInLeague = leaguePlayers.filter(lp => lp.league_id === league.id);
+                  if (playersInLeague.length === 0) return null;
+                  
+                  return (
+                    <Collapsible key={league.id}>
+                      <CollapsibleTrigger asChild>
+                        <div className="flex items-center justify-between p-2.5 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0 transition-transform [[data-state=closed]>&]:rotate-[-90deg]" />
+                            <span className="font-medium text-sm truncate">{league.name}</span>
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">
+                              {format(new Date(league.updated_at), 'dd.MM.yyyy')}
+                            </Badge>
+                            <span className="text-[10px] text-muted-foreground shrink-0">({playersInLeague.length} oyuncu)</span>
+                          </div>
+                          {isSuperAdmin && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="h-7 w-7 shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteLeague(league.id);
+                              }}
+                            >
+                              <Trash2 className="w-3 h-3 text-destructive" />
+                            </Button>
+                          )}
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="space-y-1 mt-1 ml-5">
+                          {playersInLeague.map(lp => (
+                            <div 
+                              key={lp.id}
+                              className="flex items-center p-2 bg-muted/20 rounded text-sm"
+                            >
+                              <span>{getPlayerName(lp.player_id)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   );
                 })}
               </CardContent>
