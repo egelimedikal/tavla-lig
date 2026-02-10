@@ -13,7 +13,7 @@ import { useSupabaseLeague } from '@/hooks/useSupabaseLeague';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trophy } from 'lucide-react';
+import { Loader2, Trophy, Swords } from 'lucide-react';
 
 type View = 'standings' | 'profile' | 'force-password-change';
 type TabMode = 'league' | 'tournament';
@@ -205,6 +205,7 @@ const Index = () => {
                 : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
             }`}
           >
+            <Swords className="w-4 h-4" />
             {league.name}
           </button>
         ))}
