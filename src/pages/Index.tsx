@@ -227,8 +227,8 @@ const Index = () => {
                         className="w-12 h-12 object-contain rounded-lg flex-shrink-0"
                       />
                     )}
-                    <div className="min-w-0">
-                      <h1 className="text-xl font-bold text-foreground truncate">{currentAssociation.name}</h1>
+                    <div>
+                      <h1 className="text-xl font-bold text-foreground">{currentAssociation.name}</h1>
                       {(currentAssociation.current_year || currentAssociation.active_season) && (
                         <div className="flex items-center gap-2 text-sm">
                           {currentAssociation.current_year && (
