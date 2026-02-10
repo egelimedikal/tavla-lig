@@ -1702,7 +1702,9 @@ const Admin = () => {
                           <SelectValue placeholder="Oyuncu Seç" />
                         </SelectTrigger>
                         <SelectContent>
-                          {players.map(player => (
+                          {players
+                            .filter(player => !leaguePlayers.some(lp => lp.league_id === selectedLeagueForPlayer && lp.player_id === player.id))
+                            .map(player => (
                             <SelectItem key={player.id} value={player.id}>
                               {player.name}
                             </SelectItem>

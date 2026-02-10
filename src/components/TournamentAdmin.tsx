@@ -783,15 +783,13 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                               <DialogTitle>Turnuvaya Oyuncu Ekle</DialogTitle>
                             </DialogHeader>
                             <div className="space-y-2 py-4 overflow-y-auto flex-1">
-                              {players.map(p => {
+                              {players.filter(p => !tCurrentPlayers.some(tp => tp.player_id === p.id)).map(p => {
                                 const isSelected = selectedPlayersForTournament.has(p.id);
-                                const alreadyInTournament = tCurrentPlayers.some(tp => tp.player_id === p.id);
                                 const currentRights = selectedPlayersForTournament.get(p.id) || 4;
                                 return (
-                                  <div key={p.id} className={`flex items-center gap-2 p-2.5 rounded-lg ${alreadyInTournament ? 'bg-muted/30 opacity-50' : isSelected ? 'bg-primary/10 border border-primary/30' : 'bg-muted/50'}`}>
+                                  <div key={p.id} className={`flex items-center gap-2 p-2.5 rounded-lg ${isSelected ? 'bg-primary/10 border border-primary/30' : 'bg-muted/50'}`}>
                                     <Checkbox
                                       checked={isSelected}
-                                      disabled={alreadyInTournament}
                                       onCheckedChange={() => togglePlayerSelection(p.id)}
                                     />
                                     <span className="flex-1 text-sm font-medium truncate">{p.name}</span>
@@ -813,7 +811,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                                         ))}
                                       </div>
                                     )}
-                                    {alreadyInTournament && <Badge variant="outline" className="text-[10px]">Eklendi</Badge>}
+                                    
                                   </div>
                                 );
                               })}
