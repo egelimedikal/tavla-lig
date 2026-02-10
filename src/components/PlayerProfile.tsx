@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
-import { ArrowLeft, Trophy, LogOut, Key, Loader2, Camera, Check, X, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Trophy, LogOut, Key, Loader2, Camera, Check, X, Eye, EyeOff, Swords } from 'lucide-react';
 import { TournamentPlayerProfile } from '@/components/TournamentPlayerProfile';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/AuthContext';
@@ -520,7 +520,11 @@ export function PlayerProfile({
           </div>
         </div>
 
-        {/* Stats Table - shows stats for selected league */}
+        {/* League Stats Section */}
+        <h3 className="font-semibold px-1 flex items-center gap-2">
+          <Swords className="w-4 h-4 text-primary" />
+          Lig İstatistikleri
+        </h3>
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <table className="w-full text-sm">
             <tbody className="divide-y divide-border">
