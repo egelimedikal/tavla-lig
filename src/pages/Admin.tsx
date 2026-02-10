@@ -15,7 +15,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ArrowLeft, Plus, Trash2, Edit, Users, Trophy, Gamepad2, Loader2, Shield, Crown, Key, RefreshCw, Building2, Upload, ImageIcon, X, Swords, ChevronDown, BarChart3 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -120,6 +121,9 @@ const Admin = () => {
   const [defaultPassword, setDefaultPassword] = useState('TTB2014');
   const [editingDefaultPassword, setEditingDefaultPassword] = useState('');
   const [savingPassword, setSavingPassword] = useState(false);
+  
+  // League completion confirmation
+  const [leagueToComplete, setLeagueToComplete] = useState<{ id: string; missingCount: number } | null>(null);
   
   // Admin management (removed association selection for single-association model)
   const [selectedUserForRole, setSelectedUserForRole] = useState('');
@@ -379,6 +383,20 @@ const Admin = () => {
       return;
     }
 
+    // Check for incomplete matches
+    const playerIds = leaguePlayers.filter(lp => lp.league_id === leagueId).map(lp => lp.player_id);
+    const totalExpected = (playerIds.length * (playerIds.length - 1)) / 2;
+    const missingCount = totalExpected - leagueMatchCount;
+
+    if (missingCount > 0) {
+      setLeagueToComplete({ id: leagueId, missingCount });
+      return;
+    }
+
+    await confirmCompleteLeague(leagueId);
+  };
+
+  const confirmCompleteLeague = async (leagueId: string) => {
     const { error } = await supabase
       .from('leagues')
       .update({ status: 'completed' })
@@ -394,6 +412,7 @@ const Admin = () => {
     }
 
     setLeagues(prev => prev.map(l => l.id === leagueId ? { ...l, status: 'completed', updated_at: new Date().toISOString() } : l));
+    setLeagueToComplete(null);
     toast({
       title: "Başarılı",
       description: "Lig tamamlandı.",
@@ -1971,6 +1990,23 @@ const Admin = () => {
           )}
         </Tabs>
       </div>
+      {/* League completion confirmation dialog */}
+      <AlertDialog open={!!leagueToComplete} onOpenChange={(open) => !open && setLeagueToComplete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eksik Maçlar Var</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu ligde henüz oynanmamış {leagueToComplete?.missingCount} maç bulunuyor. Yine de ligi tamamlamak istiyor musunuz?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogAction onClick={() => leagueToComplete && confirmCompleteLeague(leagueToComplete.id)}>
+              Evet, Tamamla
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
