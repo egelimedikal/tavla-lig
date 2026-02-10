@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { useSuperAdminRole } from '@/hooks/useSuperAdminRole';
-import { useAssociationAdminRole } from '@/hooks/useAssociationAdminRole';
+
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -73,18 +73,13 @@ interface UserRole {
   role: 'admin' | 'super_admin' | 'user';
 }
 
-interface AssociationAdmin {
-  id: string;
-  association_id: string;
-  user_id: string;
-}
 
 const Admin = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdminRole();
   const { isSuperAdmin, loading: superAdminLoading } = useSuperAdminRole();
-  const { managedAssociationIds } = useAssociationAdminRole();
+  
   const { toast } = useToast();
   
   const [associations, setAssociations] = useState<Association[]>([]);
@@ -93,7 +88,7 @@ const Admin = () => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [leaguePlayers, setLeaguePlayers] = useState<LeaguePlayer[]>([]);
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
-  const [associationAdmins, setAssociationAdmins] = useState<AssociationAdmin[]>([]);
+  
   const [loading, setLoading] = useState(true);
   
   // Association editing
@@ -128,7 +123,7 @@ const Admin = () => {
   // Admin management (removed association selection for single-association model)
   const [selectedUserForRole, setSelectedUserForRole] = useState('');
   const [selectedRole, setSelectedRole] = useState<'admin' | 'user'>('admin');
-  const [selectedUserForAssociationAdmin, setSelectedUserForAssociationAdmin] = useState('');
+  
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -177,12 +172,8 @@ const Admin = () => {
 
       // Fetch user roles and association admins only for super admins
       if (isSuperAdmin) {
-        const [rolesRes, assocAdminsRes] = await Promise.all([
-          supabase.from('user_roles').select('*'),
-          supabase.from('association_admins').select('*'),
-        ]);
+        const rolesRes = await supabase.from('user_roles').select('*');
         if (rolesRes.data) setUserRoles(rolesRes.data);
-        if (assocAdminsRes.data) setAssociationAdmins(assocAdminsRes.data);
       }
     } catch (error) {
       logger.error('Error fetching data:', error);
@@ -835,88 +826,6 @@ const Admin = () => {
     });
   };
 
-  // Association Admin Management
-  const addAssociationAdmin = async () => {
-    if (!selectedUserForAssociationAdmin) {
-      toast({
-        title: "Hata",
-        description: "Kullanıcı seçimi gerekli.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Use first association automatically (single association model)
-    const associationId = associations[0]?.id;
-    if (!associationId) {
-      toast({
-        title: "Hata",
-        description: "Dernek bulunamadı.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check if already an admin for this association
-    const existing = associationAdmins.find(
-      aa => aa.association_id === associationId && aa.user_id === selectedUserForAssociationAdmin
-    );
-
-    if (existing) {
-      toast({
-        title: "Hata",
-        description: "Bu kullanıcı zaten admin.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('association_admins')
-      .insert({ association_id: associationId, user_id: selectedUserForAssociationAdmin })
-      .select()
-      .single();
-
-    if (error) {
-      toast({
-        title: "Hata",
-        description: error.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (data) {
-      setAssociationAdmins(prev => [...prev, data as AssociationAdmin]);
-      setSelectedUserForAssociationAdmin('');
-      toast({
-        title: "Başarılı",
-        description: "Admin eklendi.",
-      });
-    }
-  };
-
-  const removeAssociationAdmin = async (aaId: string) => {
-    const { error } = await supabase
-      .from('association_admins')
-      .delete()
-      .eq('id', aaId);
-
-    if (error) {
-      toast({
-        title: "Hata",
-        description: error.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setAssociationAdmins(prev => prev.filter(aa => aa.id !== aaId));
-    toast({
-      title: "Başarılı",
-      description: "Dernek admini kaldırıldı.",
-    });
-  };
 
   const updateDefaultPassword = async () => {
     if (!editingDefaultPassword.trim() || editingDefaultPassword.length < 4) {
@@ -1037,11 +946,6 @@ const Admin = () => {
     if (isSuperAdmin || isAdmin) {
       return true;
     }
-    // Association admin can only see phone numbers of players in their associations
-    if (managedAssociationIds.length > 0) {
-      const playerAssociationIds = getPlayerAssociationIds(playerId);
-      return playerAssociationIds.some(assocId => managedAssociationIds.includes(assocId));
-    }
     return false;
   };
 
@@ -1049,24 +953,16 @@ const Admin = () => {
   const canManageLeague = (leagueId: string): boolean => {
     const league = leagues.find(l => l.id === leagueId);
     if (!league?.association_id) return false;
-    
-    // Super admin can manage all leagues
-    if (isSuperAdmin) return true;
-    
-    // Association admin can only manage leagues in their associations
-    return managedAssociationIds.includes(league.association_id);
+    return isSuperAdmin || isAdmin;
   };
 
   // Get leagues that current user can manage (only active leagues)
   const manageableLeagues = leagues.filter(league => {
     if (!league.association_id) return false;
     if (league.status === 'completed') return false;
-    if (isSuperAdmin) return true;
-    return managedAssociationIds.includes(league.association_id);
+    return isSuperAdmin || isAdmin;
   });
 
-  // Check if user is an association admin (not super_admin or admin)
-  const isOnlyAssociationAdmin = managedAssociationIds.length > 0 && !isSuperAdmin && !isAdmin;
 
   if (authLoading || adminLoading || superAdminLoading || loading) {
     return (
@@ -1079,8 +975,8 @@ const Admin = () => {
     );
   }
 
-  // Check if user has any admin access (super_admin, admin, or association_admin)
-  const hasAnyAdminAccess = isAdmin || isSuperAdmin || managedAssociationIds.length > 0;
+  // Check if user has any admin access (super_admin or admin)
+  const hasAnyAdminAccess = isAdmin || isSuperAdmin;
 
   if (!hasAnyAdminAccess) {
     return null;
@@ -1089,9 +985,9 @@ const Admin = () => {
   // Determine which tabs to show based on role
   const showAssociationTab = isSuperAdmin || isAdmin;
   const showLeaguesTab = isSuperAdmin || isAdmin;
-  const showPlayersTab = isSuperAdmin || isAdmin || managedAssociationIds.length > 0;
+  const showPlayersTab = isSuperAdmin || isAdmin;
   const showMatchesTab = isSuperAdmin || isAdmin;
-  const showTournamentTab = isSuperAdmin || isAdmin || managedAssociationIds.length > 0;
+  const showTournamentTab = isSuperAdmin || isAdmin;
   const showAdminsTab = isSuperAdmin;
   const visibleTabCount = [showAssociationTab, showLeaguesTab, showPlayersTab, showMatchesTab, showTournamentTab, showAdminsTab].filter(Boolean).length;
 
@@ -1115,17 +1011,12 @@ const Admin = () => {
           <div className="flex items-center gap-2">
             <Shield className="w-5 h-5 text-primary" />
             <h1 className="text-lg font-bold">Admin Paneli</h1>
-            {isSuperAdmin ? (
+            {isSuperAdmin && (
               <Badge variant="secondary" className="ml-2">
                 <Crown className="w-3 h-3 mr-1" />
                 Süper Admin
               </Badge>
-            ) : managedAssociationIds.length > 0 ? (
-              <Badge variant="outline" className="ml-2">
-                <Shield className="w-3 h-3 mr-1" />
-                Admin
-              </Badge>
-            ) : null}
+            )}
           </div>
         </div>
       </div>
@@ -1697,7 +1588,7 @@ const Admin = () => {
                 </div>
 
                 {/* Add Player to League Section - Only for association admins or super admin */}
-                {(isSuperAdmin || managedAssociationIds.length > 0) && manageableLeagues.length > 0 && (
+                {(isSuperAdmin || isAdmin) && manageableLeagues.length > 0 && (
                   <div className="space-y-3 p-4 bg-muted/50 rounded-lg border-t pt-6">
                     <Label className="text-base font-medium">Oyuncu Lig Ataması</Label>
                     <p className="text-xs text-muted-foreground">
@@ -1931,62 +1822,6 @@ const Admin = () => {
                     </p>
                 </div>
 
-                  {/* Add Association Admin */}
-                  <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
-                    <Label className="flex items-center gap-2">
-                      <Shield className="w-4 h-4" />
-                      Admin Ekle
-                    </Label>
-                    <p className="text-xs text-muted-foreground">Adminler oyuncu ve maç yönetimi yapabilir</p>
-                    <div className="flex gap-2">
-                      <Select value={selectedUserForAssociationAdmin} onValueChange={setSelectedUserForAssociationAdmin}>
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="Kullanıcı Seç" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {players
-                            .filter(player => player.user_id !== null && !associationAdmins.some(aa => aa.user_id === player.user_id) && !userRoles.some(r => (r.role === 'admin' || r.role === 'super_admin') && r.user_id === player.user_id))
-                            .map(player => (
-                              <SelectItem key={player.user_id!} value={player.user_id!}>
-                                {player.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                      <Button onClick={addAssociationAdmin} size="icon">
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Association Admins List */}
-                  <div className="space-y-3">
-                    <h3 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
-                      <Shield className="w-4 h-4" />
-                      Adminler
-                    </h3>
-                    {associationAdmins.map(aa => (
-                      <div 
-                        key={aa.id}
-                        className="flex items-center justify-between p-2 bg-muted/30 rounded"
-                      >
-                        <span className="text-sm">{getUserName(aa.user_id)}</span>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => removeAssociationAdmin(aa.id)}
-                        >
-                          <Trash2 className="w-3 h-3 text-destructive" />
-                        </Button>
-                      </div>
-                    ))}
-                    {associationAdmins.length === 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-2">
-                        Henüz admin atanmadı
-                      </p>
-                    )}
-                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

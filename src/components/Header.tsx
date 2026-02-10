@@ -1,7 +1,6 @@
 import { User, Shield, LogOut } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAdminRole } from '@/hooks/useAdminRole';
-import { useAssociationAdminRole } from '@/hooks/useAssociationAdminRole';
 import { useAuth } from '@/contexts/AuthContext';
 import logo from '@/assets/logo.png';
 
@@ -11,7 +10,6 @@ interface HeaderProps {
 
 export function Header({ onProfileClick }: HeaderProps) {
   const { isAdmin } = useAdminRole();
-  const { associationAdmins } = useAssociationAdminRole();
   const { signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -32,7 +30,7 @@ export function Header({ onProfileClick }: HeaderProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {(isAdmin || associationAdmins.length > 0) && (
+          {isAdmin && (
             <Link
               to="/admin"
               className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center hover:bg-primary/30 transition-colors"
