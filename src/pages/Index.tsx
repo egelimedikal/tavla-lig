@@ -13,7 +13,7 @@ import { useSupabaseLeague } from '@/hooks/useSupabaseLeague';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trophy, BarChart3 } from 'lucide-react';
+import { Loader2, Trophy } from 'lucide-react';
 
 type View = 'standings' | 'profile' | 'force-password-change';
 type TabMode = 'league' | 'tournament';
@@ -185,19 +185,27 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-24">
       <Header onProfileClick={handleProfileClick} />
       
-      {/* Mode Toggle + League Buttons */}
+      {/* League Buttons + Tournament */}
       <div className="flex flex-wrap items-center gap-2 px-4 pt-3">
-        <button
-          onClick={() => setTabMode('league')}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            tabMode === 'league'
-              ? 'bg-primary text-primary-foreground glow-primary'
-              : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
-          }`}
-        >
-          <BarChart3 className="w-4 h-4" />
-          Lig
-        </button>
+        {visibleLeagues.length > 0 && visibleLeagues.map((league: any) => (
+          <button
+            key={league.id}
+            onClick={() => { setTabMode('league'); setCurrentLeagueId(league.id); }}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              tabMode === 'league' && currentLeagueId === league.id
+                ? 'bg-primary text-primary-foreground glow-primary'
+                : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
+            }`}
+          >
+            {league.name}
+          </button>
+        ))}
+        <LeagueTabs 
+          seasonGroups={seasonGroups}
+          selectedSeasonKey={selectedSeasonKey}
+          onSeasonChange={setSelectedSeasonKey}
+          hasActiveLeagues={activeLeagues.length > 0}
+        />
         <button
           onClick={() => setTabMode('tournament')}
           className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -209,35 +217,6 @@ const Index = () => {
           <Trophy className="w-4 h-4" />
           Turnuva
         </button>
-
-        {tabMode === 'league' && (
-          <>
-            {visibleLeagues.length > 0 && (
-              <>
-                <div className="w-px h-6 bg-border" />
-                {visibleLeagues.map((league: any) => (
-                  <button
-                    key={league.id}
-                    onClick={() => setCurrentLeagueId(league.id)}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                      currentLeagueId === league.id
-                        ? 'bg-accent text-accent-foreground'
-                        : 'text-muted-foreground hover:bg-secondary/80'
-                    }`}
-                  >
-                    {league.name}
-                  </button>
-                ))}
-              </>
-            )}
-            <LeagueTabs 
-              seasonGroups={seasonGroups}
-              selectedSeasonKey={selectedSeasonKey}
-              onSeasonChange={setSelectedSeasonKey}
-              hasActiveLeagues={activeLeagues.length > 0}
-            />
-          </>
-        )}
       </div>
 
       {tabMode === 'league' ? (
