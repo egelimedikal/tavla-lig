@@ -104,6 +104,8 @@ const Admin = () => {
   // Form states (removed association-related states for single-association model)
   const [newLeagueName, setNewLeagueName] = useState('');
   const [newLeagueMatchLength, setNewLeagueMatchLength] = useState(9);
+  const [newLeagueYear, setNewLeagueYear] = useState<number | null>(new Date().getFullYear());
+  const [newLeagueSeason, setNewLeagueSeason] = useState<string>('');
   const [editingLeague, setEditingLeague] = useState<League | null>(null);
   const [selectedLeagueForEdit, setSelectedLeagueForEdit] = useState<string | null>(null);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
@@ -289,7 +291,7 @@ const Admin = () => {
 
     const { data, error } = await supabase
       .from('leagues')
-      .insert({ id: crypto.randomUUID(), name: newLeagueName, association_id: associationId, match_length: newLeagueMatchLength })
+      .insert({ id: crypto.randomUUID(), name: newLeagueName, association_id: associationId, match_length: newLeagueMatchLength, current_year: newLeagueYear, active_season: newLeagueSeason || null })
       .select()
       .single();
 
@@ -306,6 +308,8 @@ const Admin = () => {
       setLeagues(prev => [...prev, data]);
       setNewLeagueName('');
       setNewLeagueMatchLength(9);
+      setNewLeagueYear(new Date().getFullYear());
+      setNewLeagueSeason('');
       toast({
         title: "Başarılı",
         description: "Lig eklendi.",
@@ -1301,6 +1305,27 @@ const Admin = () => {
                     <Button onClick={addLeague} size="icon">
                       <Plus className="w-4 h-4" />
                     </Button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Mevcut Yıl</Label>
+                      <Input
+                        type="number"
+                        value={newLeagueYear ?? ''}
+                        onChange={e => setNewLeagueYear(parseInt(e.target.value) || null)}
+                        placeholder="2025"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Aktif Sezon</Label>
+                      <Input
+                        value={newLeagueSeason}
+                        onChange={e => setNewLeagueSeason(e.target.value)}
+                        placeholder="Bahar, Güz, vb."
+                        className="h-8 text-sm"
+                      />
+                    </div>
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">Kaç Sayılık?</Label>
