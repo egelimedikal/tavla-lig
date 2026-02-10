@@ -304,6 +304,9 @@ const Admin = () => {
     if (data) {
       setLeagues(prev => [...prev, data]);
       setNewLeagueName('');
+      // Auto-open the newly created league for editing
+      setSelectedLeagueForEdit(data.id);
+      setEditingLeague({ ...data });
       toast({
         title: "Başarılı",
         description: "Lig eklendi.",
@@ -1368,14 +1371,6 @@ const Admin = () => {
                               <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
                                 <Label className="text-xs text-muted-foreground">Lig Bilgileri</Label>
                                 <div className="space-y-3">
-                                  <div>
-                                    <Label className="text-xs">Lig Adı</Label>
-                                    <Input
-                                      value={editingLeague?.name || league.name}
-                                      onChange={e => setEditingLeague(prev => prev ? { ...prev, name: e.target.value } : { ...league, name: e.target.value })}
-                                      className="h-8 text-sm"
-                                    />
-                                  </div>
                                   <div className="grid grid-cols-2 gap-3">
                                     <div>
                                       <Label className="text-xs">Mevcut Yıl</Label>
