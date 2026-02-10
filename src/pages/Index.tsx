@@ -238,7 +238,7 @@ const Index = () => {
                           )}
                           {(currentLeague as any)?.active_season && (
                             <span className="text-muted-foreground">
-                              {(currentLeague as any).active_season}
+                              {(currentLeague as any).active_season} Sezonu
                             </span>
                           )}
                         </div>
