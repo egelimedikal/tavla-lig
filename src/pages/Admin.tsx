@@ -1352,13 +1352,17 @@ const Admin = () => {
                                 <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform shrink-0 ${isOpen ? 'rotate-0' : '-rotate-90'}`} />
                                 <div className="min-w-0">
                                   <p className="font-medium truncate">{league.name}</p>
-                                  {(league.current_year || league.active_season) && (
-                                    <p className="text-[10px] text-muted-foreground">
-                                      {league.current_year && `${league.current_year} Yılı`}
-                                      {league.current_year && league.active_season && ' • '}
-                                      {league.active_season && `${league.active_season} Sezonu`}
-                                    </p>
-                                  )}
+                                  {(() => {
+                                    const displayYear = (selectedLeagueForEdit === league.id && editingLeague) ? editingLeague.current_year : league.current_year;
+                                    const displaySeason = (selectedLeagueForEdit === league.id && editingLeague) ? editingLeague.active_season : league.active_season;
+                                    return (displayYear || displaySeason) ? (
+                                      <p className="text-[10px] text-muted-foreground">
+                                        {displayYear && `${displayYear} Yılı`}
+                                        {displayYear && displaySeason && ' • '}
+                                        {displaySeason && `${displaySeason} Sezonu`}
+                                      </p>
+                                    ) : null;
+                                  })()}
                                   <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                                     <Badge variant={league.status === 'active' ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0">
                                       {league.status === 'active' ? 'Aktif' : `Tamamlandı - ${format(new Date(league.updated_at), 'dd.MM.yyyy')}`}
