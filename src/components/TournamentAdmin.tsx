@@ -768,7 +768,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                             <Users className="w-4 h-4" />
                             Oyuncular
                           </h4>
-                          {t.status === 'active' && (
+                          {t.status === 'active' && t.current_round === 0 && (
                             <Button variant="outline" size="sm" onClick={() => { setSelectedTournamentId(t.id); setShowAddPlayers(true); setSelectedPlayersForTournament(new Map()); }}>
                               <Plus className="w-3 h-3 mr-1" />
                               Ekle
@@ -863,7 +863,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                         )}
 
                         {/* Remove players */}
-                        {t.status === 'active' && tCurrentPlayers.length > 0 && (
+                        {t.status === 'active' && t.current_round === 0 && tCurrentPlayers.length > 0 && (
                           <div className="space-y-1">
                             <Label className="text-xs text-muted-foreground">Oyuncu Çıkar</Label>
                             {tCurrentPlayers.map(tp => (
