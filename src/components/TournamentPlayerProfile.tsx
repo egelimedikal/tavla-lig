@@ -306,7 +306,7 @@ export function TournamentPlayerProfile({ playerId, getPlayerById }: TournamentP
                           return (
                             <tr key={match.id}>
                               <td className="px-3 py-2 text-muted-foreground text-xs whitespace-nowrap">
-                                {match.winner_id !== null
+                                {(match.winner_id !== null || match.is_bye)
                                   ? new Date(match.match_date).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })
                                   : '-'}
                               </td>
