@@ -393,27 +393,6 @@ const Admin = () => {
       return;
     }
 
-    // Auto-save players from matches into league_players
-    const leagueMatchesForPlayers = matches.filter(m => m.league_id === leagueId);
-    const playerIdsFromMatches = new Set<string>();
-    leagueMatchesForPlayers.forEach(m => {
-      playerIdsFromMatches.add(m.player1_id);
-      playerIdsFromMatches.add(m.player2_id);
-    });
-    const existingPlayerIds = new Set(leaguePlayers.filter(lp => lp.league_id === leagueId).map(lp => lp.player_id));
-    const newPlayerIds = [...playerIdsFromMatches].filter(id => !existingPlayerIds.has(id));
-
-    if (newPlayerIds.length > 0) {
-      const { data: insertedPlayers } = await supabase
-        .from('league_players')
-        .insert(newPlayerIds.map(pid => ({ league_id: leagueId, player_id: pid })))
-        .select();
-      
-      if (insertedPlayers) {
-        setLeaguePlayers(prev => [...prev, ...insertedPlayers]);
-      }
-    }
-
     setLeagues(prev => prev.map(l => l.id === leagueId ? { ...l, status: 'completed', updated_at: new Date().toISOString() } : l));
     toast({
       title: "Başarılı",
