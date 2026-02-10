@@ -85,35 +85,6 @@ export type Database = {
         }
         Relationships: []
       }
-      association_admins: {
-        Row: {
-          association_id: string
-          created_at: string
-          id: string
-          user_id: string
-        }
-        Insert: {
-          association_id: string
-          created_at?: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          association_id?: string
-          created_at?: string
-          id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "association_admins_association_id_fkey"
-            columns: ["association_id"]
-            isOneToOne: false
-            referencedRelation: "associations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       associations: {
         Row: {
           active_season: string | null
@@ -630,10 +601,6 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
-        Returns: boolean
-      }
-      is_association_admin: {
-        Args: { _association_id: string; _user_id: string }
         Returns: boolean
       }
     }
