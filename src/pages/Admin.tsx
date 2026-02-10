@@ -1787,31 +1787,33 @@ const Admin = () => {
                 }).slice(0, 50).map(match => (
                   <div 
                     key={match.id}
-                    className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
+                    className="flex items-center gap-2 py-1.5 px-2 bg-muted/20 rounded text-[11px]"
                   >
-                    <div className="flex-1">
-                      <p className="text-xs text-muted-foreground mb-1">
-                        {getLeagueName(match.league_id)} • {new Date(match.match_date).toLocaleDateString('tr-TR')}
-                      </p>
-                      <p className="text-sm">
-                        <span className={match.winner_id === match.player1_id ? 'font-bold text-primary' : ''}>
-                          {getPlayerName(match.player1_id)}
-                        </span>
-                        <span className="mx-2">{match.score1} - {match.score2}</span>
-                        <span className={match.winner_id === match.player2_id ? 'font-bold text-primary' : ''}>
-                          {getPlayerName(match.player2_id)}
-                        </span>
-                      </p>
+                    <span className="text-muted-foreground shrink-0 w-[52px]">
+                      {new Date(match.match_date).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                    </span>
+                    <span className="text-muted-foreground shrink-0 truncate max-w-[80px]" title={getLeagueName(match.league_id)}>
+                      {getLeagueName(match.league_id)}
+                    </span>
+                    <div className="flex-1 min-w-0 flex items-center gap-1 justify-center">
+                      <span className={`truncate text-right ${match.winner_id === match.player1_id ? 'font-bold' : ''}`}>
+                        {getPlayerName(match.player1_id)}
+                      </span>
+                      <span className="font-mono shrink-0">{match.score1}-{match.score2}</span>
+                      <span className={`truncate text-left ${match.winner_id === match.player2_id ? 'font-bold' : ''}`}>
+                        {getPlayerName(match.player2_id)}
+                      </span>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1 shrink-0">
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button 
-                            variant="outline" 
+                            variant="ghost" 
                             size="icon"
+                            className="h-6 w-6"
                             onClick={() => setEditingMatch({ ...match })}
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-3 h-3" />
                           </Button>
                         </DialogTrigger>
                         <DialogContent>
@@ -1856,11 +1858,12 @@ const Admin = () => {
                         </DialogContent>
                       </Dialog>
                       <Button 
-                        variant="destructive" 
+                        variant="ghost" 
                         size="icon"
+                        className="h-6 w-6 text-destructive hover:text-destructive"
                         onClick={() => deleteMatch(match.id)}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
                   </div>
