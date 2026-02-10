@@ -103,9 +103,6 @@ const Admin = () => {
   
   // Form states (removed association-related states for single-association model)
   const [newLeagueName, setNewLeagueName] = useState('');
-  const [newLeagueMatchLength, setNewLeagueMatchLength] = useState(9);
-  const [newLeagueYear, setNewLeagueYear] = useState<number | null>(new Date().getFullYear());
-  const [newLeagueSeason, setNewLeagueSeason] = useState<string>('');
   const [editingLeague, setEditingLeague] = useState<League | null>(null);
   const [selectedLeagueForEdit, setSelectedLeagueForEdit] = useState<string | null>(null);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
@@ -291,7 +288,7 @@ const Admin = () => {
 
     const { data, error } = await supabase
       .from('leagues')
-      .insert({ id: crypto.randomUUID(), name: newLeagueName, association_id: associationId, match_length: newLeagueMatchLength, current_year: newLeagueYear, active_season: newLeagueSeason || null })
+      .insert({ id: crypto.randomUUID(), name: newLeagueName, association_id: associationId, match_length: 9 })
       .select()
       .single();
 
@@ -307,9 +304,6 @@ const Admin = () => {
     if (data) {
       setLeagues(prev => [...prev, data]);
       setNewLeagueName('');
-      setNewLeagueMatchLength(9);
-      setNewLeagueYear(new Date().getFullYear());
-      setNewLeagueSeason('');
       toast({
         title: "Başarılı",
         description: "Lig eklendi.",
@@ -327,6 +321,7 @@ const Admin = () => {
         association_id: editingLeague.association_id,
         current_year: editingLeague.current_year,
         active_season: editingLeague.active_season,
+        match_length: editingLeague.match_length,
       })
       .eq('id', editingLeague.id);
 
@@ -1306,46 +1301,6 @@ const Admin = () => {
                       <Plus className="w-4 h-4" />
                     </Button>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Mevcut Yıl</Label>
-                      <Input
-                        type="number"
-                        value={newLeagueYear ?? ''}
-                        onChange={e => setNewLeagueYear(parseInt(e.target.value) || null)}
-                        placeholder="2025"
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Aktif Sezon</Label>
-                      <Input
-                        value={newLeagueSeason}
-                        onChange={e => setNewLeagueSeason(e.target.value)}
-                        placeholder="Bahar, Güz, vb."
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Kaç Sayılık?</Label>
-                    <div className="flex flex-wrap gap-1.5">
-                      {[5, 7, 9, 11, 13].map(n => (
-                        <button
-                          key={n}
-                          type="button"
-                          onClick={() => setNewLeagueMatchLength(n)}
-                          className={`w-9 h-8 rounded text-xs font-bold transition-colors ${
-                            newLeagueMatchLength === n
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted hover:bg-muted-foreground/20 text-muted-foreground'
-                          }`}
-                        >
-                          {n}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
                 </div>
                 )}
 
@@ -1446,6 +1401,33 @@ const Admin = () => {
                                         placeholder="Bahar, Güz, vb."
                                         className="h-8 text-sm"
                                       />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs">Kaç Sayılık?</Label>
+                                    <div className="flex flex-wrap gap-1.5 mt-1">
+                                      {[5, 7, 9, 11, 13].map(n => {
+                                        const currentVal = editingLeague?.match_length ?? league.match_length;
+                                        const hasMatches = matches.some(m => m.league_id === league.id);
+                                        return (
+                                          <button
+                                            key={n}
+                                            type="button"
+                                            disabled={hasMatches}
+                                            onClick={() => setEditingLeague(prev => {
+                                              const base = prev || { ...league };
+                                              return { ...base, match_length: n };
+                                            })}
+                                            className={`w-9 h-8 rounded text-xs font-bold transition-colors ${
+                                              currentVal === n
+                                                ? 'bg-primary text-primary-foreground'
+                                                : 'bg-muted hover:bg-muted-foreground/20 text-muted-foreground'
+                                            } ${hasMatches ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                          >
+                                            {n}
+                                          </button>
+                                        );
+                                      })}
                                     </div>
                                   </div>
                                   <Button 
