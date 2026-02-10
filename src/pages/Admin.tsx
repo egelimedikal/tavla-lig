@@ -1865,7 +1865,6 @@ const Admin = () => {
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-sm">{getUserName(role.user_id)}</span>
-                          <Badge variant="outline" className="text-xs">{role.role}</Badge>
                         </div>
                         <Button 
                           variant="ghost" 
