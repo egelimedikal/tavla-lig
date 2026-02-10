@@ -1822,6 +1822,76 @@ const Admin = () => {
                     </p>
                 </div>
 
+                  {/* Add Admin Role */}
+                  <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+                    <Label className="flex items-center gap-2">
+                      <Shield className="w-4 h-4" />
+                      Admin Ekle
+                    </Label>
+                    <p className="text-xs text-muted-foreground">Adminler oyuncu ve maç yönetimi yapabilir</p>
+                    <div className="flex gap-2">
+                      <Select value={selectedUserForRole} onValueChange={setSelectedUserForRole}>
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Kullanıcı Seç" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {players
+                            .filter(player => player.user_id !== null && !userRoles.some(r => r.user_id === player.user_id))
+                            .map(player => (
+                              <SelectItem key={player.user_id!} value={player.user_id!}>
+                                {player.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as 'admin' | 'user')}>
+                        <SelectTrigger className="w-28">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button onClick={addAdminRole} size="icon">
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Admin Roles List */}
+                  <div className="space-y-3">
+                    <h3 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
+                      <Shield className="w-4 h-4" />
+                      Adminler
+                    </h3>
+                    {userRoles
+                      .filter(r => r.role !== 'super_admin')
+                      .map(role => (
+                      <div 
+                        key={role.id}
+                        className="flex items-center justify-between p-2 bg-muted/30 rounded"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">{getUserName(role.user_id)}</span>
+                          <Badge variant="outline" className="text-xs">{role.role}</Badge>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => removeAdminRole(role.id, role.user_id)}
+                        >
+                          <Trash2 className="w-3 h-3 text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
+                    {userRoles.filter(r => r.role !== 'super_admin').length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-2">
+                        Henüz admin atanmadı
+                      </p>
+                    )}
+                  </div>
+
                 </CardContent>
               </Card>
             </TabsContent>
