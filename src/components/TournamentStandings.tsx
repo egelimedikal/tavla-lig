@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Trophy } from 'lucide-react';
+import { Loader2, Trophy, History } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
 interface Profile {
@@ -153,6 +153,13 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
     return '';
   };
 
+  const completedTournaments = useMemo(() =>
+    tournaments
+      .filter(t => t.status === 'completed')
+      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()),
+    [tournaments]
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -174,31 +181,35 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
 
   return (
     <div className="animate-fade-in">
-      {/* Tournament Selector */}
-      {tournaments.length > 1 && (
-        <div className="px-4 py-3">
-          <Select value={selectedTournamentId || ''} onValueChange={setSelectedTournamentId}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Turnuva seçin" />
-            </SelectTrigger>
-            <SelectContent>
-              {tournaments.map(t => (
-                <SelectItem key={t.id} value={t.id}>
-                  {t.name} {t.status === 'completed' ? `(Tamamlandı - ${format(new Date(t.updated_at), 'dd.MM.yyyy')})` : '(Aktif)'}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
       {selectedTournament && (
         <div className="px-4 mb-4">
-          <div className="flex items-center gap-2 mb-1">
-            <Trophy className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-bold text-foreground">{selectedTournament.name}</h2>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Trophy className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-bold text-foreground">{selectedTournament.name}</h2>
+              </div>
+              <p className="text-sm text-muted-foreground">Puan Tablosu</p>
+            </div>
+            {completedTournaments.length > 0 && (
+              <Select
+                value={completedTournaments.some(t => t.id === selectedTournamentId) ? selectedTournamentId || '' : ''}
+                onValueChange={setSelectedTournamentId}
+              >
+                <SelectTrigger className="w-auto gap-1.5 h-8 text-xs px-3 bg-secondary/50 border-border/50">
+                  <History className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="text-muted-foreground">Geçmiş Turnuvalar</span>
+                </SelectTrigger>
+                <SelectContent>
+                  {completedTournaments.map(t => (
+                    <SelectItem key={t.id} value={t.id} className="text-xs">
+                      {t.name} ({format(new Date(t.updated_at), 'dd.MM.yyyy')})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
-          <p className="text-sm text-muted-foreground">Puan Tablosu</p>
         </div>
       )}
 

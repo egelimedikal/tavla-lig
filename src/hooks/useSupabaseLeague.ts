@@ -139,7 +139,9 @@ export function useSupabaseLeague() {
     if (currentAssociationId) {
       const associationLeagues = leagues.filter(l => l.association_id === currentAssociationId);
       if (associationLeagues.length > 0 && !associationLeagues.find(l => l.id === currentLeagueId)) {
-        setCurrentLeagueId(associationLeagues[0].id);
+        const activeLeague = associationLeagues.find(l => l.status === 'active');
+        const fallback = [...associationLeagues].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())[0];
+        setCurrentLeagueId((activeLeague || fallback).id);
       }
     }
   }, [currentAssociationId, leagues]);
