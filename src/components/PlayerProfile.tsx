@@ -593,9 +593,9 @@ export function PlayerProfile({
                   <table className="w-full text-sm">
                     <thead className="bg-secondary/50">
                       <tr>
-                        <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Zaman</th>
-                        <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Oyuncular</th>
-                        <th className="px-4 py-3 text-center font-semibold text-muted-foreground">Skor</th>
+                        <th className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs">Zaman</th>
+                        <th className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs">Oyuncular</th>
+                        <th className="px-3 py-2 text-center font-semibold text-muted-foreground text-xs">Skor</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/50">
@@ -610,10 +610,10 @@ export function PlayerProfile({
 
                         return (
                           <tr key={match.id}>
-                            <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                            <td className="px-3 py-2 text-muted-foreground text-xs whitespace-nowrap">
                               {formatMatchDate(match.match_date)}
                             </td>
-                            <td className="px-4 py-3">
+                            <td className="px-3 py-2 text-xs">
                               <span className={playerWon ? 'font-bold text-foreground' : 'text-muted-foreground'}>
                                 {playerName}
                               </span>
@@ -622,7 +622,7 @@ export function PlayerProfile({
                                 {opponentName}
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-center font-medium">
+                            <td className="px-3 py-2 text-center text-xs font-medium">
                               {isPlayer1 ? match.score1 : match.score2} - {isPlayer1 ? match.score2 : match.score1}
                             </td>
                           </tr>
@@ -652,13 +652,13 @@ export function PlayerProfile({
                         
                         return (
                           <tr key={opponent.id}>
-                            <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">-</td>
-                            <td className="px-4 py-3">
+                            <td className="px-3 py-2 text-muted-foreground text-xs whitespace-nowrap">-</td>
+                            <td className="px-3 py-2 text-xs">
                               <span className="text-muted-foreground">{playerName}</span>
                               <span className="text-muted-foreground"> - </span>
                               <span className="text-muted-foreground">{opponentName}</span>
                             </td>
-                            <td className="px-4 py-3 text-center">
+                            <td className="px-3 py-2 text-center text-xs">
                               {isEditing ? (
                                 <div className="flex items-center justify-center gap-2">
                                   <select
