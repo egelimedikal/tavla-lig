@@ -1036,9 +1036,10 @@ const Admin = () => {
     return managedAssociationIds.includes(league.association_id);
   };
 
-  // Get leagues that current user can manage
+  // Get leagues that current user can manage (only active leagues)
   const manageableLeagues = leagues.filter(league => {
     if (!league.association_id) return false;
+    if (league.status === 'completed') return false;
     if (isSuperAdmin) return true;
     return managedAssociationIds.includes(league.association_id);
   });
