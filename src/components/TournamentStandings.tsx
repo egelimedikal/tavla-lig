@@ -193,7 +193,7 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
             </div>
             {completedTournaments.length > 0 && (
               <Select
-                value={completedTournaments.some(t => t.id === selectedTournamentId) ? selectedTournamentId || '' : ''}
+                value={selectedTournamentId || ''}
                 onValueChange={setSelectedTournamentId}
               >
                 <SelectTrigger className="w-auto gap-1.5 h-8 text-xs px-3 bg-secondary/50 border-border/50">
@@ -201,6 +201,14 @@ export function TournamentStandings({ players, onPlayerClick }: TournamentStandi
                   <span className="text-muted-foreground">Geçmiş Turnuvalar</span>
                 </SelectTrigger>
                 <SelectContent>
+                  {(() => {
+                    const activeTournament = tournaments.find(t => t.status === 'active');
+                    return activeTournament ? (
+                      <SelectItem key={activeTournament.id} value={activeTournament.id} className="text-xs font-semibold">
+                        {activeTournament.name} (Aktif)
+                      </SelectItem>
+                    ) : null;
+                  })()}
                   {completedTournaments.map(t => (
                     <SelectItem key={t.id} value={t.id} className="text-xs">
                       {t.name} ({format(new Date(t.updated_at), 'dd.MM.yyyy')})

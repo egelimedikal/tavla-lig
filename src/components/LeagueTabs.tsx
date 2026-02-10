@@ -17,6 +17,7 @@ interface LeagueTabsProps {
 }
 
 export function LeagueTabs({ leagues, currentLeagueId, onLeagueChange }: LeagueTabsProps) {
+  const activeLeague = leagues.find(l => l.status === 'active');
   const completedLeagues = leagues
     .filter(l => l.status === 'completed')
     .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
@@ -34,23 +35,26 @@ export function LeagueTabs({ leagues, currentLeagueId, onLeagueChange }: LeagueT
   }
 
   return (
-    <div className="px-4 py-2 flex justify-end">
-      <Select
-        value={completedLeagues.some(l => l.id === currentLeagueId) ? currentLeagueId : ''}
-        onValueChange={onLeagueChange}
-      >
-        <SelectTrigger className="w-auto gap-1.5 h-8 text-xs px-3 bg-secondary/50 border-border/50">
-          <History className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-muted-foreground">Geçmiş Sezonlar</span>
-        </SelectTrigger>
-        <SelectContent>
-          {completedLeagues.map((league) => (
-            <SelectItem key={league.id} value={league.id} className="text-xs">
-              {league.name} ({format(new Date(league.updated_at), 'dd.MM.yyyy')})
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+    <Select
+      value={currentLeagueId}
+      onValueChange={onLeagueChange}
+    >
+      <SelectTrigger className="w-auto gap-1.5 h-8 text-xs px-3 bg-secondary/50 border-border/50">
+        <History className="w-3.5 h-3.5 text-muted-foreground" />
+        <span className="text-muted-foreground">Geçmiş Sezonlar</span>
+      </SelectTrigger>
+      <SelectContent>
+        {activeLeague && (
+          <SelectItem key={activeLeague.id} value={activeLeague.id} className="text-xs font-semibold">
+            {activeLeague.name} (Aktif)
+          </SelectItem>
+        )}
+        {completedLeagues.map((league) => (
+          <SelectItem key={league.id} value={league.id} className="text-xs">
+            {league.name} ({format(new Date(league.updated_at), 'dd.MM.yyyy')})
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
