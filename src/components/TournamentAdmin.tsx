@@ -147,6 +147,16 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
       toast({ title: "Hata", description: "Oyuncular eklenmeden ve eşleştirme yapılmadan turnuva kaydedilemez.", variant: "destructive" });
       return;
     }
+
+    // Check if all non-bye matches have been completed
+    const unfinishedMatches = tournamentMatches.filter(
+      m => m.tournament_id === id && !m.is_bye && m.winner_id === null
+    );
+    if (unfinishedMatches.length > 0) {
+      toast({ title: "Hata", description: "Tüm maç skorları girilmeden turnuva kaydedilemez.", variant: "destructive", duration: 3000 });
+      return;
+    }
+
     // Show confirmation dialog every time
     setConfirmCompleteTournamentId(id);
   };
