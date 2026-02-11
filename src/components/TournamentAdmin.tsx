@@ -797,7 +797,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                               <DialogTitle>Turnuvaya Oyuncu Ekle</DialogTitle>
                             </DialogHeader>
                             <div className="space-y-2 py-4 overflow-y-auto flex-1">
-                              {players.filter(p => !tCurrentPlayers.some(tp => tp.player_id === p.id)).map(p => {
+                              {players.filter(p => !tCurrentPlayers.some(tp => tp.player_id === p.id)).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr')).map(p => {
                                 const isSelected = selectedPlayersForTournament.has(p.id);
                                 const currentRights = selectedPlayersForTournament.get(p.id) || 4;
                                 return (
