@@ -387,6 +387,21 @@ const Admin = () => {
     await confirmCompleteLeague(leagueId);
   };
 
+  const reactivateLeague = async (leagueId: string) => {
+    const { error } = await supabase
+      .from('leagues')
+      .update({ status: 'active' })
+      .eq('id', leagueId);
+
+    if (error) {
+      toast({ title: "Hata", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    setLeagues(prev => prev.map(l => l.id === leagueId ? { ...l, status: 'active', updated_at: new Date().toISOString() } : l));
+    toast({ title: "Başarılı", description: "Lig yeniden aktif edildi." });
+  };
+
   const confirmCompleteLeague = async (leagueId: string) => {
     const { error } = await supabase
       .from('leagues')
@@ -1269,6 +1284,12 @@ const Admin = () => {
                                 {league.status === 'active' && (
                                   <Button variant="outline" size="sm" className="h-7 px-2 text-[12px] leading-none" onClick={() => completeLeague(league.id)}>
                                     Kaydet
+                                  </Button>
+                                )}
+                                {league.status === 'completed' && isSuperAdmin && (
+                                  <Button variant="outline" size="sm" className="h-7 px-2 text-[12px] leading-none" onClick={() => reactivateLeague(league.id)}>
+                                    <RefreshCw className="w-3 h-3 mr-1" />
+                                    Devam Et
                                   </Button>
                                 )}
                                 {isSuperAdmin && (
