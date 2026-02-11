@@ -151,6 +151,21 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
     setConfirmCompleteTournamentId(id);
   };
 
+  const reactivateTournament = async (id: string) => {
+    const { error } = await supabase
+      .from('tournaments')
+      .update({ status: 'active' })
+      .eq('id', id);
+
+    if (error) {
+      toast({ title: "Hata", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    setTournaments(prev => prev.map(t => t.id === id ? { ...t, status: 'active', updated_at: new Date().toISOString() } : t));
+    toast({ title: "Başarılı", description: "Turnuva yeniden aktif edildi." });
+  };
+
   const completeTournament = async (id: string) => {
     // Check if tournament is actually finished (1 or fewer active players)
     const activePlayers = tournamentPlayers.filter(
@@ -741,6 +756,11 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                           <Button variant="outline" size="sm" className="h-7 px-2 text-[12px] leading-none" onClick={() => handleCompleteTournament(t.id)}>
                              Kaydet
                            </Button>
+                        )}
+                        {t.status === 'completed' && isSuperAdmin && (
+                          <Button variant="outline" size="sm" className="h-7 px-2 text-[12px] leading-none" onClick={() => reactivateTournament(t.id)}>
+                            Devam Et
+                          </Button>
                         )}
                         {isSuperAdmin && (
                           <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => deleteTournament(t.id)}>
