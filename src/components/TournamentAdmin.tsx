@@ -77,7 +77,6 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
   const [editingMatch, setEditingMatch] = useState<TournamentMatch | null>(null);
   const [generatingMatches, setGeneratingMatches] = useState(false);
   const [confirmCompleteTournamentId, setConfirmCompleteTournamentId] = useState<string | null>(null);
-  const [tournamentHasUnfinishedMatches, setTournamentHasUnfinishedMatches] = useState(false);
 
   useEffect(() => {
     fetchTournamentData();
@@ -148,11 +147,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
       toast({ title: "Hata", description: "Oyuncular eklenmeden ve eşleştirme yapılmadan turnuva kaydedilemez.", variant: "destructive" });
       return;
     }
-
-    const unfinishedMatches = tournamentMatches.filter(
-      m => m.tournament_id === id && !m.is_bye && m.winner_id === null
-    );
-    setTournamentHasUnfinishedMatches(unfinishedMatches.length > 0);
+    // Show confirmation dialog every time
     setConfirmCompleteTournamentId(id);
   };
 
@@ -172,6 +167,24 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
   };
 
   const completeTournament = async (id: string) => {
+    // Check if tournament is actually finished (1 or fewer active players)
+    const activePlayers = tournamentPlayers.filter(
+      tp => tp.tournament_id === id && !tp.is_eliminated
+    );
+    if (activePlayers.length > 1) {
+      toast({ title: "Hata", description: "Turnuva henüz tamamlanmadı. Elenmemiş birden fazla oyuncu var.", variant: "destructive" });
+      return;
+    }
+
+    // Check if all matches have scores
+    const unfinishedMatches = tournamentMatches.filter(
+      m => m.tournament_id === id && !m.is_bye && m.winner_id === null
+    );
+    if (unfinishedMatches.length > 0) {
+      toast({ title: "Hata", description: "Tüm maç skorları girilmeden turnuva kaydedilemez.", variant: "destructive" });
+      return;
+    }
+
     const { error } = await supabase
       .from('tournaments')
       .update({ status: 'completed' })
@@ -1080,15 +1093,13 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
         </CardContent>
       </Card>
 
-      {/* Confirmation Dialog for completing tournament */}
+      {/* Confirmation Dialog for completing tournament with active matches */}
       <AlertDialog open={!!confirmCompleteTournamentId} onOpenChange={(open) => !open && setConfirmCompleteTournamentId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Turnuvayı Sonlandır</AlertDialogTitle>
             <AlertDialogDescription>
-              {tournamentHasUnfinishedMatches
-                ? 'Bu turnuvada henüz tamamlanmamış maçlar var. Turnuvayı yine de sonlandırmak istediğinizden emin misiniz?'
-                : 'Turnuvayı sonlandırmak istediğinizden emin misiniz? Bu işlem geri alınamaz.'}
+              Bu turnuvada maçlar devam ediyor. Turnuvayı sonlandırmak istediğinizden emin misiniz? Bu işlem geri alınamaz.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
