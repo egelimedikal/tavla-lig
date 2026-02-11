@@ -757,11 +757,6 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                              Kaydet
                            </Button>
                         )}
-                        {t.status === 'completed' && isSuperAdmin && (
-                          <Button variant="outline" size="sm" className="h-7 px-2 text-[12px] leading-none" onClick={() => reactivateTournament(t.id)}>
-                            Devam Et
-                          </Button>
-                        )}
                         {isSuperAdmin && (
                           <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => deleteTournament(t.id)}>
                             <Trash2 className="w-3 h-3" />
