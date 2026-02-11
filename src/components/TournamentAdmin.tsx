@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -75,6 +76,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
   // Match editing
   const [editingMatch, setEditingMatch] = useState<TournamentMatch | null>(null);
   const [generatingMatches, setGeneratingMatches] = useState(false);
+  const [confirmCompleteTournamentId, setConfirmCompleteTournamentId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTournamentData();
@@ -135,6 +137,17 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
     setTournamentMatches(prev => prev.filter(tm => tm.tournament_id !== id));
     if (selectedTournamentId === id) setSelectedTournamentId(null);
     toast({ title: "Başarılı", description: "Turnuva silindi." });
+  };
+
+  const handleCompleteTournament = (id: string) => {
+    // If matches have started, always show warning dialog
+    const hasMatches = tournamentMatches.some(m => m.tournament_id === id);
+    if (hasMatches) {
+      setConfirmCompleteTournamentId(id);
+      return;
+    }
+    // No matches yet → complete directly
+    completeTournament(id);
   };
 
   const completeTournament = async (id: string) => {
@@ -724,9 +737,9 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
                         {t.status === 'active' && (
-                          <Button variant="outline" size="sm" className="h-7 px-2 text-[12px] leading-none" onClick={() => completeTournament(t.id)}>
-                            Kaydet
-                          </Button>
+                          <Button variant="outline" size="sm" className="h-7 px-2 text-[12px] leading-none" onClick={() => handleCompleteTournament(t.id)}>
+                             Kaydet
+                           </Button>
                         )}
                         {isSuperAdmin && (
                           <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => deleteTournament(t.id)}>
@@ -1063,6 +1076,29 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
           </div>
         </CardContent>
       </Card>
+
+      {/* Confirmation Dialog for completing tournament with active matches */}
+      <AlertDialog open={!!confirmCompleteTournamentId} onOpenChange={(open) => !open && setConfirmCompleteTournamentId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Turnuvayı Sonlandır</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu turnuvada maçlar devam ediyor. Turnuvayı sonlandırmak istediğinizden emin misiniz? Bu işlem geri alınamaz.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (confirmCompleteTournamentId) {
+                completeTournament(confirmCompleteTournamentId);
+                setConfirmCompleteTournamentId(null);
+              }
+            }}>
+              Evet, Sonlandır
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
