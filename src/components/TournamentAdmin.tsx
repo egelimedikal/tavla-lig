@@ -140,14 +140,8 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
   };
 
   const handleCompleteTournament = (id: string) => {
-    // If matches have started, always show warning dialog
-    const hasMatches = tournamentMatches.some(m => m.tournament_id === id);
-    if (hasMatches) {
-      setConfirmCompleteTournamentId(id);
-      return;
-    }
-    // No matches yet → complete directly
-    completeTournament(id);
+    // Always show warning dialog
+    setConfirmCompleteTournamentId(id);
   };
 
   const completeTournament = async (id: string) => {
