@@ -140,7 +140,14 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
   };
 
   const handleCompleteTournament = (id: string) => {
-    // Always show warning dialog
+    const hasPlayers = tournamentPlayers.some(tp => tp.tournament_id === id);
+    const hasMatches = tournamentMatches.some(m => m.tournament_id === id);
+    
+    if (!hasPlayers || !hasMatches) {
+      toast({ title: "Hata", description: "Oyuncular eklenmeden ve eşleştirme yapılmadan turnuva kaydedilemez.", variant: "destructive" });
+      return;
+    }
+    // Show confirmation dialog every time
     setConfirmCompleteTournamentId(id);
   };
 
