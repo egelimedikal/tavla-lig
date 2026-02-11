@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -76,7 +76,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
   // Match editing
   const [editingMatch, setEditingMatch] = useState<TournamentMatch | null>(null);
   const [generatingMatches, setGeneratingMatches] = useState(false);
-  const [confirmCompleteTournamentId, setConfirmCompleteTournamentId] = useState<string | null>(null);
+  
 
   useEffect(() => {
     fetchTournamentData();
@@ -139,12 +139,12 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
     toast({ title: "Başarılı", description: "Turnuva silindi." });
   };
 
-  const handleCompleteTournament = (id: string) => {
+  const handleCompleteTournament = async (id: string) => {
     const hasPlayers = tournamentPlayers.some(tp => tp.tournament_id === id);
     const hasMatches = tournamentMatches.some(m => m.tournament_id === id);
     
     if (!hasPlayers || !hasMatches) {
-      toast({ title: "Hata", description: "Oyuncular eklenmeden ve eşleştirme yapılmadan turnuva kaydedilemez.", variant: "destructive" });
+      toast({ title: "Hata", description: "Oyuncular eklenmeden ve eşleştirme yapılmadan turnuva kaydedilemez.", variant: "destructive", duration: 3000 });
       return;
     }
 
@@ -157,8 +157,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
       return;
     }
 
-    // Show confirmation dialog every time
-    setConfirmCompleteTournamentId(id);
+    await completeTournament(id);
   };
 
   const reactivateTournament = async (id: string) => {
@@ -1085,28 +1084,6 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
         </CardContent>
       </Card>
 
-      {/* Confirmation Dialog for completing tournament with active matches */}
-      <AlertDialog open={!!confirmCompleteTournamentId} onOpenChange={(open) => !open && setConfirmCompleteTournamentId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Turnuvayı Sonlandır</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bu turnuvada maçlar devam ediyor. Turnuvayı sonlandırmak istediğinizden emin misiniz? Bu işlem geri alınamaz.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>İptal</AlertDialogCancel>
-            <AlertDialogAction onClick={() => {
-              if (confirmCompleteTournamentId) {
-                completeTournament(confirmCompleteTournamentId);
-                setConfirmCompleteTournamentId(null);
-              }
-            }}>
-              Evet, Sonlandır
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
