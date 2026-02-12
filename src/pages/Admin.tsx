@@ -99,6 +99,9 @@ const Admin = () => {
   
   // Form states (removed association-related states for single-association model)
   const [newLeagueName, setNewLeagueName] = useState('');
+  const [newLeagueYear, setNewLeagueYear] = useState('');
+  const [newLeagueSeason, setNewLeagueSeason] = useState('');
+  const [newLeagueMatchLength, setNewLeagueMatchLength] = useState('9');
   const [editingLeague, setEditingLeague] = useState<League | null>(null);
   const [selectedLeagueForEdit, setSelectedLeagueForEdit] = useState<string | null>(null);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
@@ -275,10 +278,20 @@ const Admin = () => {
   // League CRUD
 
   const addLeague = async () => {
-    if (!newLeagueName.trim()) {
+    if (!newLeagueName.trim() || !newLeagueYear.trim() || !newLeagueSeason.trim()) {
       toast({
         title: "Hata",
-        description: "Lig adı gerekli.",
+        description: "Lig adı, yıl ve sezon bilgileri zorunludur.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const yearNum = parseInt(newLeagueYear);
+    if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
+      toast({
+        title: "Hata",
+        description: "Geçerli bir yıl giriniz.",
         variant: "destructive",
       });
       return;
@@ -289,7 +302,14 @@ const Admin = () => {
 
     const { data, error } = await supabase
       .from('leagues')
-      .insert({ id: crypto.randomUUID(), name: newLeagueName, association_id: associationId, match_length: 9 })
+      .insert({ 
+        id: crypto.randomUUID(), 
+        name: newLeagueName, 
+        association_id: associationId, 
+        match_length: parseInt(newLeagueMatchLength) || 9,
+        current_year: yearNum,
+        active_season: newLeagueSeason.trim(),
+      })
       .select()
       .single();
 
@@ -305,6 +325,9 @@ const Admin = () => {
     if (data) {
       setLeagues(prev => [...prev, data]);
       setNewLeagueName('');
+      setNewLeagueYear('');
+      setNewLeagueSeason('');
+      setNewLeagueMatchLength('9');
       // Auto-open the newly created league for editing
       setSelectedLeagueForEdit(data.id);
       setEditingLeague({ ...data });
@@ -1246,17 +1269,42 @@ const Admin = () => {
                 {!selectedLeagueForEdit && (
                 <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
                   <Label>Yeni Lig Ekle</Label>
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <Input
                       placeholder="Lig Adı"
                       value={newLeagueName}
                       onChange={e => setNewLeagueName(e.target.value)}
-                      className="flex-1"
                     />
-                    <Button onClick={addLeague} size="icon">
-                      <Plus className="w-4 h-4" />
-                    </Button>
+                    <Input
+                      placeholder="Yıl (ör: 2026)"
+                      value={newLeagueYear}
+                      onChange={e => setNewLeagueYear(e.target.value)}
+                      type="number"
+                    />
+                    <Input
+                      placeholder="Sezon (ör: Mayıs - Haziran)"
+                      value={newLeagueSeason}
+                      onChange={e => setNewLeagueSeason(e.target.value)}
+                    />
+                    <Select value={newLeagueMatchLength} onValueChange={setNewLeagueMatchLength}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Maç Sayısı" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[5, 7, 9, 11, 13].map(n => (
+                          <SelectItem key={n} value={String(n)}>{n} sayılık</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+                  <Button 
+                    onClick={addLeague} 
+                    className="w-full"
+                    disabled={!newLeagueName.trim() || !newLeagueYear.trim() || !newLeagueSeason.trim()}
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Lig Ekle
+                  </Button>
                 </div>
                 )}
 
