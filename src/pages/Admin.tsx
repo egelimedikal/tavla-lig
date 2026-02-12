@@ -122,9 +122,10 @@ const Admin = () => {
   const [leagueToDelete, setLeagueToDelete] = useState<string | null>(null);
   const [leagueToReactivate, setLeagueToReactivate] = useState<string | null>(null);
   
-  // Admin management (removed association selection for single-association model)
+  // Admin management
   const [selectedUserForRole, setSelectedUserForRole] = useState('');
   const [selectedRole, setSelectedRole] = useState<'admin' | 'user'>('admin');
+  const [adminToRemove, setAdminToRemove] = useState<{ id: string; userId: string } | null>(null);
   
 
   useEffect(() => {
@@ -1905,7 +1906,7 @@ const Admin = () => {
                           variant="ghost" 
                           size="icon"
                           className="h-8 w-8"
-                          onClick={() => removeAdminRole(role.id, role.user_id)}
+                          onClick={() => setAdminToRemove({ id: role.id, userId: role.user_id })}
                         >
                           <Trash2 className="w-3 h-3 text-destructive" />
                         </Button>
@@ -1979,6 +1980,26 @@ const Admin = () => {
               }
             }}>
               Evet, Devam Et
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* Admin removal confirmation dialog */}
+      <AlertDialog open={!!adminToRemove} onOpenChange={(open) => !open && setAdminToRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Emin misiniz?</AlertDialogTitle>
+            <AlertDialogDescription>Bu yöneticiyi silmek istediğinizden emin misiniz?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (adminToRemove) {
+                removeAdminRole(adminToRemove.id, adminToRemove.userId);
+                setAdminToRemove(null);
+              }
+            }}>
+              Evet, Sil
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
