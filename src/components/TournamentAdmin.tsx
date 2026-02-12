@@ -8,11 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
-
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Plus, Trash2, Edit, Loader2, Swords, Trophy, Users, Shuffle, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, Edit, Loader2, Swords, Trophy, Users, Shuffle, ChevronDown, RefreshCw } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
 interface Profile {
@@ -76,7 +76,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
   // Match editing
   const [editingMatch, setEditingMatch] = useState<TournamentMatch | null>(null);
   const [generatingMatches, setGeneratingMatches] = useState(false);
-  
+  const [confirmCompleteTournamentId, setConfirmCompleteTournamentId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTournamentData();
@@ -139,7 +139,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
     toast({ title: "Başarılı", description: "Turnuva silindi." });
   };
 
-  const handleCompleteTournament = async (id: string) => {
+  const handleCompleteTournament = (id: string) => {
     const hasPlayers = tournamentPlayers.some(tp => tp.tournament_id === id);
     const hasMatches = tournamentMatches.some(m => m.tournament_id === id);
     
@@ -153,11 +153,12 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
       m => m.tournament_id === id && !m.is_bye && m.winner_id === null
     );
     if (unfinishedMatches.length > 0) {
-      toast({ title: "Hata", description: "Tüm maç skorları girilmeden turnuva kaydedilemez.", variant: "destructive", duration: 3000 });
+      // Show warning dialog
+      setConfirmCompleteTournamentId(id);
       return;
     }
 
-    await completeTournament(id);
+    completeTournament(id);
   };
 
   const reactivateTournament = async (id: string) => {
@@ -748,6 +749,11 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                              Kaydet
                            </Button>
                         )}
+                        {t.status === 'completed' && isSuperAdmin && (
+                          <Button variant="outline" size="sm" className="h-7 px-2 text-[12px] leading-none" onClick={() => reactivateTournament(t.id)} title="Devam Et">
+                            <RefreshCw className="w-3 h-3" />
+                          </Button>
+                        )}
                         {isSuperAdmin && (
                           <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => deleteTournament(t.id)}>
                             <Trash2 className="w-3 h-3" />
@@ -1084,6 +1090,28 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
         </CardContent>
       </Card>
 
+      {/* Warning Dialog for unfinished matches */}
+      <AlertDialog open={!!confirmCompleteTournamentId} onOpenChange={(open) => !open && setConfirmCompleteTournamentId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Henüz Tamamlanmamış Maçlar Var</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu turnuvada henüz skorları girilmemiş maçlar bulunuyor. Yine de turnuvayı kaydetmek istediğinizden emin misiniz?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (confirmCompleteTournamentId) {
+                completeTournament(confirmCompleteTournamentId);
+                setConfirmCompleteTournamentId(null);
+              }
+            }}>
+              Evet, Kaydet
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
