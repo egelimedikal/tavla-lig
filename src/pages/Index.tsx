@@ -280,9 +280,9 @@ const Index = () => {
           </div>
         </>
       ) : (
-        <>
+        <div className="mt-4">
           {visibleLeagues.length === 0 && (
-            <div className="px-4 mb-4">
+            <div className="px-4 mb-2">
               <button
                 onClick={() => setTabMode('league')}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-secondary text-muted-foreground hover:bg-secondary/80 transition-all"
@@ -292,13 +292,11 @@ const Index = () => {
               </button>
             </div>
           )}
-          <div className="mt-4">
-            <TournamentStandings
+          <TournamentStandings 
             players={players}
             onPlayerClick={handlePlayerClick}
-            />
-          </div>
-        </>
+          />
+        </div>
       )}
 
       {showMatchForm && (
