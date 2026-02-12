@@ -78,6 +78,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
   const [generatingMatches, setGeneratingMatches] = useState(false);
   const [confirmCompleteTournamentId, setConfirmCompleteTournamentId] = useState<string | null>(null);
   const [tournamentToDelete, setTournamentToDelete] = useState<string | null>(null);
+  const [tournamentToReactivate, setTournamentToReactivate] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTournamentData();
@@ -751,7 +752,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                            </Button>
                         )}
                         {t.status === 'completed' && isSuperAdmin && (
-                          <Button variant="outline" size="sm" className="h-7 px-2 text-[12px] leading-none" onClick={() => reactivateTournament(t.id)} title="Devam Et">
+                          <Button variant="outline" size="sm" className="h-7 px-2 text-[12px] leading-none" onClick={() => setTournamentToReactivate(t.id)} title="Devam Et">
                             <RefreshCw className="w-3 h-3" /> Devam Et
                           </Button>
                         )}
@@ -1109,6 +1110,26 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
               }
             }}>
               Evet, Kaydet
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* Tournament reactivation confirmation dialog */}
+      <AlertDialog open={!!tournamentToReactivate} onOpenChange={(open) => !open && setTournamentToReactivate(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Emin misiniz?</AlertDialogTitle>
+            <AlertDialogDescription>Bu turnuvayı tekrar aktif hale getirmek istediğinizden emin misiniz?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (tournamentToReactivate) {
+                reactivateTournament(tournamentToReactivate);
+                setTournamentToReactivate(null);
+              }
+            }}>
+              Evet, Devam Et
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
