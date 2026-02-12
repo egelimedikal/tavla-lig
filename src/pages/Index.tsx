@@ -281,6 +281,17 @@ const Index = () => {
         </>
       ) : (
         <div className="mt-4">
+          {visibleLeagues.length === 0 && (
+            <div className="px-4 mb-2">
+              <button
+                onClick={() => setTabMode('league')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-secondary text-muted-foreground hover:bg-secondary/80 transition-all"
+              >
+                <Swords className="w-4 h-4" />
+                Lig
+              </button>
+            </div>
+          )}
           <TournamentStandings 
             players={players}
             onPlayerClick={handlePlayerClick}
