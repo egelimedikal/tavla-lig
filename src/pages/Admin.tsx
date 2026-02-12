@@ -1894,6 +1894,7 @@ const Admin = () => {
                     </h3>
                     {userRoles
                       .filter(r => r.role !== 'super_admin')
+                      .sort((a, b) => getUserName(a.user_id).localeCompare(getUserName(b.user_id), 'tr'))
                       .map(role => (
                       <div 
                         key={role.id}
