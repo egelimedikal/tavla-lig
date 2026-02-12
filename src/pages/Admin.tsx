@@ -607,9 +607,14 @@ const Admin = () => {
         return;
       }
 
+      // Find the player's user_id to clean up userRoles
+      const deletedPlayer = players.find(p => p.id === playerId);
       setPlayers(prev => prev.filter(p => p.id !== playerId));
       setLeaguePlayers(prev => prev.filter(lp => lp.player_id !== playerId));
       setMatches(prev => prev.filter(m => m.player1_id !== playerId && m.player2_id !== playerId));
+      if (deletedPlayer?.user_id) {
+        setUserRoles(prev => prev.filter(r => r.user_id !== deletedPlayer.user_id));
+      }
       toast({
         title: "Başarılı",
         description: "Oyuncu tamamen silindi.",
