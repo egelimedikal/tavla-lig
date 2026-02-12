@@ -707,18 +707,35 @@ const Admin = () => {
     });
   };
 
+  const getEditingMatchLength = () => {
+    if (!editingMatch) return 9;
+    const league = leagues.find(l => l.id === editingMatch.league_id);
+    return league?.match_length || 9;
+  };
+
   const updateMatch = async () => {
     if (!editingMatch) return;
 
-    const winnerId = editingMatch.score1 > editingMatch.score2 
-      ? editingMatch.player1_id 
-      : editingMatch.player2_id;
+    const ml = getEditingMatchLength();
+    const s1 = editingMatch.score1;
+    const s2 = editingMatch.score2;
+
+    if (s1 === s2) {
+      toast({ title: "Hata", description: "Beraberlik olamaz!", variant: "destructive" });
+      return;
+    }
+    if (Math.max(s1, s2) !== ml) {
+      toast({ title: "Hata", description: `Kazananın skoru ${ml} olmalıdır.`, variant: "destructive" });
+      return;
+    }
+
+    const winnerId = s1 > s2 ? editingMatch.player1_id : editingMatch.player2_id;
 
     const { error } = await supabase
       .from('matches')
       .update({ 
-        score1: editingMatch.score1, 
-        score2: editingMatch.score2,
+        score1: s1, 
+        score2: s2,
         winner_id: winnerId,
       })
       .eq('id', editingMatch.id);
@@ -1732,58 +1749,14 @@ const Admin = () => {
                       </span>
                     </div>
                     <div className="flex gap-1 shrink-0">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={() => setEditingMatch({ ...match })}
-                          >
-                            <Edit className="w-3 h-3" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Maç Skorunu Düzenle</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div className="flex items-center gap-4">
-                              <div className="flex-1 text-center">
-                                <p className="text-sm mb-2">{getPlayerName(editingMatch?.player1_id || '')}</p>
-                                <Input
-                                  type="number"
-                                  min={0}
-                                  max={9}
-                                  value={editingMatch?.score1 || 0}
-                                  onChange={e => setEditingMatch(prev => prev ? { ...prev, score1: parseInt(e.target.value) || 0 } : null)}
-                                  className="text-center text-lg"
-                                />
-                              </div>
-                              <span className="text-xl font-bold">-</span>
-                              <div className="flex-1 text-center">
-                                <p className="text-sm mb-2">{getPlayerName(editingMatch?.player2_id || '')}</p>
-                                <Input
-                                  type="number"
-                                  min={0}
-                                  max={9}
-                                  value={editingMatch?.score2 || 0}
-                                  onChange={e => setEditingMatch(prev => prev ? { ...prev, score2: parseInt(e.target.value) || 0 } : null)}
-                                  className="text-center text-lg"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                          <DialogFooter>
-                            <DialogClose asChild>
-                              <Button variant="outline">İptal</Button>
-                            </DialogClose>
-                            <DialogClose asChild>
-                              <Button onClick={updateMatch}>Kaydet</Button>
-                            </DialogClose>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => setEditingMatch({ ...match })}
+                      >
+                        <Edit className="w-3 h-3" />
+                      </Button>
                       <Button 
                         variant="ghost" 
                         size="icon"
@@ -1802,6 +1775,80 @@ const Admin = () => {
                   </p>
                 )}
               </CardContent>
+
+              {/* Match Edit Dialog - controlled */}
+              <Dialog open={!!editingMatch} onOpenChange={(open) => { if (!open) setEditingMatch(null); }}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Maç Skorunu Düzenle</DialogTitle>
+                  </DialogHeader>
+                  {editingMatch && (() => {
+                    const ml = getEditingMatchLength();
+                    const scoreOptions = Array.from({ length: ml + 1 }, (_, i) => i);
+                    const s1 = editingMatch.score1;
+                    const s2 = editingMatch.score2;
+                    const isValid = s1 !== s2 && Math.max(s1, s2) === ml;
+                    return (
+                      <div className="space-y-4">
+                        <p className="text-xs text-muted-foreground text-center">Skor (0-{ml})</p>
+                        <div className="flex items-center justify-center gap-6">
+                          <div className="flex flex-col items-center gap-2">
+                            <span className="text-sm text-muted-foreground truncate max-w-[100px]">
+                              {getPlayerName(editingMatch.player1_id)}
+                            </span>
+                            <Select
+                              value={String(s1)}
+                              onValueChange={(v) => setEditingMatch(prev => prev ? { ...prev, score1: Number(v) } : null)}
+                            >
+                              <SelectTrigger className={`w-20 h-14 text-2xl font-bold justify-center ${s1 > s2 ? 'text-green-500' : ''}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {scoreOptions.map(n => (
+                                  <SelectItem key={n} value={String(n)} className="text-lg font-bold justify-center">
+                                    {n}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <span className="text-2xl text-muted-foreground mt-6">-</span>
+                          <div className="flex flex-col items-center gap-2">
+                            <span className="text-sm text-muted-foreground truncate max-w-[100px]">
+                              {getPlayerName(editingMatch.player2_id)}
+                            </span>
+                            <Select
+                              value={String(s2)}
+                              onValueChange={(v) => setEditingMatch(prev => prev ? { ...prev, score2: Number(v) } : null)}
+                            >
+                              <SelectTrigger className={`w-20 h-14 text-2xl font-bold justify-center ${s2 > s1 ? 'text-green-500' : ''}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {scoreOptions.map(n => (
+                                  <SelectItem key={n} value={String(n)} className="text-lg font-bold justify-center">
+                                    {n}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        {s1 === s2 && s1 > 0 && (
+                          <p className="text-xs text-destructive text-center">Beraberlik olamaz, skorları değiştirin</p>
+                        )}
+                        {s1 !== s2 && Math.max(s1, s2) !== ml && (
+                          <p className="text-xs text-destructive text-center">Kazananın skoru {ml} olmalıdır</p>
+                        )}
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => setEditingMatch(null)}>İptal</Button>
+                          <Button onClick={updateMatch} disabled={!isValid}>Kaydet</Button>
+                        </DialogFooter>
+                      </div>
+                    );
+                  })()}
+                </DialogContent>
+              </Dialog>
             </Card>
           </TabsContent>
           )}
