@@ -12,6 +12,7 @@ import { ForcePasswordChange } from '@/components/ForcePasswordChange';
 import { useSupabaseLeague } from '@/hooks/useSupabaseLeague';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminRole } from '@/hooks/useAdminRole';
+import { useSuperAdminRole } from '@/hooks/useSuperAdminRole';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trophy, Swords } from 'lucide-react';
 
@@ -21,6 +22,7 @@ type TabMode = 'league' | 'tournament';
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin } = useAdminRole();
+  const { isSuperAdmin, loading: superAdminLoading } = useSuperAdminRole();
   const navigate = useNavigate();
   const { 
     associations,
@@ -96,6 +98,13 @@ const Index = () => {
       navigate('/auth');
     }
   }, [user, authLoading, navigate]);
+
+  // Auto-redirect super admins to admin panel
+  useEffect(() => {
+    if (!authLoading && !superAdminLoading && user && isSuperAdmin) {
+      navigate('/admin');
+    }
+  }, [user, authLoading, superAdminLoading, isSuperAdmin, navigate]);
 
   // Auto-select league when visible leagues change
   useEffect(() => {
