@@ -194,6 +194,20 @@ serve(async (req) => {
       console.error('Tournament players delete error:', tpError);
     }
 
+    // Delete user_roles entries (remove admin role if exists)
+    if (userId) {
+      const { error: rolesError } = await supabaseAdmin
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+
+      if (rolesError) {
+        console.error('User roles delete error:', rolesError);
+      } else {
+        console.log('User roles deleted for user:', userId);
+      }
+    }
+
     // If super_admin, keep profile and auth account but remove from leagues/matches only
     if (isSuperAdmin) {
       console.log('Super admin player - keeping auth account and profile, only removed league/match data:', playerId);
