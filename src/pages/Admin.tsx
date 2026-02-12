@@ -119,6 +119,7 @@ const Admin = () => {
   
   // League completion confirmation
   const [leagueToComplete, setLeagueToComplete] = useState<{ id: string; missingCount: number } | null>(null);
+  const [leagueToDelete, setLeagueToDelete] = useState<string | null>(null);
   
   // Admin management (removed association selection for single-association model)
   const [selectedUserForRole, setSelectedUserForRole] = useState('');
@@ -1293,7 +1294,7 @@ const Admin = () => {
                                   </Button>
                                 )}
                                 {isSuperAdmin && (
-                                  <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => deleteLeague(league.id)}>
+                                  <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => setLeagueToDelete(league.id)}>
                                     <Trash2 className="w-3 h-3" />
                                   </Button>
                                 )}
@@ -1935,6 +1936,28 @@ const Admin = () => {
             <AlertDialogCancel>İptal</AlertDialogCancel>
             <AlertDialogAction onClick={() => leagueToComplete && confirmCompleteLeague(leagueToComplete.id)}>
               Evet, Tamamla
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* League deletion confirmation dialog */}
+      <AlertDialog open={!!leagueToDelete} onOpenChange={(open) => !open && setLeagueToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ligi Sil</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu ligi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (leagueToDelete) {
+                deleteLeague(leagueToDelete);
+                setLeagueToDelete(null);
+              }
+            }}>
+              Evet, Sil
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
