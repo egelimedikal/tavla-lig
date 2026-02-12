@@ -473,10 +473,23 @@ const Admin = () => {
       return;
     }
 
-    if (newPlayerPhone.replace(/\D/g, '').length < 10) {
+    const cleanPhone = newPlayerPhone.replace(/\D/g, '');
+    if (cleanPhone.length < 10) {
       toast({
         title: "Hata",
         description: "Geçerli bir telefon numarası girin.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check for duplicate phone number
+    const fullPhone = `+90${cleanPhone}`;
+    const existingPlayer = players.find(p => p.phone === fullPhone);
+    if (existingPlayer) {
+      toast({
+        title: "Hata",
+        description: `Bu telefon numarası zaten "${existingPlayer.name}" adlı oyuncuya kayıtlı.`,
         variant: "destructive",
       });
       return;
