@@ -121,11 +121,14 @@ const Admin = () => {
   const [leagueToComplete, setLeagueToComplete] = useState<{ id: string; missingCount: number } | null>(null);
   const [leagueToDelete, setLeagueToDelete] = useState<string | null>(null);
   const [leagueToReactivate, setLeagueToReactivate] = useState<string | null>(null);
-  
+
   // Admin management
   const [selectedUserForRole, setSelectedUserForRole] = useState('');
   const [selectedRole, setSelectedRole] = useState<'admin' | 'user'>('admin');
   const [adminToRemove, setAdminToRemove] = useState<{ id: string; userId: string } | null>(null);
+
+  // Match deletion confirmation
+  const [matchToDelete, setMatchToDelete] = useState<string | null>(null);
   
 
   useEffect(() => {
@@ -1757,11 +1760,11 @@ const Admin = () => {
                       >
                         <Edit className="w-3 h-3" />
                       </Button>
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="icon"
                         className="h-6 w-6 text-destructive hover:text-destructive"
-                        onClick={() => deleteMatch(match.id)}
+                        onClick={() => setMatchToDelete(match.id)}
                       >
                         <Trash2 className="w-3 h-3" />
                       </Button>
@@ -2028,6 +2031,29 @@ const Admin = () => {
               }
             }}>
               Evet, Devam Et
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Match deletion confirmation dialog */}
+      <AlertDialog open={!!matchToDelete} onOpenChange={(open) => !open && setMatchToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Maçı Sil</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu maçı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (matchToDelete) {
+                deleteMatch(matchToDelete);
+                setMatchToDelete(null);
+              }
+            }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Sil
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
