@@ -120,6 +120,7 @@ const Admin = () => {
   // League completion confirmation
   const [leagueToComplete, setLeagueToComplete] = useState<{ id: string; missingCount: number } | null>(null);
   const [leagueToDelete, setLeagueToDelete] = useState<string | null>(null);
+  const [leagueToReactivate, setLeagueToReactivate] = useState<string | null>(null);
   
   // Admin management (removed association selection for single-association model)
   const [selectedUserForRole, setSelectedUserForRole] = useState('');
@@ -1288,7 +1289,7 @@ const Admin = () => {
                                    </Button>
                                  )}
                                 {league.status === 'completed' && isSuperAdmin && (
-                                  <Button variant="outline" size="sm" className="h-7 px-2 text-[12px] leading-none" onClick={() => reactivateLeague(league.id)}>
+                                  <Button variant="outline" size="sm" className="h-7 px-2 text-[12px] leading-none" onClick={() => setLeagueToReactivate(league.id)}>
                                     <RefreshCw className="w-3 h-3 mr-1" />
                                     Devam Et
                                   </Button>
@@ -1958,6 +1959,26 @@ const Admin = () => {
               }
             }}>
               Evet, Sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* League reactivation confirmation dialog */}
+      <AlertDialog open={!!leagueToReactivate} onOpenChange={(open) => !open && setLeagueToReactivate(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Emin misiniz?</AlertDialogTitle>
+            <AlertDialogDescription>Bu ligi tekrar aktif hale getirmek istediğinizden emin misiniz?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (leagueToReactivate) {
+                reactivateLeague(leagueToReactivate);
+                setLeagueToReactivate(null);
+              }
+            }}>
+              Evet, Devam Et
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
