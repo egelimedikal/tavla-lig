@@ -1281,11 +1281,11 @@ const Admin = () => {
                                 </div>
                               </div>
                               <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
-                                {league.status === 'active' && (
-                                  <Button variant="outline" size="sm" className="h-7 px-2 text-[12px] leading-none" onClick={() => completeLeague(league.id)}>
-                                    Kaydet
-                                  </Button>
-                                )}
+                                 {league.status === 'active' && (
+                                   <Button variant="outline" size="sm" className="h-7 px-2 text-[12px] leading-none" onClick={() => completeLeague(league.id)}>
+                                     Ligi Bitir
+                                   </Button>
+                                 )}
                                 {league.status === 'completed' && isSuperAdmin && (
                                   <Button variant="outline" size="sm" className="h-7 px-2 text-[12px] leading-none" onClick={() => reactivateLeague(league.id)}>
                                     <RefreshCw className="w-3 h-3 mr-1" />
