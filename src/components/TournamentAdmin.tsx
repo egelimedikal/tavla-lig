@@ -747,7 +747,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                       <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
                         {t.status === 'active' && (
                           <Button variant="outline" size="sm" className="h-7 px-2 text-[12px] leading-none" onClick={() => handleCompleteTournament(t.id)}>
-                             Kaydet
+                             Turnuvayı Bitir
                            </Button>
                         )}
                         {t.status === 'completed' && isSuperAdmin && (
