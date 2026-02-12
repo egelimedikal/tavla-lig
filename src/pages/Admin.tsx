@@ -102,6 +102,7 @@ const Admin = () => {
   const [editingLeague, setEditingLeague] = useState<League | null>(null);
   const [selectedLeagueForEdit, setSelectedLeagueForEdit] = useState<string | null>(null);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
+  const [matchToDelete, setMatchToDelete] = useState<string | null>(null);
   const [selectedLeagueForPlayer, setSelectedLeagueForPlayer] = useState('');
   const [selectedPlayer, setSelectedPlayer] = useState('');
   
@@ -780,6 +781,7 @@ const Admin = () => {
       title: "Başarılı",
       description: "Maç silindi.",
     });
+    setMatchToDelete(null);
   };
 
   // Admin Role Management (Super Admin only)
@@ -1761,7 +1763,7 @@ const Admin = () => {
                         variant="ghost" 
                         size="icon"
                         className="h-6 w-6 text-destructive hover:text-destructive"
-                        onClick={() => deleteMatch(match.id)}
+                        onClick={() => setMatchToDelete(match.id)}
                       >
                         <Trash2 className="w-3 h-3" />
                       </Button>
@@ -1847,6 +1849,29 @@ const Admin = () => {
                       </div>
                     );
                   })()}
+                </DialogContent>
+              </Dialog>
+
+              {/* Match Delete Confirmation Dialog */}
+              <AlertDialog open={!!matchToDelete} onOpenChange={(open) => { if (!open) setMatchToDelete(null); }}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Maç Sil</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Bu maçı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>İptal</AlertDialogCancel>
+                    <AlertDialogAction 
+                      className="bg-destructive hover:bg-destructive/90"
+                      onClick={() => matchToDelete && deleteMatch(matchToDelete)}
+                    >
+                      Sil
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
                 </DialogContent>
               </Dialog>
             </Card>
