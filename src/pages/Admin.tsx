@@ -133,6 +133,9 @@ const Admin = () => {
   // Match deletion confirmation
   const [matchToDelete, setMatchToDelete] = useState<string | null>(null);
   
+  // Player deletion confirmation
+  const [playerToDelete, setPlayerToDelete] = useState<string | null>(null);
+  
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -1677,7 +1680,7 @@ const Admin = () => {
                           <Button 
                             variant="destructive" 
                             size="icon"
-                            onClick={() => deletePlayer(player.id)}
+                            onClick={() => setPlayerToDelete(player.id)}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -2099,6 +2102,29 @@ const Admin = () => {
               if (matchToDelete) {
                 deleteMatch(matchToDelete);
                 setMatchToDelete(null);
+              }
+            }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Player deletion confirmation dialog */}
+      <AlertDialog open={!!playerToDelete} onOpenChange={(open) => !open && setPlayerToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Oyuncuyu Sil</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu oyuncuyu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve oyuncunun tüm maç kayıtları silinecektir.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (playerToDelete) {
+                deletePlayer(playerToDelete);
+                setPlayerToDelete(null);
               }
             }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Sil
