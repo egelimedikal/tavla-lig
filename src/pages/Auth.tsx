@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSuperAdminRole } from '@/hooks/useSuperAdminRole';
 import { Phone, Lock, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { z } from 'zod';
@@ -20,14 +21,19 @@ export default function Auth() {
   const [errors, setErrors] = useState<{ phone?: string; password?: string }>({});
   
   const { signIn, user } = useAuth();
+  const { isSuperAdmin, loading: superAdminLoading } = useSuperAdminRole();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) {
-      navigate('/');
+    if (user && !superAdminLoading) {
+      if (isSuperAdmin) {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
     }
-  }, [user, navigate]);
+  }, [user, isSuperAdmin, superAdminLoading, navigate]);
 
   const formatPhoneDisplay = (value: string) => {
     const digits = value.replace(/\D/g, '');
