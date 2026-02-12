@@ -77,6 +77,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
   const [editingMatch, setEditingMatch] = useState<TournamentMatch | null>(null);
   const [generatingMatches, setGeneratingMatches] = useState(false);
   const [confirmCompleteTournamentId, setConfirmCompleteTournamentId] = useState<string | null>(null);
+  const [tournamentToDelete, setTournamentToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTournamentData();
@@ -755,7 +756,7 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
                           </Button>
                         )}
                         {isSuperAdmin && (
-                          <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => deleteTournament(t.id)}>
+                          <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => setTournamentToDelete(t.id)}>
                             <Trash2 className="w-3 h-3" />
                           </Button>
                         )}
@@ -1108,6 +1109,28 @@ export function TournamentAdmin({ players, associationId, isSuperAdmin = false }
               }
             }}>
               Evet, Kaydet
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* Tournament deletion confirmation dialog */}
+      <AlertDialog open={!!tournamentToDelete} onOpenChange={(open) => !open && setTournamentToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Turnuvayı Sil</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu turnuvayı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (tournamentToDelete) {
+                deleteTournament(tournamentToDelete);
+                setTournamentToDelete(null);
+              }
+            }}>
+              Evet, Sil
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
