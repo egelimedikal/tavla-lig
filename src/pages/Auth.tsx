@@ -114,7 +114,7 @@ export default function Auth() {
           {/* Logo */}
           <div className="text-center space-y-4">
             <div className="w-24 h-24 mx-auto">
-              <img src={logo} alt="Mustafa Çakır Mahalle Kahvesi Logo" className="w-full h-full object-contain" />
+              <img src={logo} alt="Tavla Lig" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground">Tavla Lig</h1>
