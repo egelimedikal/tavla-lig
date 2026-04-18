@@ -23,7 +23,7 @@ export function Header({ onProfileClick }: HeaderProps) {
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10">
-            <img src={logo} alt="Mustafa Çakır Mahalle Kahvesi Logo" className="w-full h-full object-contain" />
+            <img src={logo} alt="Tavla Lig" className="w-full h-full object-contain" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-foreground">Tavla Lig</h1>
